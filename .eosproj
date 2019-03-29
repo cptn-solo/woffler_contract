@@ -1,0 +1,16 @@
+{
+  "main": "woffler.cpp",
+  "contract": "woffler",
+  "include": ".",
+  "cdt": "",
+  "output": "",
+  "scripts": {
+    "build": ""
+  },
+  "deploy": {
+    "mainnet": "",
+    "kylin": "",
+    "jungle": "",
+    "local": ""
+  }
+}
