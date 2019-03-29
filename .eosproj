@@ -1,7 +1,7 @@
 {
-  "main": "woffler.cpp",
+  "main": "src/woffler.cpp",
   "contract": "woffler",
-  "include": ".",
+  "include": "",
   "cdt": "",
   "output": "",
   "scripts": {
