@@ -1,6 +1,7 @@
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/print.hpp>
+#include <constants.hpp>
 
 using namespace eosio;
 
@@ -9,7 +10,7 @@ CONTRACT woffler : public contract {
     using contract::contract;
     woffler(name receiver, name code, datastream<const char*> ds): contract(receiver, code, ds), _players(receiver, code.value) {}
 
-    ACTION hi(name user);
+    ACTION signup(name account);
   
   private:
     TABLE wflplayer {
@@ -30,4 +31,4 @@ CONTRACT woffler : public contract {
     playerstable _players;
 };
 
-EOSIO_DISPATCH(woffler, (hi))
+EOSIO_DISPATCH(woffler, (signup))

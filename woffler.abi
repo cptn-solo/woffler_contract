@@ -4,11 +4,11 @@
     "types": [],
     "structs": [
         {
-            "name": "hi",
+            "name": "signup",
             "base": "",
             "fields": [
                 {
-                    "name": "user",
+                    "name": "account",
                     "type": "name"
                 }
             ]
@@ -58,8 +58,8 @@
     ],
     "actions": [
         {
-            "name": "hi",
-            "type": "hi",
+            "name": "signup",
+            "type": "signup",
             "ricardian_contract": ""
         }
     ],
