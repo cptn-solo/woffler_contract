@@ -14,16 +14,44 @@
             ]
         },
         {
-            "name": "tableStruct",
+            "name": "wflplayer",
             "base": "",
             "fields": [
                 {
-                    "name": "key",
+                    "name": "account",
                     "type": "name"
                 },
                 {
-                    "name": "name",
-                    "type": "string"
+                    "name": "idLvl",
+                    "type": "uint64"
+                },
+                {
+                    "name": "activebalance",
+                    "type": "asset"
+                },
+                {
+                    "name": "vestingbalance",
+                    "type": "asset"
+                },
+                {
+                    "name": "tryposition",
+                    "type": "uint64"
+                },
+                {
+                    "name": "currentposition",
+                    "type": "uint64"
+                },
+                {
+                    "name": "triesleft",
+                    "type": "uint64"
+                },
+                {
+                    "name": "levelresult",
+                    "type": "uint64"
+                },
+                {
+                    "name": "resulttimestamp",
+                    "type": "uint64"
                 }
             ]
         }
@@ -37,8 +65,8 @@
     ],
     "tables": [
         {
-            "name": "table",
-            "type": "tableStruct",
+            "name": "players",
+            "type": "wflplayer",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
