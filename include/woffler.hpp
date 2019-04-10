@@ -5,12 +5,16 @@
 
 using namespace eosio;
 
+using std::string;
+
 CONTRACT woffler : public contract {
   public:
     using contract::contract;
     woffler(name receiver, name code, datastream<const char*> ds): contract(receiver, code, ds), _players(receiver, code.value) {}
 
     ACTION signup(name account);
+    
+    void deposit(name from, name to, asset amount, string memo);
   
   private:
     TABLE wflplayer {
@@ -30,5 +34,3 @@ CONTRACT woffler : public contract {
     
     playerstable _players;
 };
-
-EOSIO_DISPATCH(woffler, (signup))
