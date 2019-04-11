@@ -1,6 +1,6 @@
 #include <woffler.hpp>
 
-ACTION woffler::signup(name account) {
+ACTION woffler::signup(name account, uint64_t idchannel) {
   require_auth(account);
   print("Register user: ", name{account});
 
@@ -9,6 +9,8 @@ ACTION woffler::signup(name account) {
       _players.emplace(get_self(), [&](auto& p) {
         p.account = account;
         p.levelresult = playerstate::INIT;
+        //TODO: check existence of the channel and use 0 if no channel found
+        p.idchannel = idchannel;
       });
     print(", added");
   } else {

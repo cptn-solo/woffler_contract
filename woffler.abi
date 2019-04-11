@@ -10,6 +10,10 @@
                 {
                     "name": "account",
                     "type": "name"
+                },
+                {
+                    "name": "idchannel",
+                    "type": "uint64"
                 }
             ]
         },
@@ -22,7 +26,11 @@
                     "type": "name"
                 },
                 {
-                    "name": "idLvl",
+                    "name": "idlvl",
+                    "type": "uint64"
+                },
+                {
+                    "name": "idchannel",
                     "type": "uint64"
                 },
                 {
@@ -35,19 +43,19 @@
                 },
                 {
                     "name": "tryposition",
-                    "type": "uint64"
+                    "type": "uint8"
                 },
                 {
                     "name": "currentposition",
-                    "type": "uint64"
+                    "type": "uint8"
                 },
                 {
                     "name": "triesleft",
-                    "type": "uint64"
+                    "type": "uint8"
                 },
                 {
                     "name": "levelresult",
-                    "type": "uint64"
+                    "type": "uint8"
                 },
                 {
                     "name": "resulttimestamp",
