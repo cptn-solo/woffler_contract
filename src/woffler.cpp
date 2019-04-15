@@ -4,10 +4,14 @@ ACTION beltalpha21z::signup(name account, uint64_t idchannel) {
   require_auth(account);
   print("Register user: ", name{account});
 
+  auto self = get_self();
+  playerstable _players(self, self.value);
   auto itr = _players.find(account.value);
-  check(itr == _players.end(), "Account already exists");
-
-  _players.emplace(get_self(), [&](auto& p) {
+  check(
+    itr == _players.end(), 
+    "Account already exists"
+  );
+  _players.emplace(self, [&](auto& p) {
     p.account = account;
     p.levelresult = playerstate::INIT;
     //TODO: check existence of the channel and use 0 if no channel found
@@ -24,7 +28,11 @@ void beltalpha21z::deposit(name from, name to, asset amnt, string memo) {
     amnt.symbol.code() == acceptedCurr,
     "Deposits accepted only in " + acceptedCurr.to_string() + " tokens"
   );
-  check(to == get_self(), "Contract must be a receiver");
+  
+  check(
+    to == get_self(), 
+    "Contract must be a receiver"
+  );
   
   bool deposited = beltalpha21z::appendBalance(from, amnt);
   if (!deposited) {
@@ -34,6 +42,8 @@ void beltalpha21z::deposit(name from, name to, asset amnt, string memo) {
 }
 
 bool beltalpha21z::appendBalance(name from, asset amnt) {
+  auto self = get_self();
+  playerstable _players(self, self.value);
   auto itr = _players.find(from.value);
   if (itr != _players.end()) {
     _players.modify(itr, get_self(), [&]( auto& p ) {

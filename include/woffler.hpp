@@ -9,7 +9,8 @@ using std::string;
 CONTRACT beltalpha21z : public contract {
   public:
     using contract::contract;
-    beltalpha21z(name receiver, name code, datastream<const char*> ds): contract(receiver, code, ds), _players(receiver, code.value) {}
+    beltalpha21z(name receiver, name code, datastream<const char*> ds): 
+      contract(receiver, code, ds) {}
 
     ACTION signup(name account, uint64_t idchannel);
     
@@ -32,7 +33,5 @@ CONTRACT beltalpha21z : public contract {
       
       uint64_t primary_key() const { return account.value; }
     };
-    typedef multi_index<"players"_n, wflplayer> playerstable;
-    
-    playerstable _players;
+    typedef multi_index<"players"_n, wflplayer> playerstable;        
 };
