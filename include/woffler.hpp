@@ -4,18 +4,19 @@
 #include <constants.hpp>
 
 using namespace eosio;
-
 using std::string;
 
-CONTRACT woffler : public contract {
+CONTRACT beltalpha21z : public contract {
   public:
     using contract::contract;
-    woffler(name receiver, name code, datastream<const char*> ds): contract(receiver, code, ds), _players(receiver, code.value) {}
+    beltalpha21z(name receiver, name code, datastream<const char*> ds): contract(receiver, code, ds), _players(receiver, code.value) {}
 
     ACTION signup(name account, uint64_t idchannel);
     
-    void deposit(name from, name to, asset amount, string memo);
-  
+    void deposit(name from, name to, asset amnt, string memo);
+    
+    bool appendBalance(name from, asset amnt);
+
   private:
     TABLE wflplayer {
       name account;
