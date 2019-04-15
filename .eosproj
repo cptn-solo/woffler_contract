@@ -1,6 +1,6 @@
 {
   "main": "src/woffler.cpp",
-  "contract": "woffler",
+  "contract": "beltalpha21z",
   "include": "./include",
   "cdt": "",
   "output": "",
