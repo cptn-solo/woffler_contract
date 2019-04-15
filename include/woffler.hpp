@@ -13,14 +13,16 @@ CONTRACT woffler : public contract {
       contract(receiver, code, ds) {}
 
     ACTION signup(name account, uint64_t idchannel);
-    
+    ACTION withdraw (name from, name to, asset amount, const string& memo);
+
     [[eosio::on_notify("eosio.token::transfer")]]
-    void deposit(name from, name to, asset amnt, string memo);
+    void transferHandler(name from, name to, asset amount, string memo);
         
-    using transfer_action = action_wrapper<"transfer"_n, &woffler::deposit>;
+    using transferAction = action_wrapper<"transfer"_n, &woffler::transferHandler>;
 
   private:
-    bool appendBalance(name from, asset amnt);
+    bool addBalance(name to, asset amount);
+    void subBalance(name from, asset amount);
 
     TABLE wflplayer {
       name account;
