@@ -1,16 +1,20 @@
 #include <woffler.hpp>
 
-ACTION beltalpha21z::signup(name account, uint64_t idchannel) {
+void woffler::signup(name account, uint64_t idchannel) {
   require_auth(account);
   print("Register user: ", name{account});
 
   auto self = get_self();
+
   playerstable _players(self, self.value);
-  auto itr = _players.find(account.value);
+  
+  auto player = _players.find(account.value);
+  
   check(
-    itr == _players.end(), 
+    player == _players.end(), 
     "Account already exists"
   );
+  
   _players.emplace(self, [&](auto& p) {
     p.account = account;
     p.levelresult = playerstate::INIT;
@@ -21,7 +25,7 @@ ACTION beltalpha21z::signup(name account, uint64_t idchannel) {
   });
 }
 
-void beltalpha21z::deposit(name from, name to, asset amnt, string memo) {
+void woffler::deposit(name from, name to, asset amnt, string memo) {
   print("deposting: ", asset{amnt}, " to account: ", name{from});
 
   check(
@@ -34,39 +38,29 @@ void beltalpha21z::deposit(name from, name to, asset amnt, string memo) {
     "Contract must be a receiver"
   );
   
-  bool deposited = beltalpha21z::appendBalance(from, amnt);
+  bool deposited = woffler::appendBalance(from, amnt);
+
   if (!deposited) {
-    beltalpha21z::signup(from, 0);
-    beltalpha21z::appendBalance(from, amnt);
+    signup(from, 0);
+    appendBalance(from, amnt);
   }
 }
 
-bool beltalpha21z::appendBalance(name from, asset amnt) {
+bool woffler::appendBalance(name from, asset amnt) {
   auto self = get_self();
-  playerstable _players(self, self.value);
-  auto itr = _players.find(from.value);
-  if (itr != _players.end()) {
-    _players.modify(itr, get_self(), [&]( auto& p ) {
-      p.activebalance += amnt;     
-      p.triesleft = 3;   
-    });
-    print("Current balance: ", asset{itr->activebalance});
-    return true;
-  }
-  return false;
-}
 
-extern "C" { 
-  void apply( uint64_t receiver, uint64_t code, uint64_t action ) { 
-    if(code == receiver) {
-        switch(action) {
-            EOSIO_DISPATCH_HELPER(
-                beltalpha21z,
-                (signup)(deposit)                    
-            )
-        }
-    } else if(code == "eosio.token"_n.value && action == "transfer"_n.value) {
-      execute_action<beltalpha21z>(name(receiver), name(code), &beltalpha21z::deposit);
-    }
-  } 
+  playerstable _players(self, self.value);
+  
+  auto player = _players.find(from.value);
+  
+  if (player == _players.end()) 
+    return false;
+    
+  _players.modify(player, self, [&]( auto& p ) {
+    p.activebalance += amnt;     
+  });
+  
+  print("Current balance: ", asset{player->activebalance});
+  
+  return true;  
 }

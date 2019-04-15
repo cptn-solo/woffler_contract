@@ -6,19 +6,22 @@
 using namespace eosio;
 using std::string;
 
-CONTRACT beltalpha21z : public contract {
+CONTRACT woffler : public contract {
   public:
     using contract::contract;
-    beltalpha21z(name receiver, name code, datastream<const char*> ds): 
+    woffler(name receiver, name code, datastream<const char*> ds): 
       contract(receiver, code, ds) {}
 
     ACTION signup(name account, uint64_t idchannel);
     
+    [[eosio::on_notify("eosio.token::transfer")]]
     void deposit(name from, name to, asset amnt, string memo);
-    
-    bool appendBalance(name from, asset amnt);
+        
+    using transfer_action = action_wrapper<"transfer"_n, &woffler::deposit>;
 
   private:
+    bool appendBalance(name from, asset amnt);
+
     TABLE wflplayer {
       name account;
       uint64_t idlvl;
