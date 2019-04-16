@@ -1,8 +1,8 @@
-#include <woffler.hpp>
+#include "accounting.cpp"
+#include "wflChannel.cpp"
 
 //*** Contract scope methods ***//
 
-//register new player and assing to (existing) sales channel or contract channel
 void woffler::signup(name account, name channel) {
   require_auth(account);
   print("Register user: ", name{account});
@@ -43,23 +43,9 @@ void woffler::signup(name account, name channel) {
   });
   
   //creating/incrementing sales channel
-  channels _channels(self, self.value);
-  auto achannel = _channels.find(_channel.value);
-
-  if (achannel == _channels.end()) {
-    _channels.emplace(self, [&](auto& c) {
-      c.owner = _channel;
-      c.height = 1;
-      c.balance = asset{0, acceptedSymbol};
-    });
-  } 
-  else {
-    _channels.modify(achannel, self, [&]( auto& p ) {
-      p.height++;     
-    });
-  }
+  upsertChannel(_channel);
 }
-// remove account from players table from contract (and eosio.token, legacy) scope
+
 void woffler::forget(name account) {
   require_auth(account);
   print("Forget user: ", name{account});
@@ -68,21 +54,18 @@ void woffler::forget(name account) {
   clearAccount(account, name("eosio.token"));//legacy
 }
 
-bool woffler::clearAccount(name account, name scope) {
+void woffler::withdraw (name from, name to, asset amount, const string& memo) {
   auto self = get_self();
+  require_auth(from);
+  
+  subBalance(from, amount);
 
-  players _players(self, scope.value);
-  
-  auto player = _players.find(account.value);
-  
-  if (player == _players.end()) 
-    return false;
-
-  _players.erase(player);
-  
-  print("Removed user: ", name{account}, " from scope: ", name{});
-  
-  return true;
+  // Inline transfer
+  const auto& contract = name("eosio.token");
+  woffler::transferAction t_action(contract, {self, "active"_n});
+  t_action.send(self, to, amount, memo);
+   
+  print("Withdrawn from: ", name{from}, " To: ", name{to});
 }
 
 void woffler::transferHandler(name from, name to, asset amount, string memo) {
@@ -104,65 +87,4 @@ void woffler::transferHandler(name from, name to, asset amount, string memo) {
     }
   } 
     
-}
-
-void woffler::withdraw (name from, name to, asset amount, const string& memo) {
-  auto self = get_self();
-  require_auth(from);
-  
-  subBalance(from, amount);
-
-  // Inline transfer
-  const auto& contract = name("eosio.token");
-  woffler::transferAction t_action(contract, {self, "active"_n});
-  t_action.send(self, to, amount, memo);
-   
-  print("Withdrawn from: ", name{from}, " To: ", name{to});
-}
-
-bool woffler::addBalance(name to, asset amount) {
-  auto self = get_self();
-
-  players _players(self, self.value);
-  
-  const auto& player = _players.find(to.value);
-  
-  if (player == _players.end()) 
-    return false;
-    
-  _players.modify(player, self, [&]( auto& p ) {
-    p.activebalance += amount;     
-  });
-  
-  print("Current balance: ", asset{player->activebalance});
-  
-  return true;  
-}
-
-void woffler::subBalance(name from, asset amount) {
-  auto self = get_self();
-
-  players _players(self, self.value);
-  
-  const auto& player = _players.find(from.value);
-  
-  check(
-    player != _players.end(), 
-    "Account does not exist"
-  );
-  
-  check(
-    player->activebalance >= amount, 
-    string("Not enough active balance in your account. Current active balance: ") + player->activebalance.to_string().c_str() 
-  );    
-
-  _players.modify(player, self, [&]( auto& p ) {
-    p.activebalance -= amount;     
-  });     
-}
-
-//*** Sales channel scope methods (wflChannel) ***//
-
-void woffler::chnmergebal(name owner) {
-
 }

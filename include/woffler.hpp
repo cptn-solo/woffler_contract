@@ -1,3 +1,4 @@
+#pragma once
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/print.hpp>
@@ -37,6 +38,7 @@ CONTRACT woffler : public contract {
     bool addBalance(name to, asset amount);
     void subBalance(name from, asset amount);
     bool clearAccount(name account, name scope);
+    void upsertChannel(name owner);
 
     //players with there balances and in-game state
     TABLE wflplayer {
