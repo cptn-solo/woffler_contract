@@ -1,7 +1,7 @@
 {
   "main": "src/woffler.cpp",
   "contract": "woffler",
-  "include": "",
+  "include": "./include",
   "cdt": "",
   "output": "",
   "scripts": {
@@ -12,5 +12,8 @@
     "kylin": "",
     "jungle": "",
     "local": ""
+  },
+  "test": {
+    "npmClient": "yarn"
   }
 }
