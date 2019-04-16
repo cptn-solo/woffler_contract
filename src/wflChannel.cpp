@@ -17,7 +17,7 @@ void woffler::upsertChannel(name owner) {
     });
   } 
   else {
-    _channels.modify(achannel, self, [&]( auto& p ) {
+    _channels.modify(achannel, self, [&](auto& p) {
       p.height++;     
     });
   }
@@ -37,7 +37,7 @@ void woffler::chnmergebal(name owner) {
   
   auto amount = achannel->balance;
 
-  _channels.modify(achannel, self, [&]( auto& c ) {
+  _channels.modify(achannel, owner, [&](auto& c) {
     c.balance = asset{0, acceptedSymbol};     
   });
   

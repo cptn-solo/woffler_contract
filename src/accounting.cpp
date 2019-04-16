@@ -52,6 +52,11 @@ bool woffler::clearAccount(name account, name scope) {
   if (player == _players.end()) 
     return false;
 
+  check(//warning! works only for records, emplaced in contract's host scope
+    player->activebalance == asset{0, acceptedSymbol},
+    string("Please withdraw funds first. Current active balance: ") + player->activebalance.to_string().c_str()
+  );
+
   _players.erase(player);
   
   print("Removed user: ", name{account}, " from scope: ", name{});

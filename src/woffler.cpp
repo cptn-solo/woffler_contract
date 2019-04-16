@@ -1,5 +1,6 @@
 #include "accounting.cpp"
 #include "wflChannel.cpp"
+#include "wflBranch.cpp"
 
 //*** Contract scope methods ***//
 
