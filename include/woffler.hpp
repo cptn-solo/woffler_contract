@@ -26,8 +26,16 @@ CONTRACT woffler : public contract {
     void transferHandler(name from, name to, asset amount, string memo);
         
     using transferAction = action_wrapper<"transfer"_n, &woffler::transferHandler>;
-    #pragma endregion
     
+    #pragma endregion
+
+    #pragma region ** Player (wflPlayer): **
+
+    //set current root branch for player and position at 1st level
+    ACTION switchbrnch(name account, uint64_t idbranch);
+
+    #pragma endregion
+
     #pragma region ** Sales channels (wflChannel): **
 
     //merge channel balance into owner's active balance
@@ -35,7 +43,7 @@ CONTRACT woffler : public contract {
 
     #pragma endregion
     
-    #pragma region ** Branches (wflBranch): **
+    #pragma region ** Branch presets (wflBranchMeta): **
     
     //create meta for root branch(es) - active balance must cover at least.
     //owner pays for ram to avoid spamming via branch meta creation.
@@ -59,10 +67,53 @@ CONTRACT woffler : public contract {
     
     //remove branch meta owned
     ACTION cleanbrmeta(name owner, uint64_t idmeta);
-    
-    //create root branch after meta is created/selected from existing
+        
+    #pragma endregion
+
+    #pragma region ** Branches (wflBranch): **
+
+    //create root branch with root level after meta is created/selected from existing
+    //add pot value from owner's active balance to the root level's pot
+    //register pot value as owner's stake in root branch created
     ACTION branch(name owner, uint64_t idmeta, asset pot);
+
+    //link quest created earlier to the specified branch (see qstsetmeta)
+    ACTION addquest(name owner, uint64_t idbranch, uint64_t idquest);
     
+    //unlink quest from the specified branch
+    ACTION rmquest(name owner, uint64_t idbranch, uint64_t idquest);
+
+    #pragma endregion
+
+    #pragma region ** Branch Stakes (wflStake): **
+    
+    //increase volume of root branch starting pot:
+    //add amount to the root level's pot of the branch from owner's active balance
+    //register amount as owner's stake in specified branch
+    ACTION stkaddval(name owner, uint64_t idbranch, asset amount);
+
+    //merge branch stake revenue into owner's active balance
+    ACTION stktakervn(name owner, uint64_t idbranch);
+
+    #pragma endregion
+
+    #pragma region ** Levels (wflLevel): **
+        
+    #pragma endregion
+
+    #pragma region ** Quests (wflQuest): **
+        
+    //create/update owned quest metadata
+    ACTION qstsetmeta(name owner, uint64_t idquest, 
+      std::vector<uint64_t> hashes, 
+      asset minprice, 
+      asset maxprice, 
+      string apiurl
+    );
+
+    //adjust owned quest balance using owner's active balance (add/remove to/from)
+    ACTION qstsetbal(name owner, uint64_t idquest, asset amount);
+
     #pragma endregion
 
   private:
@@ -98,18 +149,6 @@ CONTRACT woffler : public contract {
     };
     typedef multi_index<"channels"_n, wflchannel> channels; 
 
-    //branches for levels
-    TABLE wflbranch {
-      uint64_t id;
-      uint64_t idparent;
-      uint64_t idmeta;
-      name winner;
-      uint64_t generation;
-
-      uint64_t primary_key() const { return id; }
-    };
-    typedef multi_index<"branches"_n, wflbranch> branches;
-
     //branch presets and metadata (applied for all subbranches)
     TABLE wflbrnchmeta {
       uint64_t id;
@@ -131,4 +170,66 @@ CONTRACT woffler : public contract {
       uint64_t primary_key() const { return id; }
     };
     typedef multi_index<"brnchmeta"_n, wflbrnchmeta> brnchmetas;
+
+    //branches for levels
+    TABLE wflbranch {
+      uint64_t id;
+      uint64_t idparent;
+      uint64_t idmeta;
+      name winner;
+      uint64_t generation;
+
+      uint64_t primary_key() const { return id; }
+    };
+    typedef multi_index<"branches"_n, wflbranch> branches;
+
+    //branch stakeholders with accumulated revenue and stake
+    TABLE wflstake {
+      uint64_t id;
+      uint64_t idbranch;
+      name owner;
+      asset stake;
+      asset revenue;
+
+      uint64_t primary_key() const { return id; }
+    };
+    typedef multi_index<"stakes"_n, wflstake> stakes;
+
+    //branch levels
+    TABLE wfllevel {
+      uint64_t id;
+      uint64_t idbranch;
+      uint64_t idchbranch;
+      asset potbalance;
+      std::vector<uint8_t> redcells;
+      std::vector<uint8_t> greencells;
+
+      uint64_t primary_key() const { return id; }
+    };
+    typedef multi_index<"levels"_n, wfllevel> levels;
+
+    //branch quests
+    TABLE wflquest {
+      uint64_t id;      
+      name owner;
+      asset balance;
+      std::vector<uint64_t> hashes;
+      asset minprice;
+      asset maxprice;
+      string apiurl;
+
+      uint64_t primary_key() const { return id; }
+    };
+    typedef multi_index<"quests"_n, wflquest> quests;
+
+    //branch-to-quest references
+    TABLE wflbrquest {
+      uint64_t id;
+      uint64_t idbranch;
+      uint64_t idquest;
+      name owner;
+      
+      uint64_t primary_key() const { return id; }
+    };
+    typedef multi_index<"brquest"_n, wflbrquest> brquests;
 };
