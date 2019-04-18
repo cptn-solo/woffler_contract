@@ -1,6 +1,10 @@
 #include "accounting.cpp"
+#include "wflPlayer.cpp"
 #include "wflChannel.cpp"
+#include "wflBranchMeta.cpp"
 #include "wflBranch.cpp"
+#include "wflStake.cpp"
+#include "wflQuest.cpp"
 
 //*** Contract scope methods ***//
 
