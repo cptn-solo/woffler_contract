@@ -53,7 +53,7 @@ bool woffler::clearAccount(name account, name scope) {
     return false;
 
   check(//warning! works only for records, emplaced in contract's host scope
-    player->activebalance == asset{0, acceptedSymbol},
+    player->activebalance == asset{0, Const::acceptedSymbol},
     string("Please withdraw funds first. Current active balance: ") + player->activebalance.to_string().c_str()
   );
 

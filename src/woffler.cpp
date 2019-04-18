@@ -40,11 +40,11 @@ void woffler::signup(name account, name channel) {
   //creating player record
   _players.emplace(self, [&](auto& p) {
     p.account = account;
-    p.levelresult = playerstate::INIT;
+    p.levelresult = Const::playerstate::INIT;
     //TODO: check existence of the channel and use 0 if no channel found
     p.channel = _channel;
-    p.activebalance = asset{0, acceptedSymbol};
-    p.vestingbalance = asset{0, acceptedSymbol};
+    p.activebalance = asset{0, Const::acceptedSymbol};
+    p.vestingbalance = asset{0, Const::acceptedSymbol};
   });
   
   //creating/incrementing sales channel
@@ -77,8 +77,8 @@ void woffler::transferHandler(name from, name to, asset amount, string memo) {
   print("Transfer: ", asset{amount}, " from: ", name{from}, " to: ", name{to});
 
   check(
-    amount.symbol.code() == acceptedCurr,
-    "Only " + acceptedCurr.to_string() + " transfers allowed"
+    amount.symbol.code() == Const::acceptedCurr,
+    "Only " + Const::acceptedCurr.to_string() + " transfers allowed"
   );
 
   auto self = get_self();
