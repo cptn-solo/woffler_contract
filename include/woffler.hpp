@@ -98,7 +98,10 @@ CONTRACT woffler : public contract {
     #pragma endregion
 
     #pragma region ** Levels (wflLevel): **
-        
+
+    //TEST action for cell generation debug 
+    ACTION gencells(uint8_t size, uint8_t maxval);
+    
     #pragma endregion
 
     #pragma region ** Quests (wflQuest): **
@@ -117,10 +120,6 @@ CONTRACT woffler : public contract {
     #pragma endregion
 
   private:
-    bool addBalance(name to, asset amount);
-    void subBalance(name from, asset amount);
-    bool clearAccount(name account, name scope);
-    void upsertChannel(name owner);
 
     //players with there balances and in-game state
     TABLE wflplayer {
@@ -153,6 +152,9 @@ CONTRACT woffler : public contract {
     TABLE wflbrnchmeta {
       uint64_t id;
       name owner;
+      uint8_t lvllength;//min lvlgreens+lvlreds
+      uint8_t lvlgreens;//min 1
+      uint8_t lvlreds;//min 1
       asset unjlmin;
       uint8_t unjlrate;
       uint64_t unjlintrvl;
@@ -232,4 +234,26 @@ CONTRACT woffler : public contract {
       uint64_t primary_key() const { return id; }
     };
     typedef multi_index<"brquest"_n, wflbrquest> brquests;
+    
+    struct cellGenerator {
+      uint8_t _current;
+      uint8_t _step;
+      cellGenerator(uint8_t maxval, uint8_t size) {
+        _current = 0;
+        _step = ((maxval - 1) / size);
+      }
+      uint8_t operator()() {  
+        _current += _step;
+        return _current;
+      }
+    };
+
+    
+    bool addBalance(name to, asset amount);
+    void subBalance(name from, asset amount);
+    bool clearAccount(name account, name scope);
+    void upsertChannel(name owner);
+    std::vector<uint8_t> generate_data(uint8_t size, uint8_t maxval);
+    void addLevel(name owner, uint64_t idbranch, asset pot, const wflbrnchmeta& bmeta);
+    void registerStake(name owner, uint64_t idbranch, asset amount);
 };

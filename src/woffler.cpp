@@ -5,6 +5,7 @@
 #include "wflBranch.cpp"
 #include "wflStake.cpp"
 #include "wflQuest.cpp"
+#include "wflLevel.cpp"
 
 //*** Contract scope methods ***//
 

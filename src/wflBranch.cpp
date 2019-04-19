@@ -1,5 +1,4 @@
 #include <woffler.hpp>
-#include "accounting.cpp"
 
 void woffler::branch(name owner, uint64_t idmeta, 
   asset pot
@@ -30,30 +29,11 @@ void woffler::branch(name owner, uint64_t idmeta,
   });
 
   //add pot value from owner's active balance to the root level's pot
-  levels _levels(self, self.value);
-  auto idlevel = Utils::nextPrimariKey(_levels.available_primary_key());
-  std::vector<uint8_t> redcells = {};//TODO: fill with random numbers (1-Const::levelLength)
-  std::vector<uint8_t> greencells = {};//TODO: fill with random numbers (1-Const::levelLength)
-  _levels.emplace(owner, [&](auto& l) {
-    l.id = idlevel;
-    l.idbranch = idbranch;
-    l.idchbranch = 0;
-    l.potbalance = pot;//owner's balance cut with check (see subBalance earlier)
-    l.redcells = redcells;
-    l.greencells = greencells;
-  });
+  addLevel(owner, idbranch, pot, *_meta);
   
   //register pot value as owner's stake in root branch created
-  stakes _stakes(self, self.value);
-  auto idstake = Utils::nextPrimariKey(_stakes.available_primary_key());
-  _stakes.emplace(owner, [&](auto& s) {
-    s.id = idstake;
-    s.idbranch = idbranch;
-    s.owner = owner;
-    s.stake = pot;
-    s.revenue = asset{0, Const::acceptedSymbol};
-  });
-  
+  registerStake(owner, idbranch, pot);
+
   print(" Root branch created, pot: ", asset{pot});
 }
 
