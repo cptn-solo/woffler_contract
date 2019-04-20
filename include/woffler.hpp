@@ -242,7 +242,7 @@ CONTRACT woffler : public contract {
     void upsertChannel(name owner);
 
     template<class T>
-    typename std::vector<T> generateCells(T size, T maxval);
+    std::vector<T> generateCells(T size, T maxval);
     void addLevel(name owner, uint64_t idbranch, asset pot, const wflbrnchmeta& bmeta);
     void registerStake(name owner, uint64_t idbranch, asset amount);
 };

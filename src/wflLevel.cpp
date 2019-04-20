@@ -22,7 +22,7 @@ void woffler::addLevel(name owner,
 }
 
 template<class T>
-typename std::vector<T> woffler::generateCells(T size, T maxval) {
+std::vector<T> woffler::generateCells(T size, T maxval) {
 
   std::vector<T> data(size);
   Cell::generator<T> generator(maxval, size);
