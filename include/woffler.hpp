@@ -1,6 +1,7 @@
 #pragma once
 #include <utils.hpp>
 #include <constants.hpp>
+#include <cell.hpp>
 
 using namespace eosio;
 using std::string;
@@ -233,27 +234,13 @@ CONTRACT woffler : public contract {
       
       uint64_t primary_key() const { return id; }
     };
-    typedef multi_index<"brquest"_n, wflbrquest> brquests;
-    
-    struct cellGenerator {
-      uint8_t _current;
-      uint8_t _step;
-      cellGenerator(uint8_t maxval, uint8_t size) {
-        _current = 0;
-        _step = ((maxval - 1) / size);
-      }
-      uint8_t operator()() {  
-        _current += _step;
-        return _current;
-      }
-    };
-
+    typedef multi_index<"brquest"_n, wflbrquest> brquests;    
     
     bool addBalance(name to, asset amount);
     void subBalance(name from, asset amount);
     bool clearAccount(name account, name scope);
     void upsertChannel(name owner);
-    std::vector<uint8_t> generate_data(uint8_t size, uint8_t maxval);
+    std::vector<uint8_t> generateCells(uint8_t size, uint8_t maxval);
     void addLevel(name owner, uint64_t idbranch, asset pot, const wflbrnchmeta& bmeta);
     void registerStake(name owner, uint64_t idbranch, asset amount);
 };

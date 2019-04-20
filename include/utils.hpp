@@ -12,4 +12,11 @@ namespace Utils {
       return 1;
     }
   }
+  
+  template<class T>
+  void printVectorInt(const std::vector<T>& data) {
+    for (typename std::vector<T>::const_iterator i = data.begin(); i != data.end(); ++i)
+      eosio::print("[", std::to_string(*i), "]");
+  }
+
 }
