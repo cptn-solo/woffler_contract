@@ -21,16 +21,17 @@ void woffler::addLevel(name owner,
   });
 }
 
-std::vector<uint8_t> woffler::generateCells(uint8_t size, uint8_t maxval) {
+template<class T>
+typename std::vector<T> woffler::generateCells(T size, T maxval) {
 
-  std::vector<uint8_t> data(size);
-  Cell::generator generator(maxval, size);
+  std::vector<T> data(size);
+  Cell::generator<T> generator(maxval, size);
   std::generate(data.begin(), data.end(), generator);
 
   return data;
 }
 
 void woffler::gencells(uint8_t size, uint8_t maxval) {
-  auto data = generateCells(size, maxval);
+  auto data = generateCells<uint8_t>(size, maxval);
   Utils::printVectorInt<uint8_t>(data);
 }

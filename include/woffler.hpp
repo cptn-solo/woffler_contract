@@ -240,7 +240,9 @@ CONTRACT woffler : public contract {
     void subBalance(name from, asset amount);
     bool clearAccount(name account, name scope);
     void upsertChannel(name owner);
-    std::vector<uint8_t> generateCells(uint8_t size, uint8_t maxval);
+
+    template<class T>
+    typename std::vector<T> generateCells(T size, T maxval);
     void addLevel(name owner, uint64_t idbranch, asset pot, const wflbrnchmeta& bmeta);
     void registerStake(name owner, uint64_t idbranch, asset amount);
 };

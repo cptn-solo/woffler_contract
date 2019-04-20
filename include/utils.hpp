@@ -5,7 +5,7 @@
 
 namespace Utils {
   
-  uint64_t nextPrimariKey(uint64_t key) {
+  inline uint64_t nextPrimariKey(uint64_t key) {
     if(key > 0) {
       return key;
     } else {
