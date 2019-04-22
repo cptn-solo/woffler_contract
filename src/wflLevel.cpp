@@ -25,7 +25,8 @@ template<class T>
 std::vector<T> woffler::generateCells(name account, T size, T maxval) {
 
   std::vector<T> data(size);
-  Cell::generator<T> generator(account, maxval, size);
+  auto rnd = randomizer::getInstance(account);
+  Cell::generator<T> generator(rnd, maxval, size);
   std::generate(data.begin(), data.end(), generator);
 
   return data;

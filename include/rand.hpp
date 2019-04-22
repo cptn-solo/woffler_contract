@@ -6,23 +6,28 @@
 
 using namespace eosio;
 
-class randomGen {
+class randomizer {
 private:
-    static randomGen instance;
+    static randomizer instance;
 
     uint64_t seed = 0;
 
 public:
-    static randomGen& getInstance(name player) {
-        if (instance.seed == 0) {
-            instance.seed = current_time_point().sec_since_epoch() + player.value;
-        }
+    static randomizer& getInstance(name player) {
+        auto _now = time_point_sec(current_time_point()).utc_seconds;
+        auto _player = player.value;
+
+        instance.seed = _now + player.value;
+
         return instance;
     }
 
     uint32_t range(uint32_t to) {
+        print("seed:", std::to_string(seed), "\n");
         checksum256 result = sha256((char *)&seed, sizeof(seed));
-        //sha256((char *)&seed, sizeof(seed), &result);
+        result.print();
+        print("\n");
+
         auto dgarr = result.get_array();
         seed = dgarr[1];
         seed <<= 32;

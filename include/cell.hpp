@@ -5,9 +5,9 @@ namespace Cell {
   struct generator {
     T _current;
     T _step;
-    randomGen _randomGen;
-    generator(name account, T maxval, T size) {
-      _randomGen = randomGen::getInstance(account);
+    randomizer _randomGen;
+    generator(randomizer& rnd, T maxval, T size) {
+      _randomGen = rnd;
       _current = 0;
       _step = (maxval / size);
     }
@@ -21,7 +21,7 @@ namespace Cell {
 
       _current += _step;
 
-      return _current;
+      return _retval;
     }
   };
   
