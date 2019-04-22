@@ -15,7 +15,7 @@ void woffler::addLevel(name owner,
     l.id = idlevel;
     l.idbranch = idbranch;
     l.idchbranch = 0;
-    l.potbalance = pot;//owner's balance cut with check (see subBalance earlier)
+    l.potbalance = pot;//owner's balance cut with check (see subBalance in wflBranch.cpp->woffler::branch)
     l.redcells = redcells;
     l.greencells = greencells;
   });
