@@ -51,6 +51,9 @@ CONTRACT woffler : public contract {
     //only owner can modify branch metadata.
     ACTION brnchmeta(name owner, 
       uint64_t id,
+      uint8_t lvllength,//min lvlgreens+lvlreds
+      uint8_t lvlgreens,//min 1
+      uint8_t lvlreds,//min 1
       asset unjlmin,
       uint8_t unjlrate,
       uint64_t unjlintrvl,

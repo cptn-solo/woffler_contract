@@ -29,6 +29,9 @@ void woffler::cleanbrmeta(name owner, uint64_t idmeta) {
 
 void woffler::brnchmeta(name owner, 
   uint64_t id,  
+  uint8_t lvllength,//min lvlgreens+lvlreds
+  uint8_t lvlgreens,//min 1
+  uint8_t lvlreds,//min 1
   asset unjlmin,
   uint8_t unjlrate,
   uint64_t unjlintrvl,
@@ -49,6 +52,10 @@ void woffler::brnchmeta(name owner,
   auto self = get_self();
   
   brnchmetas _metas(self, self.value);
+  check(
+    lvlreds >= 1  && lvlgreens >= 1 && lvllength >= (lvlreds + lvlgreens),
+    "Please comply level rules: lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens)"
+  );
     
   if (id >= 1) {
     auto _meta = _metas.find(id);
@@ -63,6 +70,9 @@ void woffler::brnchmeta(name owner,
     );
 
     _metas.modify(_meta, owner, [&](auto& m) {
+      m.lvllength = lvllength;//min lvlgreens+lvlreds
+      m.lvlgreens = lvlgreens;//min 1
+      m.lvlreds = lvlreds;//min 1
       m.unjlrate = unjlrate;
       m.unjlintrvl = unjlintrvl;
       m.tkrate = tkrate;
@@ -81,6 +91,9 @@ void woffler::brnchmeta(name owner,
     _metas.emplace(owner, [&](auto& m) {
       m.id = Utils::nextPrimariKey(_metas.available_primary_key());
       m.owner = owner;
+      m.lvllength = lvllength;//min lvlgreens+lvlreds
+      m.lvlgreens = lvlgreens;//min 1
+      m.lvlreds = lvlreds;//min 1
       m.unjlrate = unjlrate;
       m.unjlintrvl = unjlintrvl;
       m.tkrate = tkrate;
