@@ -9,8 +9,8 @@ void woffler::addLevel(name owner,
   
   levels _levels(self, self.value);
   auto idlevel = Utils::nextPrimariKey(_levels.available_primary_key());
-  std::vector<uint8_t> greencells = generateCells(bmeta.lvllength, bmeta.lvlreds);//TODO: fill with random numbers (1-meta::(lvllenght, lvlgreens))
-  std::vector<uint8_t> redcells = generateCells(bmeta.lvllength, bmeta.lvlreds);//TODO: fill with random numbers (1-meta::(lvllenght, lvlgreens))
+  std::vector<uint8_t> greencells = generateCells(owner, bmeta.lvllength, bmeta.lvlreds);//TODO: fill with random numbers (1-meta::(lvllenght, lvlgreens))
+  std::vector<uint8_t> redcells = generateCells(owner, bmeta.lvllength, bmeta.lvlreds);//TODO: fill with random numbers (1-meta::(lvllenght, lvlgreens))
   _levels.emplace(owner, [&](auto& l) {
     l.id = idlevel;
     l.idbranch = idbranch;
@@ -22,16 +22,16 @@ void woffler::addLevel(name owner,
 }
 
 template<class T>
-std::vector<T> woffler::generateCells(T size, T maxval) {
+std::vector<T> woffler::generateCells(name account, T size, T maxval) {
 
   std::vector<T> data(size);
-  Cell::generator<T> generator(maxval, size);
+  Cell::generator<T> generator(account, maxval, size);
   std::generate(data.begin(), data.end(), generator);
 
   return data;
 }
 
-void woffler::gencells(uint8_t size, uint8_t maxval) {
-  auto data = generateCells<uint8_t>(size, maxval);
+void woffler::gencells(name account, uint8_t size, uint8_t maxval) {
+  auto data = generateCells<uint8_t>(account, size, maxval);
   Utils::printVectorInt<uint8_t>(data);
 }

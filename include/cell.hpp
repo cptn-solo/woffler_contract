@@ -1,15 +1,27 @@
+#include <rand.hpp>
+
 namespace Cell {
   template <typename T>
   struct generator {
     T _current;
     T _step;
-    generator(T maxval, T size) {
-        _current = 0;
-        _step = (maxval / size);
+    randomGen _randomGen;
+    generator(name account, T maxval, T size) {
+      _randomGen = randomGen::getInstance(account);
+      _current = 0;
+      _step = (maxval / size);
     }
     T operator()() {  
-        _current += _step;
-        return _current;
+      //get random for each segment of length == step 
+      T _retval = (
+        _current == 0 ? 
+          (_randomGen.range(_step-1)+1) : /* exclude 0 position for player "respawn" point */
+          (_randomGen.range(_step)+_current)
+      );
+
+      _current += _step;
+
+      return _current;
     }
   };
   

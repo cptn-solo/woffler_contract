@@ -104,7 +104,7 @@ CONTRACT woffler : public contract {
     #pragma region ** Levels (wflLevel): **
 
     //TEST action for cell generation debug 
-    ACTION gencells(uint8_t size, uint8_t maxval);
+    ACTION gencells(name account, uint8_t size, uint8_t maxval);
     
     #pragma endregion
 
@@ -245,7 +245,7 @@ CONTRACT woffler : public contract {
     void upsertChannel(name owner);
 
     template<class T>
-    std::vector<T> generateCells(T size, T maxval);
+    std::vector<T> generateCells(name account, T size, T maxval);
     void addLevel(name owner, uint64_t idbranch, asset pot, const wflbrnchmeta& bmeta);
     void registerStake(name owner, uint64_t idbranch, asset amount);
 };
