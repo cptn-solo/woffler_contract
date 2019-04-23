@@ -13,11 +13,11 @@ private:
     uint64_t seed = 0;
 
 public:
-    static randomizer& getInstance(name player) {
+    static randomizer& getInstance(name player, uint64_t addint) {
         auto _now = time_point_sec(current_time_point()).utc_seconds;
         auto _player = player.value;
 
-        instance.seed = _now + player.value;
+        instance.seed = _now + player.value + addint;
 
         return instance;
     }

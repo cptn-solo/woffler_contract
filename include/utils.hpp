@@ -18,5 +18,8 @@ namespace Utils {
     for (typename std::vector<T>::const_iterator i = data.begin(); i != data.end(); ++i)
       eosio::print("[", std::to_string(*i), "]");
   }
+  inline uint128_t combineIds(const uint64_t& x, const uint64_t& y) {
+    return (uint128_t{x} << 64) | y;
+  }
 
 }

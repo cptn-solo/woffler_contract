@@ -12,8 +12,6 @@ void woffler::upsertChannel(name owner) {
   if (achannel == _channels.end()) {
     _channels.emplace(self, [&](auto& c) {
       c.owner = owner;
-      c.height = 1;
-      c.balance = asset{0, Const::acceptedSymbol};
     });
   } 
   else {
@@ -41,7 +39,7 @@ void woffler::chnmergebal(name owner) {
     c.balance = asset{0, Const::acceptedSymbol};     
   });
   
-  addBalance(owner, amount);
+  addBalance(owner, amount, owner);
   
   print("Channel balance merged: ", asset{amount});
 }

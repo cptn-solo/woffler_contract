@@ -5,14 +5,23 @@ void woffler::stkaddval(name owner, uint64_t idbranch,
 ) {
   require_auth(owner);
   
-  registerStake(owner, idbranch, amount);
+  auto self = get_self();
+  branches _branches(self, self.value);
+  auto _branch = _branches.find(idbranch);
+  check(
+    _branch != _branches.end(),
+    "No branch found for id"
+  );
 
+  //cut owner's active balance for pot value (will fail if not enough funds)
+  subBalance(owner, amount, owner);
+
+  registerStake(owner, idbranch, amount);
 }
 
 void woffler::stktakervn(name owner, uint64_t idbranch) {
   require_auth(owner);
   check(false, "Not implemented");
-
 }
 
 void woffler::registerStake(name owner, uint64_t idbranch, 
@@ -21,17 +30,29 @@ void woffler::registerStake(name owner, uint64_t idbranch,
   auto self = get_self();
   stakes _stakes(self, self.value);
 
-  //TODO: find stake and add amount, or emplace if not found
+  //find stake and add amount, or emplace if not found
+  auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
+  auto stkidx = _stakes.get_index<name("byownedbrnch")>();
+  const auto& stake = stkidx.find(ownedBranchId);          
 
-  auto idstake = Utils::nextPrimariKey(_stakes.available_primary_key());
-  _stakes.emplace(owner, [&](auto& s) {
-    s.id = idstake;
-    s.idbranch = idbranch;
-    s.owner = owner;
-    s.stake += amount;
-    s.revenue = asset{0, Const::acceptedSymbol};//only for emplace. modify should not change revenue!
-  });
+  auto currentStake = amount;        
 
-  print(" Branch stake registred, current stake owned: ", asset{amount});
+  if (stake == stkidx.end()) {
+    auto idstake = Utils::nextPrimariKey(_stakes.available_primary_key());
+    _stakes.emplace(owner, [&](auto& s) {
+      s.id = idstake;
+      s.idbranch = idbranch;
+      s.owner = owner;
+      s.stake = amount;
+      s.revenue = asset{0, Const::acceptedSymbol};//only for emplace. modify should not change revenue!
+    });
+  } 
+  else {
+    _stakes.modify(*stake, owner, [&](auto& s) {
+      s.stake += amount;     
+    });    
+    currentStake = stake->stake;
+  }
 
+  print(" Branch stake registred, current stake owned: ", asset{currentStake});
 }

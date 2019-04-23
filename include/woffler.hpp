@@ -76,24 +76,31 @@ CONTRACT woffler : public contract {
 
     #pragma region ** Branches (wflBranch): **
 
-    //create root branch with root level after meta is created/selected from existing
-    //add pot value from owner's active balance to the root level's pot
+    //create root branch after meta is created/selected from existing
     //register pot value as owner's stake in root branch created
     ACTION branch(name owner, uint64_t idmeta, asset pot);
+
+    //create root level with all branch stake (from all owners)
+    //generate cells for root level
+    ACTION rootlvl(name owner, uint64_t idbranch);
 
     //link quest created earlier to the specified branch (see qstsetmeta)
     ACTION addquest(name owner, uint64_t idbranch, uint64_t idquest);
     
     //unlink quest from the specified branch
     ACTION rmquest(name owner, uint64_t idbranch, uint64_t idquest);
+    
+    //DEBUG actions for branch generation debug 
+    ACTION setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl);
 
     #pragma endregion
 
     #pragma region ** Branch Stakes (wflStake): **
     
     //increase volume of root branch starting pot:
-    //add amount to the root level's pot of the branch from owner's active balance
+    //cut amount from owner's active balance
     //register amount as owner's stake in specified branch
+    //if branch already has a root lvl, add amount to its pot 
     ACTION stkaddval(name owner, uint64_t idbranch, asset amount);
 
     //merge branch stake revenue into owner's active balance
@@ -103,8 +110,9 @@ CONTRACT woffler : public contract {
 
     #pragma region ** Levels (wflLevel): **
 
-    //TEST action for cell generation debug 
+    //DEBUG actions for level generation debug 
     ACTION gencells(name account, uint8_t size, uint8_t maxval);
+    ACTION regencells(name owner, uint64_t idlevel, uint64_t idmeta);
     
     #pragma endregion
 
@@ -129,13 +137,13 @@ CONTRACT woffler : public contract {
     TABLE wflplayer {
       name account;
       name channel;
-      uint64_t idlvl;
-      asset activebalance;
-      asset vestingbalance;
-      uint8_t tryposition;
-      uint8_t currentposition;
-      uint8_t triesleft;
-      uint8_t levelresult;
+      uint64_t idlvl = 0;
+      asset activebalance = asset{0, Const::acceptedSymbol};
+      asset vestingbalance = asset{0, Const::acceptedSymbol};
+      uint8_t tryposition = 0;
+      uint8_t currentposition = 0;
+      uint8_t triesleft = 0;
+      uint8_t levelresult = Const::playerstate::INIT;
       uint64_t resulttimestamp;
       
       uint64_t primary_key() const { return account.value; }
@@ -145,8 +153,8 @@ CONTRACT woffler : public contract {
     //sales channels with user counter and current revenue balance available to merge into channel owner's balance
     TABLE wflchannel {
       name owner;
-      uint64_t height;
-      asset balance;
+      uint64_t height = 1;
+      asset balance = asset{0, Const::acceptedSymbol};
       
       uint64_t primary_key() const { return owner.value; }
     };
@@ -159,16 +167,16 @@ CONTRACT woffler : public contract {
       uint8_t lvllength;//min lvlgreens+lvlreds
       uint8_t lvlgreens;//min 1
       uint8_t lvlreds;//min 1
-      asset unjlmin;
+      asset unjlmin = asset{0, Const::acceptedSymbol};
       uint8_t unjlrate;
       uint64_t unjlintrvl;
       uint8_t tkrate;
       uint64_t tkintrvl;
       uint8_t nxtrate;
       uint8_t spltrate;
-      asset stkmin;
+      asset stkmin = asset{0, Const::acceptedSymbol};
       uint8_t stkrate;
-      asset potmin;
+      asset potmin = asset{0, Const::acceptedSymbol};
       uint8_t slsrate;
       string url;
       string name;
@@ -180,10 +188,11 @@ CONTRACT woffler : public contract {
     //branches for levels
     TABLE wflbranch {
       uint64_t id;
-      uint64_t idparent;
+      uint64_t idrootlvl = 0;
+      uint64_t idparent = 0;
       uint64_t idmeta;
       name winner;
-      uint64_t generation;
+      uint64_t generation = 1;
 
       uint64_t primary_key() const { return id; }
     };
@@ -194,34 +203,45 @@ CONTRACT woffler : public contract {
       uint64_t id;
       uint64_t idbranch;
       name owner;
-      asset stake;
-      asset revenue;
+      asset stake = asset{0, Const::acceptedSymbol};
+      asset revenue = asset{0, Const::acceptedSymbol};
 
       uint64_t primary_key() const { return id; }
+      uint64_t get_idbranch() const { return idbranch; }
+      uint128_t get_ownedbrnch() const { return Utils::combineIds(owner.value, idbranch); }
     };
-    typedef multi_index<"stakes"_n, wflstake> stakes;
+    typedef multi_index<"stakes"_n, wflstake,
+      indexed_by<"bybranch"_n, const_mem_fun<wflstake, uint64_t, &wflstake::get_idbranch>>,
+      indexed_by<"byownedbrnch"_n, const_mem_fun<wflstake, uint128_t, &wflstake::get_ownedbrnch>>
+    > stakes;
 
     //branch levels
     TABLE wfllevel {
       uint64_t id;
+      uint64_t idparent = 0;
       uint64_t idbranch;
-      uint64_t idchbranch;
-      asset potbalance;
+      uint64_t idchbranch = 0;
+      asset potbalance = asset{0, Const::acceptedSymbol};
       std::vector<uint8_t> redcells;
       std::vector<uint8_t> greencells;
 
       uint64_t primary_key() const { return id; }
+      uint64_t get_idparent()const { return idparent; }
+      uint64_t get_idbranch()const { return idbranch; }
     };
-    typedef multi_index<"levels"_n, wfllevel> levels;
+    typedef multi_index<"levels"_n, wfllevel,
+      indexed_by<"byparent"_n, const_mem_fun<wfllevel, uint64_t, &wfllevel::get_idparent>>,//next level
+      indexed_by<"bybranch"_n, const_mem_fun<wfllevel, uint64_t, &wfllevel::get_idbranch>>
+    > levels;
 
     //branch quests
     TABLE wflquest {
       uint64_t id;      
       name owner;
-      asset balance;
+      asset balance = asset{0, Const::acceptedSymbol};
       std::vector<uint64_t> hashes;
-      asset minprice;
-      asset maxprice;
+      asset minprice = asset{0, Const::acceptedSymbol};
+      asset maxprice = asset{0, Const::acceptedSymbol};
       string apiurl;
 
       uint64_t primary_key() const { return id; }
@@ -239,13 +259,14 @@ CONTRACT woffler : public contract {
     };
     typedef multi_index<"brquest"_n, wflbrquest> brquests;    
     
-    bool addBalance(name to, asset amount);
-    void subBalance(name from, asset amount);
+    bool addBalance(name to, asset amount, name payer);
+    void subBalance(name from, asset amount, name payer);
     bool clearAccount(name account, name scope);
     void upsertChannel(name owner);
+    auto getStake(name owner, uint64_t idbranch);
 
     template<class T>
-    std::vector<T> generateCells(name account, T size, T maxval);
-    void addLevel(name owner, uint64_t idbranch, asset pot, const wflbrnchmeta& bmeta);
+    std::vector<T> generateCells(randomizer& rnd, T size, T maxval);
+    uint64_t addLevel(name owner, const wflbranch& branch);
     void registerStake(name owner, uint64_t idbranch, asset amount);
 };

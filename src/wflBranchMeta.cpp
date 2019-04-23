@@ -54,7 +54,7 @@ void woffler::brnchmeta(name owner,
   brnchmetas _metas(self, self.value);
   check(
     lvlreds >= 1  && lvlgreens >= 1 && lvllength >= (lvlreds + lvlgreens),
-    "Please comply level rules: lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens)"
+    "Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens)"
   );
     
   if (id >= 1) {
@@ -73,6 +73,7 @@ void woffler::brnchmeta(name owner,
       m.lvllength = lvllength;//min lvlgreens+lvlreds
       m.lvlgreens = lvlgreens;//min 1
       m.lvlreds = lvlreds;//min 1
+      m.unjlmin = unjlmin;
       m.unjlrate = unjlrate;
       m.unjlintrvl = unjlintrvl;
       m.tkrate = tkrate;

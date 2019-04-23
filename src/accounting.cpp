@@ -1,7 +1,7 @@
 #pragma once
 #include <woffler.hpp>
 
-bool woffler::addBalance(name to, asset amount) {
+bool woffler::addBalance(name to, asset amount, name payer) {
   auto self = get_self();
 
   players _players(self, self.value);
@@ -11,7 +11,7 @@ bool woffler::addBalance(name to, asset amount) {
   if (player == _players.end()) 
     return false;
     
-  _players.modify(player, self, [&]( auto& p ) {
+  _players.modify(player, payer, [&]( auto& p ) {
     p.activebalance += amount;     
   });
   
@@ -20,7 +20,7 @@ bool woffler::addBalance(name to, asset amount) {
   return true;  
 }
 
-void woffler::subBalance(name from, asset amount) {
+void woffler::subBalance(name from, asset amount, name payer) {
   auto self = get_self();
 
   players _players(self, self.value);
@@ -37,7 +37,7 @@ void woffler::subBalance(name from, asset amount) {
     string("Not enough active balance in your account. Current active balance: ") + player->activebalance.to_string().c_str() 
   );    
 
-  _players.modify(player, self, [&]( auto& p ) {
+  _players.modify(player, payer, [&]( auto& p ) {
     p.activebalance -= amount;     
   });     
 }
@@ -59,7 +59,7 @@ bool woffler::clearAccount(name account, name scope) {
 
   _players.erase(player);
   
-  print("Removed user: ", name{account}, " from scope: ", name{});
+  print("Removed user: ", name{account}, " from scope: ", name{scope});
   
   return true;
 }

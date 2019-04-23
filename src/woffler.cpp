@@ -44,13 +44,9 @@ void woffler::signup(name account, name channel) {
   }
   
   //creating player record
-  _players.emplace(self, [&](auto& p) {
+  _players.emplace(account, [&](auto& p) {
     p.account = account;
-    p.levelresult = Const::playerstate::INIT;
-    //TODO: check existence of the channel and use 0 if no channel found
     p.channel = _channel;
-    p.activebalance = asset{0, Const::acceptedSymbol};
-    p.vestingbalance = asset{0, Const::acceptedSymbol};
   });
   
   //creating/incrementing sales channel
@@ -69,7 +65,7 @@ void woffler::withdraw (name from, name to, asset amount, const string& memo) {
   auto self = get_self();
   require_auth(from);
   
-  subBalance(from, amount);
+  subBalance(from, amount, from);
 
   // Inline transfer
   const auto& contract = name("eosio.token");
@@ -90,11 +86,11 @@ void woffler::transferHandler(name from, name to, asset amount, string memo) {
   auto self = get_self();
 
   if (to == self) { //deposit
-    bool deposited = woffler::addBalance(from, amount);
+    bool deposited = woffler::addBalance(from, amount, self);
 
     if (!deposited) {
       signup(from, self);
-      addBalance(from, amount);
+      addBalance(from, amount, self);
     }
   } 
     
