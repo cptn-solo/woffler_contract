@@ -19,12 +19,12 @@ void woffler::cleanbrmeta(name owner, uint64_t idmeta) {
     "Branch metadata can be deleted only by its owner"
   );
   
-  //TODO: check if there are branches using meta being deleted
+  //check for usage
+  checkBranchMetaUsage(idmeta);
 
   _metas.erase(_meta);
   
   print("Branch metadata Removed");
-
 }
 
 void woffler::brnchmeta(name owner, 
@@ -53,8 +53,8 @@ void woffler::brnchmeta(name owner,
   
   brnchmetas _metas(self, self.value);
   check(
-    lvlreds >= 1  && lvlgreens >= 1 && lvllength >= (lvlreds + lvlgreens + 1),
-    "Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens + 1)"
+    lvllength <= Const::maxLvlLength && lvlreds >= 1  && lvlgreens >= 1 && lvllength >= (lvlreds + lvlgreens + 1),
+    string("Please comply to level rules: lvllength <= ") + std::to_string(Const::maxLvlLength) + string(" AND lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens + 1)")
   );
     
   if (id >= 1) {
@@ -68,6 +68,9 @@ void woffler::brnchmeta(name owner,
       _meta->owner == owner,
       "Branch metadata can be modified only by its owner"
     );
+
+    //check for usage
+    checkBranchMetaUsage(id);
 
     _metas.modify(_meta, owner, [&](auto& m) {
       m.lvllength = lvllength;//min lvlgreens+lvlreds
@@ -109,4 +112,17 @@ void woffler::brnchmeta(name owner,
       m.name = name;
     });
   }
+}
+
+void woffler::checkBranchMetaUsage(uint64_t idmeta) {
+  auto self = get_self();
+
+  branches _branches(self, self.value);
+  auto idxbymeta = _branches.get_index<name("bymeta")>();
+  auto itrbymeta = idxbymeta.find(idmeta);  
+
+  check(
+    itrbymeta != idxbymeta.end(),
+    "Branch metadata is already used in branches."
+  );
 }

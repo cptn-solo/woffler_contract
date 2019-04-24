@@ -29,7 +29,7 @@ void woffler::subBalance(name from, asset amount, name payer) {
   
   check(
     player != _players.end(), 
-    "Account does not exist"
+    string("Account ") + from.to_string() + string(" is not registred in game conract. Please signup or send some funds first.")
   );
   
   check(

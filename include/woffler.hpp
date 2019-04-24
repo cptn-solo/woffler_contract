@@ -195,8 +195,11 @@ CONTRACT woffler : public contract {
       uint64_t generation = 1;
 
       uint64_t primary_key() const { return id; }
+      uint64_t get_idmeta() const { return idmeta; }
     };
-    typedef multi_index<"branches"_n, wflbranch> branches;
+    typedef multi_index<"branches"_n, wflbranch,
+      indexed_by<"bymeta"_n, const_mem_fun<wflbranch, uint64_t, &wflbranch::get_idmeta>>
+    > branches;
 
     //branch stakeholders with accumulated revenue and stake
     TABLE wflstake {
@@ -264,6 +267,7 @@ CONTRACT woffler : public contract {
     bool clearAccount(name account, name scope);
     void upsertChannel(name owner);
     void addPot(name owner, uint64_t idlevel, asset pot);
+    void checkBranchMetaUsage(uint64_t idmeta);
 
     template<class T>
     std::vector<T> generateCells(randomizer& rnd, T size, T maxval);

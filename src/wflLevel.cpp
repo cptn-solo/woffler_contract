@@ -67,6 +67,7 @@ std::vector<T> woffler::generateCells(randomizer& rnd, T size, T maxval) {
   return data;
 }
 
+//DEBUG: testing cells generation for a given level and meta
 void woffler::regencells(name owner, uint64_t idlevel, uint64_t idmeta) {
   require_auth(owner);
   auto self = get_self();
