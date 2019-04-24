@@ -51,8 +51,12 @@ void woffler::branch(name owner, uint64_t idmeta,
     b.idmeta = idmeta;
   });
   
-  //register pot value as owner's stake in root branch created
-  registerStake(owner, idbranch, pot);
+  //register players's and house stake
+  auto playerStake = (pot * (100 - Const::houseShare)) / 100;
+  registerStake(owner, idbranch, playerStake);
+
+  auto houseStake = (pot * Const::houseShare) / 100;
+  registerStake(self, idbranch, houseStake);
 
   print(" Root branch created, pot: ", asset{pot});
 }

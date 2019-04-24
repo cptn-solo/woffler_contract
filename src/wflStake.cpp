@@ -15,8 +15,23 @@ void woffler::stkaddval(name owner, uint64_t idbranch,
 
   //cut owner's active balance for pot value (will fail if not enough funds)
   subBalance(owner, amount, owner);
+  
+  if (_branch->generation > 1) {
+    registerStake(owner, idbranch, amount);
+  } 
+  else {
+    //register players's and house stake
+    auto playerStake = (amount * (100 - Const::houseShare)) / 100;
+    registerStake(owner, idbranch, playerStake);
 
-  registerStake(owner, idbranch, amount);
+    auto houseStake = (amount * Const::houseShare) / 100;
+    registerStake(self, idbranch, houseStake);
+  }
+
+  //if root level is created already - append staked value to the root level's pot
+  if(_branch->idrootlvl > 0) {
+    addPot(owner, _branch->idrootlvl, amount);
+  }
 }
 
 void woffler::stktakervn(name owner, uint64_t idbranch) {

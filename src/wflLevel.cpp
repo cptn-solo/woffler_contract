@@ -42,6 +42,21 @@ uint64_t woffler::addLevel(name owner, const wflbranch& branch) {
   return idlevel;
 }
 
+void woffler::addPot(name owner, uint64_t idlevel, asset pot) {
+  auto self = get_self();
+  levels _levels(self, self.value);
+  auto _level = _levels.find(idlevel);
+  check(
+    _level != _levels.end(),
+    "Level not found."
+  );
+
+  _levels.modify(_level, owner, [&](auto& l){
+    l.potbalance += pot;
+  });
+  print("Value added to the pot: ", asset{pot}, ", current pot value: ", asset{_level->potbalance});  
+}
+
 template<class T>
 std::vector<T> woffler::generateCells(randomizer& rnd, T size, T maxval) {
 
@@ -65,13 +80,13 @@ void woffler::regencells(name owner, uint64_t idlevel, uint64_t idmeta) {
   auto _meta = _metas.find(idmeta);
   check(
     _meta != _metas.end(),
-    "No branch metadata found"
+    "No branch metadata found."
   );
   levels _levels(self, self.value);
   auto _level = _levels.find(idlevel);
   check(
     _level != _levels.end(),
-    "No level found "
+    "No level found."
   );
   auto rnd = randomizer::getInstance(owner, idlevel);
   std::vector<uint8_t> greencells = generateCells(rnd, _meta->lvlgreens, _meta->lvllength);
@@ -82,6 +97,7 @@ void woffler::regencells(name owner, uint64_t idlevel, uint64_t idmeta) {
   });
 }
 
+//DEBUG: testing cell randomizer
 void woffler::gencells(name account, uint8_t size, uint8_t maxval) {
   require_auth(account);
   auto self = get_self();

@@ -18,7 +18,7 @@ void woffler::signup(name account, name channel) {
   auto _channel = (channel ? channel : self);
 
   check(
-    channel != account,
+    account == self || channel != account,
     "One can not be a sales channel for himself"
   );
   
