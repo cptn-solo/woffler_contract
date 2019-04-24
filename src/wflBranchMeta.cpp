@@ -122,7 +122,7 @@ void woffler::checkBranchMetaUsage(uint64_t idmeta) {
   auto itrbymeta = idxbymeta.find(idmeta);  
 
   check(
-    itrbymeta != idxbymeta.end(),
+    itrbymeta == idxbymeta.end(),
     "Branch metadata is already used in branches."
   );
 }
