@@ -82,11 +82,11 @@ void woffler::rootlvl(name owner, uint64_t idbranch) {
   stakes _stakes(self, self.value);
 
   auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
-  auto sktidx = _stakes.get_index<name("byownedbrnch")>();
-  auto stake = sktidx.find(ownedBranchId);          
+  auto stkidx = _stakes.get_index<name("byownedbrnch")>();
+  auto stake = stkidx.find(ownedBranchId);          
 
   check(
-    stake != sktidx.end(),
+    stake != stkidx.end(),
     "Only stakeholder of a branch can create root level for it"
   );
   

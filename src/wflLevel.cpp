@@ -29,12 +29,14 @@ uint64_t woffler::addLevel(name owner, const wflbranch& branch) {
   auto rnd = randomizer::getInstance(owner, idlevel);
   std::vector<uint8_t> greencells = generateCells(rnd, _meta->lvlgreens, _meta->lvllength);
   std::vector<uint8_t> redcells = generateCells(rnd, _meta->lvlreds, _meta->lvllength);
+  
   _levels.emplace(owner, [&](auto& l) {
     l.id = idlevel;
     l.idbranch = branch.id;
     l.potbalance = branchStake;
     l.redcells = redcells;
     l.greencells = greencells;
+    l.locked = Utils::hasIntersection<uint8_t>(greencells, redcells);
   });
 
   print("Root level created with id: ", std::to_string(idlevel) , ", pot balance: ", asset{branchStake}, " for branch: ", std::to_string(branch.id));    
@@ -92,9 +94,11 @@ void woffler::regencells(name owner, uint64_t idlevel, uint64_t idmeta) {
   auto rnd = randomizer::getInstance(owner, idlevel);
   std::vector<uint8_t> greencells = generateCells(rnd, _meta->lvlgreens, _meta->lvllength);
   std::vector<uint8_t> redcells = generateCells(rnd, _meta->lvlreds, _meta->lvllength);
+
   _levels.modify(_level, owner, [&](auto& l) {
     l.redcells = redcells;
     l.greencells = greencells;
+    l.locked = Utils::hasIntersection<uint8_t>(greencells, redcells);
   });
 }
 
@@ -110,4 +114,23 @@ void woffler::gencells(name account, uint8_t size, uint8_t maxval) {
   auto rnd = randomizer::getInstance(account, 1);
   auto data = generateCells<uint8_t>(rnd, size, maxval);
   Utils::printVectorInt<uint8_t>(data);
+}
+
+//DEBUG: testing level delete
+void woffler::rmlevel(name owner, uint64_t idlevel) {
+  require_auth(owner);
+  auto self = get_self();
+  check(
+    owner == self,
+    string("Debug mode available only to contract owner: ") + self.to_string()
+  );
+
+  levels _levels(self, self.value);
+  auto _level = _levels.find(idlevel);
+  check(
+    _level != _levels.end(),
+    "No level found."
+  );
+
+  _levels.erase(_level);
 }
