@@ -1,6 +1,11 @@
 #include "accounting.cpp"
+#include "wflPlayer.cpp"
 #include "wflChannel.cpp"
+#include "wflBranchMeta.cpp"
 #include "wflBranch.cpp"
+#include "wflStake.cpp"
+#include "wflQuest.cpp"
+#include "wflLevel.cpp"
 
 //*** Contract scope methods ***//
 
@@ -11,6 +16,11 @@ void woffler::signup(name account, name channel) {
   auto self = get_self();
 
   auto _channel = (channel ? channel : self);
+
+  check(
+    account == self || channel != account,
+    "One can not be a sales channel for himself"
+  );
   
   players _players(self, self.value);
   
@@ -34,13 +44,9 @@ void woffler::signup(name account, name channel) {
   }
   
   //creating player record
-  _players.emplace(self, [&](auto& p) {
+  _players.emplace(account, [&](auto& p) {
     p.account = account;
-    p.levelresult = playerstate::INIT;
-    //TODO: check existence of the channel and use 0 if no channel found
     p.channel = _channel;
-    p.activebalance = asset{0, acceptedSymbol};
-    p.vestingbalance = asset{0, acceptedSymbol};
   });
   
   //creating/incrementing sales channel
@@ -59,7 +65,7 @@ void woffler::withdraw (name from, name to, asset amount, const string& memo) {
   auto self = get_self();
   require_auth(from);
   
-  subBalance(from, amount);
+  subBalance(from, amount, from);
 
   // Inline transfer
   const auto& contract = name("eosio.token");
@@ -73,18 +79,18 @@ void woffler::transferHandler(name from, name to, asset amount, string memo) {
   print("Transfer: ", asset{amount}, " from: ", name{from}, " to: ", name{to});
 
   check(
-    amount.symbol.code() == acceptedCurr,
-    "Only " + acceptedCurr.to_string() + " transfers allowed"
+    amount.symbol.code() == Const::acceptedCurr,
+    "Only " + Const::acceptedCurr.to_string() + " transfers allowed"
   );
 
   auto self = get_self();
 
   if (to == self) { //deposit
-    bool deposited = woffler::addBalance(from, amount);
+    bool deposited = woffler::addBalance(from, amount, self);
 
     if (!deposited) {
       signup(from, self);
-      addBalance(from, amount);
+      addBalance(from, amount, self);
     }
   } 
     
