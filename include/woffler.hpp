@@ -109,7 +109,10 @@ CONTRACT woffler : public contract {
     #pragma endregion
 
     #pragma region ** Levels (wflLevel): **
-
+    
+    //generate cells for a given level and mark level unlocked if compatible green/red set found
+    ACTION unlocklvl(name owner, uint64_t idlevel);
+    
     //DEBUG actions for level generation debug 
     ACTION gencells(name account, uint8_t size, uint8_t maxval);
     ACTION regencells(name owner, uint64_t idlevel, uint64_t idmeta);
