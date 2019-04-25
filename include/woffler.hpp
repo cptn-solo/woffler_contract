@@ -33,7 +33,13 @@ CONTRACT woffler : public contract {
     #pragma region ** Player (wflPlayer): **
 
     //set current root branch for player and position at 1st level
-    ACTION switchbrnch(name account, uint64_t idbranch);
+    ACTION switchbrnch(name player, uint64_t idbranch);
+
+    //use try to change position in current level from safe to green. last try will change position automatically
+    ACTION tryturn(name player);
+    
+    //commit position change in current level
+    ACTION committurn(name player);
 
     #pragma endregion
 
@@ -115,7 +121,7 @@ CONTRACT woffler : public contract {
     
     //DEBUG actions for level generation debug 
     ACTION gencells(name account, uint8_t size, uint8_t maxval);
-    ACTION regencells(name owner, uint64_t idlevel, uint64_t idmeta);
+    ACTION regencells(name owner, uint64_t idlevel);
     ACTION rmlevel(name owner, uint64_t idlevel);
     
     #pragma endregion
@@ -148,7 +154,7 @@ CONTRACT woffler : public contract {
       uint8_t currentposition = 0;
       uint8_t triesleft = 0;
       uint8_t levelresult = Const::playerstate::INIT;
-      uint64_t resulttimestamp;
+      uint32_t resulttimestamp;
       
       uint64_t primary_key() const { return account.value; }
     };
@@ -226,12 +232,14 @@ CONTRACT woffler : public contract {
     TABLE wfllevel {
       uint64_t id;
       uint64_t idparent = 0;
-      uint64_t idbranch;
+      uint64_t idbranch;      
       uint64_t idchbranch = 0;
+      uint64_t idmeta;
       asset potbalance = asset{0, Const::acceptedSymbol};
       std::vector<uint8_t> redcells;
       std::vector<uint8_t> greencells;
       bool locked = true;
+      bool root = true;
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idparent()const { return idparent; }
@@ -273,6 +281,8 @@ CONTRACT woffler : public contract {
     void upsertChannel(name owner);
     void addPot(name owner, uint64_t idlevel, asset pot);
     void checkBranchMetaUsage(uint64_t idmeta);
+    void tryTurnChecks(const wflplayer& _player);
+    void commitPlayersTurn(wflplayer& p, const wfllevel& l);
 
     template<class T>
     std::vector<T> generateCells(randomizer& rnd, T size, T maxval);

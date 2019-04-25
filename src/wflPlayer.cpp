@@ -48,3 +48,94 @@ void woffler::switchbrnch(name player, uint64_t idbranch) {
   });
 
 }
+
+void woffler::tryturn(name player) {
+  require_auth(player);
+
+  auto self = get_self();
+
+  players _players(self, self.value);    
+  auto _player = _players.find(player.value);
+
+  check(
+    _player != _players.end(),
+    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
+  );
+
+  /* Checks and prerequisites */
+  tryTurnChecks(*_player);
+
+  /* Turn logic */
+  //find player's current level 
+  levels _levels(self, self.value);
+  auto _level = _levels.find(_player->idlvl);
+
+  //getting branch meta to decide on level presets
+  brnchmetas _metas(self, self.value);    
+  auto _meta = _metas.find(_level->idmeta);
+
+  if (_player->triesleft >= 1) {
+    //get current position and produce tryposition by generating random offset
+    auto rnd = randomizer::getInstance(player, _player->idlvl);
+    auto tryposition = (_player->currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
+    
+    _players.modify(_player, player, [&]( auto& p ) {
+      p.tryposition = tryposition;
+      p.triesleft -= 1;
+    });
+  }
+
+  if (_player->triesleft == 0) {
+    _players.modify(_player, player, [&]( auto& p ) {
+      commitPlayersTurn(p, *_level);
+    });
+  }
+}
+void woffler::committurn(name player) {
+  require_auth(player);
+
+  auto self = get_self();
+  
+
+  players _players(self, self.value);    
+  auto _player = _players.find(player.value);
+  
+  check(
+    _player != _players.end(),
+    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
+  );
+
+  /* Checks and prerequisites */
+  tryTurnChecks(*_player);
+
+  /* Turn logic */
+  //find player's current level 
+  levels _levels(self, self.value);
+  auto _level = _levels.find(_player->idlvl);
+
+  _players.modify(_player, player, [&]( auto& p ) {
+    commitPlayersTurn(p, *_level);
+  });
+  
+}
+void woffler::tryTurnChecks(const wflplayer& _player) {
+  check(
+    _player.idlvl != 0,
+    "First select branch to play on with action switchbrnch."
+  );
+  check(
+    _player.levelresult == Const::playerstate::SAFE,
+    "Player can make turn only from safe locations."
+  );
+}
+
+void woffler::commitPlayersTurn(wflplayer& p, const wfllevel& l) {
+  p.currentposition = p.tryposition;
+  if (std::find(l.redcells.begin(), l.redcells.end(), p.currentposition) != l.redcells.end()) {
+    p.levelresult = Const::playerstate::RED;
+  } else if (std::find(l.greencells.begin(), l.greencells.end(), p.currentposition) != l.greencells.end()) {
+    p.levelresult = Const::playerstate::GREEN;
+  }
+  p.resulttimestamp = Utils::now();
+  p.triesleft = Const::retriesCount;
+}

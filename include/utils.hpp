@@ -1,7 +1,11 @@
 #pragma once
 #include <eosio/eosio.hpp>
+#include <eosio/system.hpp>
+#include <eosio/crypto.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/print.hpp>
+
+using namespace eosio;
 
 namespace Utils {
   
@@ -12,11 +16,15 @@ namespace Utils {
       return 1;
     }
   }
-  
+
+  inline uint32_t now() {
+    return time_point_sec(current_time_point()).utc_seconds;
+  }
+
   template<typename T>
   void printVectorInt(const std::vector<T>& data) {
     for (typename std::vector<T>::const_iterator i = data.begin(); i != data.end(); ++i)
-      eosio::print("[", std::to_string(*i), "]");
+      print("[", std::to_string(*i), "]");
   }
   inline uint128_t combineIds(const uint64_t& x, const uint64_t& y) {
     return (uint128_t{x} << 64) | y;

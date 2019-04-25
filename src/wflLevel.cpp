@@ -31,6 +31,7 @@ uint64_t woffler::addLevel(name owner, const wflbranch& branch) {
   _levels.emplace(owner, [&](auto& l) {
     l.id = idlevel;
     l.idbranch = branch.id;
+    l.idmeta = branch.idmeta;
     l.potbalance = branchStake;
     l.redcells = generateCells(rnd, _meta->lvlreds, _meta->lvllength);
   });
@@ -65,15 +66,9 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
     _player != _players.end(),
     "Player not found"
   );
-
-  //find branch of the level
-  branches _branches(self, self.value);
-  const auto& _branch = _branches.find(_level->idbranch);
-  
-  bool _nextLevelUnlock = false;
-  
+    
   /* Restrictions check */
-  if (_branch->idrootlvl == idlevel) {//root level can be unlocked only by stakeholder, unlimited retries count
+  if (_level->root) {//root level can be unlocked only by stakeholder, unlimited retries count
     //find stake to use as pot value for root level
     stakes _stakes(self, self.value);
 
@@ -99,7 +94,6 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
       _player->triesleft >= 1,
       "No retries left"
     );
-    _nextLevelUnlock = true;
 
     _players.modify(_player, owner, [&]( auto& p ) {
       p.triesleft -= 1;     
@@ -110,7 +104,7 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
 
   //getting branch meta to decide on level presets
   brnchmetas _metas(self, self.value);    
-  auto _meta = _metas.find(_branch->idmeta);
+  auto _meta = _metas.find(_level->idmeta);
   auto rnd = randomizer::getInstance(owner, idlevel);
 
   _levels.modify(_level, owner, [&](auto& l) {
@@ -118,7 +112,7 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
     l.locked = Utils::hasIntersection<uint8_t>(l.greencells, l.redcells);
   });
 
-  if (_nextLevelUnlock && !_level->locked) {
+  if (!_level->root && !_level->locked) {
     //process NEXT workflow: position player to the unlocked level
     _players.modify(_player, owner, [&]( auto& p ) {
       p.triesleft = Const::retriesCount;     
@@ -157,7 +151,7 @@ std::vector<T> woffler::generateCells(randomizer& rnd, T size, T maxval) {
 }
 
 //DEBUG: testing cells generation for a given level and meta
-void woffler::regencells(name owner, uint64_t idlevel, uint64_t idmeta) {
+void woffler::regencells(name owner, uint64_t idlevel) {
   require_auth(owner);
   auto self = get_self();
   check(
@@ -165,18 +159,18 @@ void woffler::regencells(name owner, uint64_t idlevel, uint64_t idmeta) {
     string("Debug mode available only to contract owner: ") + self.to_string()
   );
 
-  //getting branch meta to decide on level presets
-  brnchmetas _metas(self, self.value);    
-  auto _meta = _metas.find(idmeta);
-  check(
-    _meta != _metas.end(),
-    "No branch metadata found."
-  );
   levels _levels(self, self.value);
   auto _level = _levels.find(idlevel);
   check(
     _level != _levels.end(),
     "No level found."
+  );
+  //getting branch meta to decide on level presets
+  brnchmetas _metas(self, self.value);    
+  auto _meta = _metas.find(_level->idmeta);
+  check(
+    _meta != _metas.end(),
+    "No branch metadata found."
   );
   auto rnd = randomizer::getInstance(owner, idlevel);
   std::vector<uint8_t> greencells = generateCells(rnd, _meta->lvlgreens, _meta->lvllength);
