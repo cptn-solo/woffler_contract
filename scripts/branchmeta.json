@@ -1,0 +1,20 @@
+{
+  "id": 1, 
+  "lvlgreens": 2, 
+  "lvllength": 16, 
+  "lvlreds": 5, 
+  "name": "default (fixed)", 
+  "nxtrate": 90, 
+  "owner": "beltalpha21a", 
+  "potmin": "1.0000 EOS", 
+  "slsrate": 3, 
+  "spltrate": 50, 
+  "stkmin": "1.0000 EOS", 
+  "stkrate": 10, 
+  "tkintrvl": 1200, 
+  "tkrate": 3, 
+  "unjlintrvl": 600, 
+  "unjlmin": "1.0000 EOS", 
+  "unjlrate": 1, 
+  "url": "https://main-belt.space"
+}
