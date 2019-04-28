@@ -21,8 +21,6 @@ public:
     uint32_t range(uint32_t to) {
         print("seed:", std::to_string(seed), "\n");
         checksum256 result = sha256((char *)&seed, sizeof(seed));
-        result.print();
-        print("\n");
 
         auto dgarr = result.get_array();
         seed = dgarr[1];

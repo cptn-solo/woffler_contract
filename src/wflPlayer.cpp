@@ -46,7 +46,6 @@ void woffler::switchbrnch(name player, uint64_t idbranch) {
     p.tryposition = 0;
     p.currentposition = 0;
   });
-
 }
 
 void woffler::tryturn(name player) {
@@ -91,11 +90,11 @@ void woffler::tryturn(name player) {
     });
   }
 }
+
 void woffler::committurn(name player) {
   require_auth(player);
 
   auto self = get_self();
-  
 
   players _players(self, self.value);    
   auto _player = _players.find(player.value);
@@ -115,10 +114,50 @@ void woffler::committurn(name player) {
 
   _players.modify(_player, player, [&]( auto& p ) {
     commitPlayersTurn(p, *_level);
-  });
-  
+  }); 
 }
-void woffler::tryTurnChecks(const wflplayer& _player) {
+
+void woffler::claimred(name player) {
+  require_auth(player);
+
+  auto self = get_self();
+
+  players _players(self, self.value);    
+  auto _player = _players.find(player.value);
+  
+  check(
+    _player != _players.end(),
+    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
+  );
+
+  /* Checks and prerequisites */
+  check(
+    _player->idlvl != 0,
+    "First select branch to play on with action switchbrnch."
+  );
+  check(
+    _player->levelresult == Const::playerstate::RED,
+    "Player position must be 'RED'."
+  );
+
+  /* Turn logic */
+  //find player's current level 
+  levels _levels(self, self.value);
+  auto _level = _levels.find(_player->idlvl);
+
+  _players.modify(_player, player, [&]( auto& p ) {
+    if (_level->idparent != 0) {
+      p.idlvl = _level->idparent;
+    }
+    p.tryposition = 0;
+    p.currentposition = 0;
+    p.levelresult = Const::playerstate::SAFE;
+    p.resulttimestamp = 0;
+    p.triesleft = Const::retriesCount;
+  });   
+}
+
+void woffler::tryTurnChecks(const woffler::wflplayer& _player) {
   check(
     _player.idlvl != 0,
     "First select branch to play on with action switchbrnch."
@@ -129,7 +168,7 @@ void woffler::tryTurnChecks(const wflplayer& _player) {
   );
 }
 
-void woffler::commitPlayersTurn(wflplayer& p, const wfllevel& l) {
+void woffler::commitPlayersTurn(woffler::wflplayer& p, const woffler::wfllevel& l) {
   p.currentposition = p.tryposition;
   if (std::find(l.redcells.begin(), l.redcells.end(), p.currentposition) != l.redcells.end()) {
     p.levelresult = Const::playerstate::RED;

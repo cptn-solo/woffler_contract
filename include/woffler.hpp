@@ -41,6 +41,9 @@ CONTRACT woffler : public contract {
     //commit position change in current level
     ACTION committurn(name player);
 
+    //commit player's position after turn result "red cell" (position player to prev. level's zero)
+    ACTION claimred(name player);
+
     #pragma endregion
 
     #pragma region ** Sales channels (wflChannel): **
