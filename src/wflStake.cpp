@@ -17,6 +17,7 @@ void woffler::stkaddval(name owner, uint64_t idbranch,
   subBalance(owner, amount, owner);
   
   if (_branch->generation > 1) {
+    //non-root branches don't directly share profit with contract's account (house)
     registerStake(owner, idbranch, amount);
   } 
   else {

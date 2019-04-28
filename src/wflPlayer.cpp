@@ -157,6 +157,14 @@ void woffler::claimred(name player) {
   });   
 }
 
+void woffler::claimgreen(name player) {
+  require_auth(player);
+}
+
+void woffler::claimtake(name player) {
+  
+}
+
 void woffler::tryTurnChecks(const woffler::wflplayer& _player) {
   check(
     _player.idlvl != 0,

@@ -44,6 +44,12 @@ CONTRACT woffler : public contract {
     //commit player's position after turn result "red cell" (position player to prev. level's zero)
     ACTION claimred(name player);
 
+    //reset player's GREEN position to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
+    ACTION claimgreen(name player);
+
+    //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
+    ACTION claimtake(name player);
+
     #pragma endregion
 
     #pragma region ** Sales channels (wflChannel): **
@@ -122,6 +128,28 @@ CONTRACT woffler : public contract {
     //generate cells for a given level and mark level unlocked if compatible green/red set found
     ACTION unlocklvl(name owner, uint64_t idlevel);
     
+    //position player to the next level
+    //if not yet exists - initialize new locked level in current branch 
+    //split pot according to level's branch metadata(`nxtrate`), 
+    //make the player a branch winner
+    //as new level is locked, winner have 3 tries to unlock it, if no luck - zero-ed in current level
+    ACTION nextlvl(name player);
+
+    //split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update)
+    //player wait untill the end of `tkintrvl` set with level result upon `takelvl`
+    //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level
+    ACTION takelvl(name player);
+
+    //make subbranch with locked root level
+    //split level's pot according to level's branch metadata (`spltrate`, `potmin`)
+    //make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
+    //as new level is locked, splitter have 3 tries to unlock it, if no luck - zero-ed in current level
+    ACTION splitlvl(name player);
+
+    //if no free unlock retries left, player can bet for split from his active balance to reset retries count  
+    //bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
+    ACTION splitbet(name player);
+
     //DEBUG actions for level generation debug 
     ACTION gencells(name account, uint8_t size, uint8_t maxval);
     ACTION regencells(name owner, uint64_t idlevel);

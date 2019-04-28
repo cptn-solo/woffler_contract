@@ -66,7 +66,7 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
     _player != _players.end(),
     "Player not found"
   );
-    
+
   /* Restrictions check */
   if (_level->root) {//root level can be unlocked only by stakeholder, unlimited retries count
     //find stake to use as pot value for root level
@@ -87,14 +87,17 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
       "Player must be at previous level to unlock next one."
     );
     check(
-      _player->levelresult == Const::playerstate::GREEN,
+      (
+        _player->levelresult == Const::playerstate::GREEN || 
+        _player->levelresult == Const::playerstate::TAKE
+      ),
       "Player can unlock level only from GREEN position"
     );
     check(
       _player->triesleft >= 1,
       "No retries left"
     );
-
+    
     _players.modify(_player, owner, [&]( auto& p ) {
       p.triesleft -= 1;     
     });
@@ -124,6 +127,24 @@ void woffler::unlocklvl(name owner, uint64_t idlevel) {
   }
 }
 
+void woffler::nextlvl(name player) {
+  require_auth(player);
+}
+
+void woffler::takelvl(name player) {
+  require_auth(player);
+  //dont forget to set retries count = 0 to force a player to call `splitbet` before split branch unlock trial
+}
+
+void woffler::splitlvl(name player) {
+  require_auth(player);  
+}
+
+void woffler::splitbet(name player) {
+  require_auth(player);
+  //players in TAKE state 1st cut vested balance, then - active
+  //reset retries count if balance cut was successfull
+}
 
 void woffler::addPot(name owner, uint64_t idlevel, asset pot) {
   auto self = get_self();
