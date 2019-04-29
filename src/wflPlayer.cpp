@@ -159,10 +159,40 @@ void woffler::claimred(name player) {
 
 void woffler::claimgreen(name player) {
   require_auth(player);
+
+  auto self = get_self();
+
+  players _players(self, self.value);    
+  auto _player = _players.find(player.value);
+  
+  check(
+    _player != _players.end(),
+    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
+  ); 
+
+  /* Checks and prerequisites */
+  check(
+    _player->idlvl != 0,
+    "First select branch to play on with action switchbrnch."
+  );
+  check(
+    _player->levelresult == Const::playerstate::GREEN,
+    "Player position must be 'GREEN'."
+  );
+
+  /* Claim logic */
+
+  _players.modify(_player, player, [&]( auto& p ) {
+    p.tryposition = 0;
+    p.currentposition = 0;
+    p.levelresult = Const::playerstate::SAFE;
+    p.resulttimestamp = 0;
+    p.triesleft = Const::retriesCount;
+  });   
 }
 
 void woffler::claimtake(name player) {
-  
+
 }
 
 void woffler::tryTurnChecks(const woffler::wflplayer& _player) {
