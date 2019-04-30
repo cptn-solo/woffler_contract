@@ -1,218 +1,199 @@
-#include <woffler.hpp>
+#include <wflPlayer.hpp>
 
-void woffler::switchbrnch(name player, uint64_t idbranch) {
-  require_auth(player);
-
-  auto self = get_self();
-
-  //find player
-  players _players(self, self.value);    
-  auto _player = _players.find(player.value);
-  check(
-    _player != _players.end(),
-    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
-  );
-  check(
-    _player->levelresult == Const::playerstate::INIT ||
-    _player->levelresult == Const::playerstate::SAFE,
-    "Player can switch branch only from safe locations."
-  );
- 
-  //find branch of the level
-  branches _branches(self, self.value);
-  const auto& _branch = _branches.find(idbranch);
-  check(
-    _branch->generation == 1,
-    "Player can start only from root branch"
-  );
-  check(
-    _branch->idrootlvl != 0,
-    "Branch has no root level yet."
-  );
- 
-   //check if branch is unlocked (its root level is not locked)
-  levels _levels(self, self.value);
-  auto _level = _levels.find(_branch->idrootlvl);
-  check(
-    !_level->locked,
-    "Root level of the branch is locked."
-  );
-
-  //position player in root level of the branch
-  _players.modify(_player, player, [&]( auto& p ) {
-    p.idlvl = _level->id;
-    p.triesleft = Const::retriesCount;     
-    p.levelresult = Const::playerstate::SAFE;
-    p.tryposition = 0;
-    p.currentposition = 0;
-  });
-}
-
-void woffler::tryturn(name player) {
-  require_auth(player);
-
-  auto self = get_self();
-
-  players _players(self, self.value);    
-  auto _player = _players.find(player.value);
-
-  check(
-    _player != _players.end(),
-    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
-  );
-
-  /* Checks and prerequisites */
-  tryTurnChecks(*_player);
-
-  /* Turn logic */
-  //find player's current level 
-  levels _levels(self, self.value);
-  auto _level = _levels.find(_player->idlvl);
-
-  //getting branch meta to decide on level presets
-  brnchmetas _metas(self, self.value);    
-  auto _meta = _metas.find(_level->idmeta);
-
-  if (_player->triesleft >= 1) {
-    //get current position and produce tryposition by generating random offset
-    auto rnd = randomizer::getInstance(player, _player->idlvl);
-    auto tryposition = (_player->currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
-    
-    _players.modify(_player, player, [&]( auto& p ) {
-      p.tryposition = tryposition;
-      p.triesleft -= 1;
-    });
-  }
-
-  if (_player->triesleft == 0) {
-    _players.modify(_player, player, [&]( auto& p ) {
-      commitPlayersTurn(p, *_level);
-    });
-  }
-}
-
-void woffler::committurn(name player) {
-  require_auth(player);
-
-  auto self = get_self();
-
-  players _players(self, self.value);    
-  auto _player = _players.find(player.value);
-  
-  check(
-    _player != _players.end(),
-    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
-  );
-
-  /* Checks and prerequisites */
-  tryTurnChecks(*_player);
-
-  /* Turn logic */
-  //find player's current level 
-  levels _levels(self, self.value);
-  auto _level = _levels.find(_player->idlvl);
-
-  _players.modify(_player, player, [&]( auto& p ) {
-    commitPlayersTurn(p, *_level);
-  }); 
-}
-
-void woffler::claimred(name player) {
-  require_auth(player);
-
-  auto self = get_self();
-
-  players _players(self, self.value);    
-  auto _player = _players.find(player.value);
-  
-  check(
-    _player != _players.end(),
-    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
-  );
-
-  /* Checks and prerequisites */
-  check(
-    _player->idlvl != 0,
-    "First select branch to play on with action switchbrnch."
-  );
-  check(
-    _player->levelresult == Const::playerstate::RED,
-    "Player position must be 'RED'."
-  );
-
-  /* Turn logic */
-  //find player's current level 
-  levels _levels(self, self.value);
-  auto _level = _levels.find(_player->idlvl);
-
-  _players.modify(_player, player, [&]( auto& p ) {
-    if (_level->idparent != 0) {
-      p.idlvl = _level->idparent;
+namespace woffler {
+  namespace wflPlayer {
+    Player::Player(name _self, name _player) : _players(_self, _self.value) {
+      this->_self = _self;
+      this->_player = _player;
+      this->_players = _players;
     }
-    p.tryposition = 0;
-    p.currentposition = 0;
-    p.levelresult = Const::playerstate::SAFE;
-    p.resulttimestamp = 0;
-    p.triesleft = Const::retriesCount;
-  });   
-}
 
-void woffler::claimgreen(name player) {
-  require_auth(player);
+    template<typename Lambda>
+    void Player::updateState(name payer, Lambda&& updater) {
+      auto player = _players.find(_player.value);
+      _players.modify(*player, payer, std::forward<Lambda&&>(updater)); 
+    }
 
-  auto self = get_self();
+    void Player::checkPlayer() {
+      auto player = _players.find(_player.value);
+      check(
+        player != _players.end(),
+        string("Account ") + _player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + _self.to_string() + string(" first.")
+      ); 
+      idlevel = player->idlvl;
+      levelresult = player->levelresult;
+      tryposition = player->tryposition;
+      triesleft = player->triesleft;
+      activebalance = player->activebalance;
+    }
+    
+    void Player::checkNoPlayer() {
+      auto player = _players.find(_player.value);
+      check(
+        player == _players.end(), 
+        "Account already exists"
+      );
+    }
 
-  players _players(self, self.value);    
-  auto _player = _players.find(player.value);
-  
-  check(
-    _player != _players.end(),
-    string("Account ") + player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + self.to_string() + string(" first.")
-  ); 
+    void Player::checkActivePlayer() {
+      checkPlayer();
+      check(
+        idlevel != 0,
+        "First select branch to play on with action switchbrnch."
+      );
+    }
 
-  /* Checks and prerequisites */
-  check(
-    _player->idlvl != 0,
-    "First select branch to play on with action switchbrnch."
-  );
-  check(
-    _player->levelresult == Const::playerstate::GREEN,
-    "Player position must be 'GREEN'."
-  );
+    void Player::checkState(Const::playerstate state) {
+      checkActivePlayer();    
+      check(
+        levelresult == state,
+        string("Player current level resutl must be '") + std::to_string(state) + string("'.")
+      );
+    }
 
-  /* Claim logic */
+    void Player::checkBalanceCovers(asset amount) {
+      checkPlayer();
+      check(
+        activebalance >= amount, 
+        string("Not enough active balance in your account. Current active balance: ") + activebalance.to_string().c_str() 
+      );    
+    }
 
-  _players.modify(_player, player, [&]( auto& p ) {
-    p.tryposition = 0;
-    p.currentposition = 0;
-    p.levelresult = Const::playerstate::SAFE;
-    p.resulttimestamp = 0;
-    p.triesleft = Const::retriesCount;
-  });   
-}
+    void Player::checkBalanceZero() {
+      checkPlayer();
+      check(//warning! works only for records, emplaced in contract's host scope
+        activebalance == asset{0, Const::acceptedSymbol},
+        string("Please withdraw funds first. Current active balance: ") + activebalance.to_string().c_str()
+      );
+    }
 
-void woffler::claimtake(name player) {
+    void Player::checkSwitchBranchAllowed() {
+      checkPlayer();
+      check(
+        levelresult == Const::playerstate::INIT ||
+        levelresult == Const::playerstate::SAFE,
+        "Player can switch branch only from safe locations."
+      );
+    }
 
-}
+    void Player::checkLevelUnlockTrialAllowed(uint64_t idlvl) {
+      check(
+        idlevel == idlvl,
+        "Player must be at previous level to unlock next one."
+      );
+      check(
+        (
+          levelresult == Const::playerstate::GREEN || 
+          levelresult == Const::playerstate::TAKE
+        ),
+        "Player can unlock level only from GREEN position"
+      );
+      check(
+        triesleft >= 1,
+        "No retries left"
+      );
+    }
+    
+    void Player::createPlayer(name achannel) {
+      channel = achannel;
+      _players.emplace(_player, [&](auto& p) {
+        p.account = _player;
+        p.channel = channel;
+      });
+    }
 
-void woffler::tryTurnChecks(const woffler::wflplayer& _player) {
-  check(
-    _player.idlvl != 0,
-    "First select branch to play on with action switchbrnch."
-  );
-  check(
-    _player.levelresult == Const::playerstate::SAFE,
-    "Player can make turn only from safe locations."
-  );
-}
+    bool Player::addBalance(asset amount, name payer) {    
+      auto player = _players.find(_player.value);    
+      if (player == _players.end()) 
+        return false;//without exception, bc it is allowed while signing up
+      
+      _players.modify(*player, payer, [&]( auto& p ) {
+        p.activebalance += amount;     
+      });
+      activebalance = player->activebalance;
+      
+      print("Current balance: ", asset{activebalance});
+      
+      return true;  
+    }
 
-void woffler::commitPlayersTurn(woffler::wflplayer& p, const woffler::wfllevel& l) {
-  p.currentposition = p.tryposition;
-  if (std::find(l.redcells.begin(), l.redcells.end(), p.currentposition) != l.redcells.end()) {
-    p.levelresult = Const::playerstate::RED;
-  } else if (std::find(l.greencells.begin(), l.greencells.end(), p.currentposition) != l.greencells.end()) {
-    p.levelresult = Const::playerstate::GREEN;
+    void Player::subBalance(asset amount, name payer) {
+      checkBalanceCovers(amount);
+      activebalance -= amount;
+      updateState(payer, [&]( auto& p ) {
+        p.activebalance = activebalance;     
+      });     
+    }
+
+    bool Player::rmAccount() {
+      checkBalanceZero();
+      auto player = _players.find(_player.value);
+      _players.erase(player);
+      
+      print("Removed user: ", name{_player}, " from scope: ", name{_self});
+      
+      return true;
+    }
+
+    void Player::switchRootLevel(uint64_t idlvl) {
+      //position player in root level of the branch
+      idlevel = idlvl;
+      triesleft = Const::retriesCount;
+      levelresult = Const::playerstate::SAFE;
+      tryposition = 0;
+      currentposition = 0;
+
+      updateState(_player, [&](auto& p) {
+        p.idlvl = idlevel;
+        p.triesleft = triesleft;     
+        p.levelresult = levelresult;
+        p.tryposition = tryposition;
+        p.currentposition = currentposition;
+      });
+    }
+
+    void Player::useTry() {
+      useTry(tryposition);  
+    }
+
+    void Player::useTry(uint8_t position) {
+      tryposition = position;
+      triesleft -= 1;
+
+      updateState(_player, [&](auto& p) {
+        p.tryposition = tryposition;
+        p.triesleft = triesleft;
+      });
+    }
+
+    void Player::commitTurn(Const::playerstate result) {
+      currentposition = tryposition;
+      levelresult = result;
+      triesleft = Const::retriesCount;
+
+      updateState(_player, [&](auto& p) {
+        p.currentposition = tryposition;
+        p.levelresult = levelresult;
+        p.resulttimestamp = Utils::now();
+        p.triesleft = triesleft;
+      });
+    }
+
+    void Player::resetPositionAtLevel(uint64_t idlvl) {
+      idlevel = idlvl;
+      tryposition = 0;
+      currentposition = 0;
+      levelresult = Const::playerstate::SAFE;
+      triesleft = Const::retriesCount;
+
+      updateState(_player, [&](auto& p) {
+        p.idlvl = idlevel;
+        p.tryposition = tryposition;
+        p.currentposition = currentposition;
+        p.levelresult = levelresult;
+        p.resulttimestamp = 0;
+        p.triesleft = triesleft;
+      });
+    }
   }
-  p.resulttimestamp = Utils::now();
-  p.triesleft = Const::retriesCount;
 }

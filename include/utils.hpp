@@ -4,6 +4,7 @@
 #include <eosio/crypto.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/print.hpp>
+#include <eosio/multi_index.hpp>
 
 using namespace eosio;
 

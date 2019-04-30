@@ -1,238 +1,114 @@
-#include <woffler.hpp>
+#include <wflLevel.hpp>
 
-uint64_t woffler::addLevel(name owner, const wflbranch& branch) {
-  auto self = get_self();
-  
-  //find stake to use as pot value for root level
-  stakes _stakes(self, self.value);
+namespace woffler {
+  namespace wflLevel {
+    Level::Level(name _self, uint64_t _idlevel) : _levels(_self, _self.value) {
+      this->_self = _self;
+      this->_levels = _levels;
+      this->_idlevel = _idlevel;
+    }
 
-  //calculating branch stake total (all stakeholders)
-  auto stkidx = _stakes.get_index<name("bybranch")>();
-  auto stkitr = stkidx.lower_bound(branch.id);
-  auto branchStake = asset{0, Const::acceptedSymbol};
-  while(stkitr != stkidx.end()) {
-    branchStake+=stkitr->stake;
-    stkitr++;
-  }
+    template<typename Lambda>
+    void Level::updateState(name payer, Lambda&& updater) {
+      auto level = _levels.find(_idlevel);
+      _levels.modify(*level, payer, std::forward<Lambda&&>(updater)); 
+    }
 
-  //getting branch meta to decide on level presets
-  brnchmetas _metas(self, self.value);    
-  auto _meta = _metas.find(branch.idmeta);
-  check(
-    _meta != _metas.end(),
-    "No branch metadata found for branch"
-  );
-
-  //emplacing new (root) level
-  levels _levels(self, self.value);
-  auto idlevel = Utils::nextPrimariKey(_levels.available_primary_key());
-  auto rnd = randomizer::getInstance(owner, idlevel);
-
-  _levels.emplace(owner, [&](auto& l) {
-    l.id = idlevel;
-    l.idbranch = branch.id;
-    l.idmeta = branch.idmeta;
-    l.potbalance = branchStake;
-    l.redcells = generateCells(rnd, _meta->lvlreds, _meta->lvllength);
-  });
-
-  print("Root level created with id: ", std::to_string(idlevel) , ", pot balance: ", asset{branchStake}, " for branch: ", std::to_string(branch.id));    
-  
-  return idlevel;
-}
-
-void woffler::unlocklvl(name owner, uint64_t idlevel) {
-  require_auth(owner);
-  auto self = get_self();
-  
-  /* Getting into context */
-
-  //find level to unlock
-  levels _levels(self, self.value);
-  auto _level = _levels.find(idlevel);
-  check(
-    _level != _levels.end(),
-    "No level found."
-  );
-  check(
-    _level->locked,
-    "Level is not locked"
-  );
-
-  //find player
-  players _players(self, self.value);    
-  auto _player = _players.find(owner.value);
-  check(
-    _player != _players.end(),
-    "Player not found"
-  );
-
-  /* Restrictions check */
-  if (_level->root) {//root level can be unlocked only by stakeholder, unlimited retries count
-    //find stake to use as pot value for root level
-    stakes _stakes(self, self.value);
-
-    auto ownedBranchId = Utils::combineIds(owner.value, _level->idbranch);    
-    auto stkidx = _stakes.get_index<name("byownedbrnch")>();
-    const auto& stake = stkidx.find(ownedBranchId);          
-
-    check(
-      stake != stkidx.end(),
-      "Only stakeholder of a branch can unlock root level for it"
-    );
-  }
-  else {//"next" level can be unlocked only from GREEN position, retries count limited
-    check(
-      _player->idlvl == _level->idparent,
-      "Player must be at previous level to unlock next one."
-    );
-    check(
-      (
-        _player->levelresult == Const::playerstate::GREEN || 
-        _player->levelresult == Const::playerstate::TAKE
-      ),
-      "Player can unlock level only from GREEN position"
-    );
-    check(
-      _player->triesleft >= 1,
-      "No retries left"
-    );
+    void Level::checkLevel() {
+      auto level = _levels.find(_idlevel);
+      check(
+        level != _levels.end(),
+        "Level not found."
+      );        
+      idlevel = level->id;
+      idparent = level->idparent;
+      redcells = level->redcells;
+      greencells = level->greencells;
+      locked = level->locked;
+      root = level->root;
+      idbranch = level->idbranch;      
+      idchbranch = level->idchbranch;
+      idmeta = level->idmeta;
+    }
     
-    _players.modify(_player, owner, [&]( auto& p ) {
-      p.triesleft -= 1;     
-    });
-  }
+    void Level::checkLockedLevel() {
+      checkLevel();
+      check(
+        locked,
+        "Level is already unlocked."
+      );
+    }
+    
+    void Level::checkUnlockedLevel() {
+      checkLevel();
+      check(
+        !locked,
+        "Level is locked."
+      );
+    }
+    
+    void Level::createLevel(name payer, asset pot, uint64_t branchid, uint64_t metaid, uint8_t lvlreds, uint8_t lvllength) {
+      auto idlvl = Utils::nextPrimariKey(_levels.available_primary_key());
 
-  /* Generate cells */  
+      idlevel = idlvl;
+      _idlevel = idlvl;
+      idbranch = branchid;
+      idmeta = metaid;
+      potbalance = pot;
 
-  //getting branch meta to decide on level presets
-  brnchmetas _metas(self, self.value);    
-  auto _meta = _metas.find(_level->idmeta);
-  auto rnd = randomizer::getInstance(owner, idlevel);
+      _levels.emplace(payer, [&](auto& l) {
+        l.id = idlevel;
+        l.idbranch = idbranch;
+        l.idmeta = idmeta;
+        l.potbalance = potbalance;
+      });
 
-  _levels.modify(_level, owner, [&](auto& l) {
-    l.greencells = generateCells(rnd, _meta->lvlgreens, _meta->lvllength);;
-    l.locked = Utils::hasIntersection<uint8_t>(l.greencells, l.redcells);
-  });
+      generateRedCells(payer, lvlreds, lvllength);
+    }
 
-  if (!_level->root && !_level->locked) {
-    //process NEXT workflow: position player to the unlocked level
-    _players.modify(_player, owner, [&]( auto& p ) {
-      p.triesleft = Const::retriesCount;     
-      p.idlvl = _level->id;
-      p.tryposition = 0;
-      p.currentposition = 0;
-      p.levelresult = Const::playerstate::SAFE;
-    });
-  }
-}
+    void Level::generateRedCells(name payer, uint8_t lvlreds, uint8_t lvllength) {
+      auto rnd = randomizer::getInstance(payer, idlevel);
+      redcells = generateCells(rnd, lvlreds, lvllength);
 
-void woffler::nextlvl(name player) {
-  require_auth(player);
-}
+      updateState(payer, [&](auto& l) {
+        l.redcells = redcells;
+      });
+    }  
 
-void woffler::takelvl(name player) {
-  require_auth(player);
-  //dont forget to set retries count = 0 to force a player to call `splitbet` before split branch unlock trial
-}
+    void Level::unlockTrial(name payer, uint8_t lvlgreens, uint8_t lvllength) {
+      auto rnd = randomizer::getInstance(payer, idlevel);
+      greencells = generateCells(rnd, lvlgreens, lvllength);
+      locked = Utils::hasIntersection<uint8_t>(greencells, redcells);
+      updateState(payer, [&](auto& l) {
+        l.greencells = greencells;
+        l.locked = locked;
+      });
+    }
 
-void woffler::splitlvl(name player) {
-  require_auth(player);  
-}
+    void Level::addPot(name payer, asset pot) {
+      potbalance += pot;
+      updateState(payer, [&](auto& l) {
+        l.potbalance = potbalance;
+      });
+    }
 
-void woffler::splitbet(name player) {
-  require_auth(player);
-  //players in TAKE state 1st cut vested balance, then - active
-  //reset retries count if balance cut was successfull
-}
-
-void woffler::addPot(name owner, uint64_t idlevel, asset pot) {
-  auto self = get_self();
-  levels _levels(self, self.value);
-  auto _level = _levels.find(idlevel);
-  check(
-    _level != _levels.end(),
-    "Level not found."
-  );
-
-  _levels.modify(_level, owner, [&](auto& l){
-    l.potbalance += pot;
-  });
-  print("Value added to the pot: ", asset{pot}, ", current pot value: ", asset{_level->potbalance});  
-}
-
-template<class T>
-std::vector<T> woffler::generateCells(randomizer& rnd, T size, T maxval) {
-
-  std::vector<T> data(size);
-  Cell::generator<T> generator(rnd, maxval, size);
-  std::generate(data.begin(), data.end(), generator);
-
-  return data;
-}
-
-//DEBUG: testing cells generation for a given level and meta
-void woffler::regencells(name owner, uint64_t idlevel) {
-  require_auth(owner);
-  auto self = get_self();
-  check(
-    owner == self,
-    string("Debug mode available only to contract owner: ") + self.to_string()
-  );
-
-  levels _levels(self, self.value);
-  auto _level = _levels.find(idlevel);
-  check(
-    _level != _levels.end(),
-    "No level found."
-  );
-  //getting branch meta to decide on level presets
-  brnchmetas _metas(self, self.value);    
-  auto _meta = _metas.find(_level->idmeta);
-  check(
-    _meta != _metas.end(),
-    "No branch metadata found."
-  );
-  auto rnd = randomizer::getInstance(owner, idlevel);
-  std::vector<uint8_t> greencells = generateCells(rnd, _meta->lvlgreens, _meta->lvllength);
-  std::vector<uint8_t> redcells = generateCells(rnd, _meta->lvlreds, _meta->lvllength);
-
-  _levels.modify(_level, owner, [&](auto& l) {
-    l.redcells = redcells;
-    l.greencells = greencells;
-    l.locked = Utils::hasIntersection<uint8_t>(greencells, redcells);
-  });
-}
-
-//DEBUG: testing cell randomizer
-void woffler::gencells(name account, uint8_t size, uint8_t maxval) {
-  require_auth(account);
-  auto self = get_self();
-  check(
-    account == self,
-    string("Debug mode available only to contract owner: ") + self.to_string()
-  );
-
-  auto rnd = randomizer::getInstance(account, 1);
-  auto data = generateCells<uint8_t>(rnd, size, maxval);
-  Utils::printVectorInt<uint8_t>(data);
-}
-
-//DEBUG: testing level delete
-void woffler::rmlevel(name owner, uint64_t idlevel) {
-  require_auth(owner);
-  auto self = get_self();
-  check(
-    owner == self,
-    string("Debug mode available only to contract owner: ") + self.to_string()
-  );
-
-  levels _levels(self, self.value);
-  auto _level = _levels.find(idlevel);
-  check(
-    _level != _levels.end(),
-    "No level found."
-  );
-
-  _levels.erase(_level);
+    Const::playerstate Level::cellTypeAtPosition(uint8_t position) {
+      auto levelresult = Const::playerstate::SAFE;
+      if (std::find(redcells.begin(), redcells.end(), position) != redcells.end()) {
+        levelresult = Const::playerstate::RED;
+      } else if (std::find(greencells.begin(), greencells.end(), position) != greencells.end()) {
+        levelresult = Const::playerstate::GREEN;
+      }
+      return levelresult;
+    }
+    
+    void Level::rmLevel() {
+      auto level = _levels.find(_idlevel);
+      check(
+        level != _levels.end(),
+        "Level not found"
+      );
+      _levels.erase(level);
+    }
+  }  
 }

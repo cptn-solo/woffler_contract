@@ -2,7 +2,7 @@
 #include <eosio/symbol.hpp>
 
 namespace Const {
-  enum playerstate {
+  enum playerstate: uint8_t {
     INIT, SAFE, RED, GREEN, TAKE
   };
   const eosio::symbol_code acceptedCurr("EOS");
