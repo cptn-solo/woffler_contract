@@ -1,4 +1,7 @@
 #include <woffler.hpp>
+#include "wflPlayer.cpp"
+#include "wflBranch.cpp"
+#include "wflLevel.cpp"
 
 //*** Contract scope methods ***//
 namespace woffler {
@@ -16,12 +19,12 @@ namespace woffler {
       "One can not be a sales channel for himself"
     );
     
-    wflPlayer::Player _player(self, account);
+    Player _player(self, account);
     _player.checkNoPlayer();
 
     //validating sales channel
     if (_channel != self) { //channel account must be signed up already
-      wflPlayer::Player _chnlacct(self, _channel);
+      Player _chnlacct(self, _channel);
       _chnlacct.checkPlayer();
     }
     
@@ -36,7 +39,7 @@ namespace woffler {
     require_auth(account);
     print("Forget user: ", name{account});
 
-    wflPlayer::Player _player(get_self(), account);
+    Player _player(get_self(), account);
     _player.rmAccount();
   }
 
@@ -44,7 +47,7 @@ namespace woffler {
     auto self = get_self();
     require_auth(from);
     
-    wflPlayer::Player _player(self, from);
+    Player _player(self, from);
     _player.subBalance(amount, from);
 
     // Inline transfer
@@ -67,7 +70,7 @@ namespace woffler {
 
     if (to == self) { //deposit
       print("Deposit to: ", name{to});
-      wflPlayer::Player _player(self, from);
+      Player _player(self, from);
       
       if (!_player.isRegistred()) {
         print("Registering player: ", name{from}, " payer: ", name{self});
@@ -84,15 +87,15 @@ namespace woffler {
 
     auto self = get_self();
 
-    wflPlayer::Player _player(self, player);  
+    Player _player(self, player);  
     _player.checkSwitchBranchAllowed();
   
     //find branch of the level
-    wflBranch::Branch _branch(self, idbranch);
+    Branch _branch(self, idbranch);
     _branch.checkStartBranch();
   
     //check if branch is unlocked (its root level is not locked)
-    wflLevel::Level _level(self, _branch.idrootlvl);
+    Level _level(self, _branch.idrootlvl);
     _level.checkUnlockedLevel();
   
     //position player in root level of the branch
@@ -104,27 +107,27 @@ namespace woffler {
     
     auto self = get_self();
 
-    wflPlayer::Player _player(self, player);
+    Player _player(self, player);
     _player.checkState(Const::playerstate::SAFE);
     
     /* Turn logic */
     //find player's current level 
-    wflLevel::Level _level(self, _player.player->idlvl);
+    Level _level(self, (*_player.player)->idlvl);
     _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
 
     //getting branch meta to decide on level presets
     brnchmetas _metas(self, self.value);    
     auto _meta = _metas.find(_level.idmeta);
 
-    if (_player.player->triesleft >= 1) {
+    if ((*_player.player)->triesleft >= 1) {
       //get current position and produce tryposition by generating random offset
-      auto rnd = randomizer::getInstance(player, _player.player->idlvl);
-      auto tryposition = (_player.player->currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
+      auto rnd = randomizer::getInstance(player, (*_player.player)->idlvl);
+      auto tryposition = ((*_player.player)->currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
       _player.useTry(tryposition);    
     }
 
-    if (_player.player->triesleft == 0) {
-      Const::playerstate levelresult = _level.cellTypeAtPosition(_player.player->tryposition);
+    if ((*_player.player)->triesleft == 0) {
+      Const::playerstate levelresult = _level.cellTypeAtPosition((*_player.player)->tryposition);
       _player.commitTurn(levelresult);
     }
   }
@@ -134,13 +137,13 @@ namespace woffler {
     
     auto self = get_self();
 
-    wflPlayer::Player _player(self, player);
+    Player _player(self, player);
     _player.checkState(Const::playerstate::SAFE);
 
-    wflLevel::Level _level(self, _player.player->idlvl);
+    Level _level(self, (*_player.player)->idlvl);
     _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
 
-    auto levelresult = _level.cellTypeAtPosition(_player.player->tryposition);
+    auto levelresult = _level.cellTypeAtPosition((*_player.player)->tryposition);
     _player.commitTurn(levelresult);
   }
 
@@ -149,10 +152,10 @@ namespace woffler {
 
     auto self = get_self();
 
-    wflPlayer::Player _player(self, player);
+    Player _player(self, player);
     _player.checkState(Const::playerstate::RED);
 
-    wflLevel::Level _level(self, _player.player->idlvl);
+    Level _level(self, (*_player.player)->idlvl);
     _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
 
     /* Claim logic */  
@@ -164,11 +167,11 @@ namespace woffler {
     
     require_auth(player);          
 
-    wflPlayer::Player _player(get_self(), player);
+    Player _player(get_self(), player);
     _player.checkState(Const::playerstate::GREEN);
     
     /* Claim logic */  
-    _player.resetPositionAtLevel(_player.player->idlvl);
+    _player.resetPositionAtLevel((*_player.player)->idlvl);
   }
 
   void woffler::claimtake(name player) {
@@ -219,10 +222,10 @@ namespace woffler {
     );
     
     //cut owner's active balance for pot value (will fail if not enough funds)
-    wflPlayer::Player _player(self, owner);
+    Player _player(self, owner);
     _player.subBalance(pot, owner);
 
-    wflBranch::Branch _branch(self, 0);
+    Branch _branch(self, 0);
     _branch.createBranch(owner, idmeta);
     
     //register players's and house stake
@@ -241,7 +244,7 @@ namespace woffler {
     
     auto self = get_self();
     
-    wflBranch::Branch _branch(self, idbranch);
+    Branch _branch(self, idbranch);
     _branch.checkEmptyBranch();
 
     //find stake to use as pot value for root level
@@ -286,7 +289,7 @@ namespace woffler {
       string("Debug mode available only to contract owner: ") + self.to_string()
     );
 
-    wflBranch::Branch _branch(self, idbranch);
+    Branch _branch(self, idbranch);
     _branch.checkBranch();
 
     _branch.setRootLevel(owner, idrootlvl);
@@ -319,7 +322,7 @@ namespace woffler {
     );
 
     //emplacing new (root) level
-    wflLevel::Level _level(self, 0);
+    Level _level(self, 0);
     _level.createLevel(owner, branchStake, idbranch, idmeta, _meta->lvlreds, _meta->lvllength);
 
     print("Root level created with id: ", std::to_string(_level.idlevel) , ", pot balance: ", asset{branchStake}, " for branch: ", std::to_string(idbranch));    
@@ -332,11 +335,11 @@ namespace woffler {
     auto self = get_self();
     
     //find level to unlock
-    wflLevel::Level _level(self, idlevel);
+    Level _level(self, idlevel);
     _level.checkLockedLevel();
 
     //find player
-    wflPlayer::Player _player(self, owner);
+    Player _player(self, owner);
     _player.checkPlayer();
 
     /* Restrictions check */
@@ -400,7 +403,7 @@ namespace woffler {
       string("Debug mode available only to contract owner: ") + self.to_string()
     );
 
-    wflLevel::Level _level(self, self.value);
+    Level _level(self, self.value);
     _level.checkLevel();
 
     //getting branch meta to decide on level presets
@@ -424,7 +427,7 @@ namespace woffler {
       string("Debug mode available only to contract owner: ") + self.to_string()
     );
 
-    wflLevel::Level::debugGenerateCells(account, 1, size, maxval);
+    Level::debugGenerateCells(account, 1, size, maxval);
   }
 
   //DEBUG: testing level delete
@@ -436,7 +439,7 @@ namespace woffler {
       string("Debug mode available only to contract owner: ") + self.to_string()
     );
 
-    wflLevel::Level _level(self, self.value);
+    Level _level(self, self.value);
     _level.rmLevel();
   }
 
@@ -482,7 +485,7 @@ namespace woffler {
       c.balance = asset{0, Const::acceptedSymbol};     
     });
 
-    wflPlayer::Player _player(self, owner);
+    Player _player(self, owner);
     _player.addBalance(amount, owner);
     
     print("Channel balance merged: ", asset{amount});
@@ -562,7 +565,7 @@ namespace woffler {
       );
 
       //check for usage
-      wflBranch::Branch _branch(self, 0);
+      Branch _branch(self, 0);
       _branch.checkBranchMetaUsage(id);
 
       _metas.modify(_meta, owner, [&](auto& m) {
@@ -638,11 +641,11 @@ namespace woffler {
     require_auth(owner);
     
     auto self = get_self();
-    wflBranch::Branch _branch(self, idbranch);
+    Branch _branch(self, idbranch);
     _branch.checkBranch();
 
     //cut owner's active balance for pot value (will fail if not enough funds)
-    wflPlayer::Player _player(self, owner);
+    Player _player(self, owner);
     _player.subBalance(amount, owner);
     
     if (_branch.generation > 1) {
@@ -660,7 +663,7 @@ namespace woffler {
 
     //if root level is created already - append staked value to the root level's pot
     if(_branch.idrootlvl > 0) {
-      wflLevel::Level _level(self, _branch.idrootlvl);
+      Level _level(self, _branch.idrootlvl);
       _level.checkLevel();
       _level.addPot(owner, amount);
       print("Value added to the pot: ", asset{amount}, ", current pot value: ", asset{_level.potbalance});  

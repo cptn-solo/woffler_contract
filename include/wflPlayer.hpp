@@ -2,65 +2,60 @@
 #include <utils.hpp>
 #include <constants.hpp>
 
-namespace woffler {
-    using namespace eosio;
-    using std::string;
+using namespace eosio;
+using std::string;
 
-    namespace wflPlayer {
-        class Player {
-            public:
-            Player(name self, name player);
+class Player {
+    public:
+    Player(name self, name player);
 
-            bool isRegistred();
+    bool isRegistred();
 
-            void checkPlayer();
-            void checkNoPlayer();
-            void checkActivePlayer();
-            void checkState(Const::playerstate state);
-            void checkBalanceCovers(asset amount);
-            void checkBalanceZero();
-            void checkSwitchBranchAllowed();
-            void checkLevelUnlockTrialAllowed(uint64_t idlvl);
+    void checkPlayer();
+    void checkNoPlayer();
+    void checkActivePlayer();
+    void checkState(Const::playerstate state);
+    void checkBalanceCovers(asset amount);
+    void checkBalanceZero();
+    void checkSwitchBranchAllowed();
+    void checkLevelUnlockTrialAllowed(uint64_t idlvl);
 
-            void createPlayer(name achannel, name payer);
-            void addBalance(asset amount, name payer);
-            void subBalance(asset amount, name payer);
-            void switchRootLevel(uint64_t idlvl);
-            void useTry();
-            void useTry(uint8_t position);
-            void commitTurn(Const::playerstate result);
-            void resetPositionAtLevel(uint64_t idlvl);
+    void createPlayer(name channel, name payer);
+    void addBalance(asset amount, name payer);
+    void subBalance(asset amount, name payer);
+    void switchRootLevel(uint64_t idlvl);
+    void useTry();
+    void useTry(uint8_t position);
+    void commitTurn(Const::playerstate result);
+    void resetPositionAtLevel(uint64_t idlvl);
 
-            void rmAccount();        
-            
-            //players with there balances and in-game state
-            TABLE wflplayer {
-                name account;
-                name channel;
-                uint64_t idlvl = 0;
-                asset activebalance = asset{0, Const::acceptedSymbol};
-                asset vestingbalance = asset{0, Const::acceptedSymbol};
-                uint8_t tryposition = 0;
-                uint8_t currentposition = 0;
-                uint8_t triesleft = 0;
-                uint8_t levelresult = Const::playerstate::INIT;
-                uint32_t resulttimestamp;
-                
-                uint64_t primary_key() const { return account.value; }
-            };
+    void rmAccount();        
+    
+    //players with there balances and in-game state
+    TABLE wflplayer {
+        name account;
+        name channel;
+        uint64_t idlvl = 0;
+        asset activebalance = asset{0, Const::acceptedSymbol};
+        asset vestingbalance = asset{0, Const::acceptedSymbol};
+        uint8_t tryposition = 0;
+        uint8_t currentposition = 0;
+        uint8_t triesleft = 0;
+        uint8_t levelresult = Const::playerstate::INIT;
+        uint32_t resulttimestamp;
+        
+        uint64_t primary_key() const { return account.value; }
+    };
+    typedef multi_index<"players"_n, wflplayer> players;        
 
-            wflplayer* player = NULL;
+    players::const_iterator* player = NULL;
 
-            private:
-            
-            typedef multi_index<"players"_n, wflplayer> players;        
-            
-            template<typename Lambda>
-            void updateState(name payer, Lambda&& updater);        
-            
-            name _self;
-            name _player;
-            players _players;            
-        };
-    }
-}
+    private:
+    
+    template<typename Lambda>
+    void updateState(name payer, Lambda&& updater);        
+    
+    name _self;
+    name _player;
+    players _players;            
+};

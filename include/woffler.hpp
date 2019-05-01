@@ -1,9 +1,6 @@
 #pragma once
 #include <utils.hpp>
 #include <constants.hpp>
-#include <wflPlayer.hpp>
-#include <wflBranch.hpp>
-#include <wflLevel.hpp>
 
 namespace woffler {
   using namespace eosio;
