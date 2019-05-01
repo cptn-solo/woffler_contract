@@ -1,11 +1,11 @@
 {
-  "main": "src/woffler.cpp",
+  "main": "src/main.cpp",
   "contract": "woffler",
   "include": "./include",
   "cdt": "",
   "output": "",
   "scripts": {
-    "build": ""
+    "build": "eosio-cpp -abigen -I ./include -contract woffler -o woffler.wasm src/main.cpp src/player.cpp"
   },
   "deploy": {
     "mainnet": "",

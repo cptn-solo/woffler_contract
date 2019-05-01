@@ -32,7 +32,9 @@ class Player {
     void rmAccount();        
     
     //players with there balances and in-game state
-    TABLE wflplayer {
+    typedef struct 
+    [[eosio::table("players"), eosio::contract("woffler")]]
+    wflplayer {
         name account;
         name channel;
         uint64_t idlvl = 0;
@@ -45,6 +47,7 @@ class Player {
         uint32_t resulttimestamp;
         
         uint64_t primary_key() const { return account.value; }
+        EOSLIB_SERIALIZE(wflplayer, (account)(channel)(idlvl)(activebalance)(vestingbalance)(tryposition)(currentposition)(triesleft)(levelresult)(resulttimestamp))
     };
     typedef multi_index<"players"_n, wflplayer> players;        
 
