@@ -11,13 +11,7 @@ namespace woffler {
             public:
             Player(name self, name player);
 
-            uint64_t idlevel = 0;
-            uint8_t levelresult = Const::playerstate::INIT;
-            uint8_t tryposition = 0;
-            uint8_t currentposition = 0;
-            uint8_t triesleft = 0;
-            asset activebalance = asset{0, Const::acceptedSymbol};
-            name channel = name();
+            bool isRegistred();
 
             void checkPlayer();
             void checkNoPlayer();
@@ -28,8 +22,8 @@ namespace woffler {
             void checkSwitchBranchAllowed();
             void checkLevelUnlockTrialAllowed(uint64_t idlvl);
 
-            void createPlayer(name achannel);
-            bool addBalance(asset amount, name payer);
+            void createPlayer(name achannel, name payer);
+            void addBalance(asset amount, name payer);
             void subBalance(asset amount, name payer);
             void switchRootLevel(uint64_t idlvl);
             void useTry();
@@ -37,9 +31,8 @@ namespace woffler {
             void commitTurn(Const::playerstate result);
             void resetPositionAtLevel(uint64_t idlvl);
 
-            bool rmAccount();        
+            void rmAccount();        
             
-            private:
             //players with there balances and in-game state
             TABLE wflplayer {
                 name account;
@@ -55,6 +48,10 @@ namespace woffler {
                 
                 uint64_t primary_key() const { return account.value; }
             };
+
+            wflplayer* player = NULL;
+
+            private:
             
             typedef multi_index<"players"_n, wflplayer> players;        
             
@@ -66,5 +63,4 @@ namespace woffler {
             players _players;            
         };
     }
-
 }

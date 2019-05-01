@@ -26,7 +26,7 @@ namespace woffler {
     }
     
     //creating player record
-    _player.createPlayer(_channel);
+    _player.createPlayer(_channel, account);
 
     //creating/incrementing sales channel
     upsertChannel(_channel);
@@ -66,13 +66,15 @@ namespace woffler {
     auto self = get_self();
 
     if (to == self) { //deposit
+      print("Deposit to: ", name{to});
       wflPlayer::Player _player(self, from);
-      bool deposited = _player.addBalance(amount, self);
-
-      if (!deposited) {
-        signup(from, self);
-        _player.addBalance(amount, self);
-      }
+      
+      if (!_player.isRegistred()) {
+        print("Registering player: ", name{from}, " payer: ", name{self});
+        _player.createPlayer(self, self);        
+        upsertChannel(self);//transfer always register a user under contract's sales channel
+      }        
+      _player.addBalance(amount, self);
     } 
   }
   #pragma region ** wflPlayer**
@@ -107,22 +109,22 @@ namespace woffler {
     
     /* Turn logic */
     //find player's current level 
-    wflLevel::Level _level(self, _player.idlevel);
+    wflLevel::Level _level(self, _player.player->idlvl);
     _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
 
     //getting branch meta to decide on level presets
     brnchmetas _metas(self, self.value);    
     auto _meta = _metas.find(_level.idmeta);
 
-    if (_player.triesleft >= 1) {
+    if (_player.player->triesleft >= 1) {
       //get current position and produce tryposition by generating random offset
-      auto rnd = randomizer::getInstance(player, _player.idlevel);
-      auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
+      auto rnd = randomizer::getInstance(player, _player.player->idlvl);
+      auto tryposition = (_player.player->currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
       _player.useTry(tryposition);    
     }
 
-    if (_player.triesleft == 0) {
-      Const::playerstate levelresult = _level.cellTypeAtPosition(_player.tryposition);
+    if (_player.player->triesleft == 0) {
+      Const::playerstate levelresult = _level.cellTypeAtPosition(_player.player->tryposition);
       _player.commitTurn(levelresult);
     }
   }
@@ -135,10 +137,10 @@ namespace woffler {
     wflPlayer::Player _player(self, player);
     _player.checkState(Const::playerstate::SAFE);
 
-    wflLevel::Level _level(self, _player.idlevel);
+    wflLevel::Level _level(self, _player.player->idlvl);
     _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
 
-    auto levelresult = _level.cellTypeAtPosition(_player.tryposition);
+    auto levelresult = _level.cellTypeAtPosition(_player.player->tryposition);
     _player.commitTurn(levelresult);
   }
 
@@ -150,7 +152,7 @@ namespace woffler {
     wflPlayer::Player _player(self, player);
     _player.checkState(Const::playerstate::RED);
 
-    wflLevel::Level _level(self, _player.idlevel);
+    wflLevel::Level _level(self, _player.player->idlvl);
     _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
 
     /* Claim logic */  
@@ -166,7 +168,7 @@ namespace woffler {
     _player.checkState(Const::playerstate::GREEN);
     
     /* Claim logic */  
-    _player.resetPositionAtLevel(_player.idlevel);
+    _player.resetPositionAtLevel(_player.player->idlvl);
   }
 
   void woffler::claimtake(name player) {
