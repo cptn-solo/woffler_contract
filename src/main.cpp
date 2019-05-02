@@ -5,8 +5,9 @@
 namespace Woffler {
     using namespace eosio;
     using std::string;
-    
-    CONTRACT woffler : public contract {
+    class
+    [[eosio::contract("woffler")]]
+    woffler : public contract {
         public:
         using contract::contract;
         woffler(name receiver, name code, datastream<const char*> ds): 

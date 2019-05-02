@@ -10,7 +10,9 @@ namespace Woffler {
             public:
             Player(name self, name account);
             //players with there balances and in-game state
-            TABLE wflplayer {
+            typedef struct
+            [[eosio::table("players"), eosio::contract("woffler")]]
+            wflplayer {
                 name account;
                 name channel;
                 uint64_t idlvl = 0;
@@ -23,7 +25,7 @@ namespace Woffler {
                 uint32_t resulttimestamp;
                 
                 uint64_t primary_key() const { return account.value; }
-            };
+            } wflplayer;
             typedef multi_index<"players"_n, wflplayer> players;    
 
             const wflplayer& getPlayer();

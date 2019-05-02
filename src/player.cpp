@@ -5,13 +5,19 @@
 namespace Woffler {
     namespace Player {
         Player::Player(name self, name account): 
-            _players(_self, _self.value), 
-            _pitr(_players.find(_player.value)) 
+            _players(self, self.value),
+            _pitr(_players.end())
         {
             this->_self = self;
             this->_player = account;
+            this->_pitr = _players.find(account.value);
         }
         
+        /*** 
+          usage (check for existance before use!!!):
+          auto p = getPlayer();
+          print("player: ", name{p.account});
+        */
         const Player::wflplayer& Player::getPlayer() {
             return *_pitr;
         }
@@ -29,7 +35,7 @@ namespace Woffler {
                 _player == _self || channel != _player, //only contract account can be register by his own
                 "One can not be a sales channel for himself"
             );
-            
+
             checkNoPlayer();
 
             _players.emplace(payer, [&](auto& p) {
