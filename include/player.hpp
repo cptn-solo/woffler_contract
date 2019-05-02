@@ -8,7 +8,7 @@ namespace Woffler {
     namespace Player {
         class Player {
             public:
-            Player(name self, name player);
+            Player(name self, name account);
             //players with there balances and in-game state
             TABLE wflplayer {
                 name account;
@@ -26,11 +26,16 @@ namespace Woffler {
             };
             typedef multi_index<"players"_n, wflplayer> players;    
 
-            void createPlayer();
+            const wflplayer& getPlayer();
+            
+            void checkNoPlayer();
+            
+            void createPlayer(name payer, name channel);            
 
             private:
             name _self;
             name _player;
+            players::const_iterator _pitr;
             
             players _players;     
 

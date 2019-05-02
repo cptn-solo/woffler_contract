@@ -14,8 +14,11 @@ namespace Woffler {
             
         //signup new player with custom sales channel (via referral link)
         ACTION signup(name account, name channel) {
+            require_auth(account);
+            print("Register user: ", name{account});
+
             Player::Player player = Player::Player(get_self(), account);
-            player.createPlayer();
+            player.createPlayer(account, channel);
         }
     };
 }
