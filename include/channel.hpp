@@ -18,19 +18,6 @@ namespace Woffler {
         } wflchannel;
         typedef multi_index<"channels"_n, wflchannel> channels; 
         
-        class Channel {
-            public:
-
-                Channel(name self, name owner);
-                void upsertChannel(name payer);
-
-            private:
-
-                name _self;
-                name _owner;            
-                channels _channels;     
-        };
-
         struct DAO {
             public:
 
@@ -51,5 +38,20 @@ namespace Woffler {
                 channels::const_iterator _citr;
         };
 
+        class Channel {
+            public:
+
+                Channel(name self, name owner);
+                ~Channel();
+                
+                void upsertChannel(name payer);
+
+            private:
+
+                name _self;
+                name _owner;            
+                channels _channels;     
+                DAO* _dao = NULL;
+        };
     }
 }

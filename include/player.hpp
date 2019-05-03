@@ -24,22 +24,8 @@ namespace Woffler {
             uint64_t primary_key() const { return account.value; }
         } wflplayer;
         
-        typedef multi_index<"players"_n, wflplayer> players;    
+        typedef multi_index<"players"_n, wflplayer> players;  
         
-        class Player {
-            public:
-
-                Player(name self, name account);
-                
-                void createPlayer(name payer, name referrer);                            
-                
-            private:
-
-                name _self;
-                name _player;            
-                players _players;     
-        };
-
         struct DAO {
             public:
 
@@ -59,6 +45,22 @@ namespace Woffler {
 
                 players& _players;     
                 players::const_iterator _pitr;
+        };
+
+        class Player {
+            public:
+
+                Player(name self, name account);
+                ~Player();
+                
+                void createPlayer(name payer, name referrer);                            
+                
+            private:
+
+                name _self;
+                name _player;            
+                players _players;     
+                DAO* _dao = NULL;
         };
 
     }

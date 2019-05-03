@@ -8,8 +8,15 @@ namespace Woffler {
         Player::Player(name self, name account) : _players(self, self.value) {
             this->_self = self;
             this->_player = account;
-            //this->_pitr = _players.find(account.value);
+            
+            DAO d(_players, _player);
+            this->_dao = &d;
         }        
+        
+        Player::~Player() {
+            delete this->_dao;
+            this->_dao = NULL;
+        }
 
         void Player::createPlayer(name payer, name referrer) {
             auto _referrer = (referrer ? referrer : _self);
@@ -18,22 +25,20 @@ namespace Woffler {
                 "One can not be a sales channel for himself"
             );
 
-            DAO _dao(_players, _player);
-            
             //channel's account must exist at the moment of player signup unless channel isn't the contract itself
             if (_referrer != _player) {
                 check(
-                    _dao.isAccountRegistred(_referrer),
+                    _dao->isAccountRegistred(_referrer),
                     string("Account ") + _referrer.to_string() + string(" is not registred in game conract.")
                 );
             } 
 
             check(
-                _dao.isAccountRegistred(),
+                !_dao->isAccountRegistred(),
                 string("Account ") + _player.to_string() + string(" is already registred.")
             );
 
-            _dao.create(payer, [&](auto& p) {
+            _dao->create(payer, [&](auto& p) {
                 p.account = _player;
                 p.channel = _referrer;
             });

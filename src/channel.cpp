@@ -7,18 +7,25 @@ namespace Woffler {
         Channel::Channel(name self, name owner) : _channels(self, self.value) {
             this->_self = self;
             this->_owner = owner;
-        }        
+            
+            DAO d(_channels, _owner);
+            this->_dao = &d;
+        }
+        
+        Channel::~Channel() {
+            delete this->_dao;
+            this->_dao = NULL;
+        }
         
         void Channel::upsertChannel(name payer) {
-            DAO _dao(_channels, _owner);
             
-            if (_dao.isRegistred()) {
-                _dao.update(payer, [&](auto& c) {
+            if (_dao->isRegistred()) {
+                _dao->update(payer, [&](auto& c) {
                     c.height++;     
                 });
             } 
             else {
-                _dao.create(payer, [&](auto& c) {
+                _dao->create(payer, [&](auto& c) {
                     c.owner = _owner;
                 });
             }
