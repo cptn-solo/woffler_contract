@@ -36,6 +36,8 @@ namespace Woffler {
 
                 template<typename Lambda>
                 void update(name payer, Lambda&& updater);
+
+                void remove();
                 
                 bool isAccountRegistred();
                 bool isAccountRegistred(name account);
@@ -64,6 +66,15 @@ namespace Woffler {
                 void checkLevelUnlockTrialAllowed(uint64_t idlvl);
 
                 void createPlayer(name payer, name referrer);                            
+                void addBalance(asset amount, name payer);
+                void subBalance(asset amount, name payer);
+                void switchRootLevel(uint64_t idlvl);
+                void useTry();
+                void useTry(uint8_t position);
+                void commitTurn(Const::playerstate result);
+                void resetPositionAtLevel(uint64_t idlvl);
+
+                void rmAccount();        
                 
             private:
 

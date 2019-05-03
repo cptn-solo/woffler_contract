@@ -4,7 +4,7 @@
 Input parameters:
 
 * `account` (player name)
-* `channel` (referral name)
+* `referrer` (referrer name)
 
 ### Intent
 INTENT. The intent of the `{{ signup }}` action is to register account as a game player. Account being registred pays for the RAM for the game registration record. This action can only be called once.

@@ -1,7 +1,6 @@
 #include <utils.hpp>
 #include <constants.hpp>
 #include <player.hpp>
-#include <channel.hpp>
 
 namespace Woffler {
     namespace Player {
@@ -19,27 +18,85 @@ namespace Woffler {
         }
 
         void Player::createPlayer(name payer, name referrer) {
-            auto _referrer = (referrer ? referrer : _self);
             check(
-                _player == _self || _referrer != _player, //only contract account can be register by his own
+                _player == _self || referrer != _player, //only contract account can be register by his own
                 "One can not be a sales channel for himself"
             );
 
             //channel's account must exist at the moment of player signup unless channel isn't the contract itself
-            if (_referrer != _player) 
-                checkReferrer(_referrer);
+            if (referrer != _player) 
+                checkReferrer(referrer);
 
             //account can't be registred twice
             checkNoPlayer();
 
             _dao->create(payer, [&](auto& p) {
                 p.account = _player;
-                p.channel = _referrer;
+                p.channel = referrer;
             });
+        }
 
-            Channel::Channel channel = Channel::Channel(_self, _referrer);
-            //contract pays for the sales channels' records RAM:
-            channel.upsertChannel(_self);
+        void Player::addBalance(asset amount, name payer) {    
+            checkPlayer();
+            _dao->update(payer, [&](auto& p) {
+                p.activebalance += amount;     
+            });      
+        }
+
+        void Player::subBalance(asset amount, name payer) {
+            checkBalanceCovers(amount);
+            _dao->update(payer, [&](auto& p) {
+                p.activebalance -= amount;     
+            });     
+        }
+
+        void Player::rmAccount() {
+            checkBalanceZero();
+            _dao->remove();
+        }
+
+        void Player::switchRootLevel(uint64_t idlvl) {
+            //position player in root level of the branch
+            _dao->update(_player, [&](auto& p) {
+                p.idlvl = idlvl;
+                p.triesleft = Const::retriesCount;     
+                p.levelresult = Const::playerstate::SAFE;
+                p.tryposition = 0;
+                p.currentposition = 0;
+            });
+        }
+
+        void Player::useTry() {
+            auto p = _dao->getPlayer();
+            useTry(p.tryposition);  
+        }
+
+        void Player::useTry(uint8_t position) {
+            _dao->update(_player, [&](auto& p) {
+                p.tryposition = position;
+                p.triesleft -= 1;
+            });
+        }
+
+        void Player::commitTurn(Const::playerstate result) {
+            auto player = _dao->getPlayer();
+            _dao->update(_player, [&](auto& p) {
+                p.currentposition = player.tryposition;
+                p.levelresult = result;
+                p.resulttimestamp = Utils::now();
+                p.triesleft = Const::retriesCount;
+            });
+        }
+
+        void Player::resetPositionAtLevel(uint64_t idlvl) {
+            _dao->update(_player, [&](auto& p) {
+                p.idlvl = idlvl;
+                p.tryposition = 0;
+                p.currentposition = 0;
+                p.levelresult = Const::playerstate::SAFE;
+                p.resulttimestamp = 0;
+                p.triesleft = Const::retriesCount;
+            });
         }
 
         void Player::checkReferrer(name referrer) {
@@ -136,6 +193,10 @@ namespace Woffler {
         template<typename Lambda>
         void DAO::update(name payer, Lambda&& updater) {
             _players.modify(_pitr, payer, std::forward<Lambda&&>(updater)); 
+        }
+
+        void DAO::remove() {
+            _players.erase(_pitr);      
         }
 
         /*** 
