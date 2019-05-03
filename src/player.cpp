@@ -1,6 +1,7 @@
 #include <utils.hpp>
 #include <constants.hpp>
 #include <player.hpp>
+#include <channel.hpp>
 
 namespace Woffler {
     namespace Player {
@@ -9,23 +10,39 @@ namespace Woffler {
             this->_player = account;
             //this->_pitr = _players.find(account.value);
         }        
-        
-        void Player::createPlayer(name payer, name channel) {
+
+        void Player::createPlayer(name payer, name referrer) {
+            auto _referrer = (referrer ? referrer : _self);
             check(
-                _player == _self || channel != _player, //only contract account can be register by his own
+                _player == _self || _referrer != _player, //only contract account can be register by his own
                 "One can not be a sales channel for himself"
             );
 
-            auto _channel = (channel ? channel : _self);
-
             DAO _dao(_players, _player);
-            _dao.checkNoPlayer();
+            
+            //channel's account must exist at the moment of player signup unless channel isn't the contract itself
+            if (_referrer != _player) {
+                check(
+                    _dao.isAccountRegistred(_referrer),
+                    string("Account ") + _referrer.to_string() + string(" is not registred in game conract.")
+                );
+            } 
+
+            check(
+                _dao.isAccountRegistred(),
+                string("Account ") + _player.to_string() + string(" is already registred.")
+            );
+
             _dao.create(payer, [&](auto& p) {
                 p.account = _player;
-                p.channel = _channel;
+                p.channel = _referrer;
             });
-        }
 
+            Channel::Channel channel = Channel::Channel(_self, _referrer);
+            //contract pays for the sales channels' records RAM:
+            channel.upsertChannel(_self);
+        }
+                
         DAO::DAO(players& players, name player): _pitr(players.find(player.value)), _players{players} {}
         
         template<typename Lambda>
@@ -44,14 +61,16 @@ namespace Woffler {
           print("player: ", name{p.account});
         */
         const wflplayer& DAO::getPlayer() {
+            check(isAccountRegistred(), "Account not registred.");
             return *_pitr;
         }
             
-        void DAO::checkNoPlayer() {      
-            check(
-                _pitr == _players.end(), 
-                "Account already exists"
-            );
+        bool DAO::isAccountRegistred() {      
+            return _pitr != _players.end();
+        }
+
+        bool DAO::isAccountRegistred(name account) {      
+            return _players.find(account.value) != _players.end();
         }
     }
     

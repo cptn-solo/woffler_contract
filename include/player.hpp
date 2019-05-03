@@ -25,21 +25,19 @@ namespace Woffler {
         } wflplayer;
         
         typedef multi_index<"players"_n, wflplayer> players;    
-
         
         class Player {
             public:
 
                 Player(name self, name account);
-
-                void createPlayer(name payer, name channel);            
-
+                
+                void createPlayer(name payer, name referrer);                            
+                
             private:
 
                 name _self;
                 name _player;            
                 players _players;     
-
         };
 
         struct DAO {
@@ -53,9 +51,9 @@ namespace Woffler {
                 template<typename Lambda>
                 void update(name payer, Lambda&& updater);
                 
+                bool isAccountRegistred();
+                bool isAccountRegistred(name account);
                 const wflplayer& getPlayer();
-                void checkNoPlayer();
-                void create(name payer, name player, name channel);
             
             private:
 
