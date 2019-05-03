@@ -52,7 +52,17 @@ namespace Woffler {
 
                 Player(name self, name account);
                 ~Player();
-                
+
+                void checkReferrer(name referrer);
+                void checkPlayer();
+                void checkNoPlayer();
+                void checkActivePlayer();
+                void checkState(Const::playerstate state);
+                void checkBalanceCovers(asset amount);
+                void checkBalanceZero();
+                void checkSwitchBranchAllowed();
+                void checkLevelUnlockTrialAllowed(uint64_t idlvl);
+
                 void createPlayer(name payer, name referrer);                            
                 
             private:
