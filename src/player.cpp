@@ -4,34 +4,24 @@
 
 namespace Woffler {
     namespace Player {
-        Player::Player(name self, name account) : _players(self, self.value) {
-            this->_self = self;
-            this->_player = account;
-            
-            DAO d(_players, _player.value);
-            this->_dao = &d;
+        Player::Player(name self, name account) : Entity<players, DAO, name>(self, account) {
         }        
         
-        Player::~Player() {
-            delete this->_dao;
-            this->_dao = NULL;
-        }
-
         void Player::createPlayer(name payer, name referrer) {
             check(
-                _player == _self || referrer != _player, //only contract account can be register by his own
+                _entKey == _self || referrer != _entKey, //only contract account can be register by his own
                 "One can not be a sales channel for himself"
             );
 
             //channel's account must exist at the moment of player signup unless channel isn't the contract itself
-            if (referrer != _player) 
+            if (referrer != _entKey) 
                 checkReferrer(referrer);
 
             //account can't be registred twice
             checkNoPlayer();
 
             _dao->create(payer, [&](auto& p) {
-                p.account = _player;
+                p.account = _entKey;
                 p.channel = referrer;
             });
         }
@@ -57,7 +47,7 @@ namespace Woffler {
 
         void Player::switchRootLevel(uint64_t idlvl) {
             //position player in root level of the branch
-            _dao->update(_player, [&](auto& p) {
+            _dao->update(_entKey, [&](auto& p) {
                 p.idlvl = idlvl;
                 p.triesleft = Const::retriesCount;     
                 p.levelresult = Const::playerstate::SAFE;
@@ -72,7 +62,7 @@ namespace Woffler {
         }
 
         void Player::useTry(uint8_t position) {
-            _dao->update(_player, [&](auto& p) {
+            _dao->update(_entKey, [&](auto& p) {
                 p.tryposition = position;
                 p.triesleft -= 1;
             });
@@ -80,7 +70,7 @@ namespace Woffler {
 
         void Player::commitTurn(Const::playerstate result) {
             auto player = _dao->getEnt();
-            _dao->update(_player, [&](auto& p) {
+            _dao->update(_entKey, [&](auto& p) {
                 p.currentposition = player.tryposition;
                 p.levelresult = result;
                 p.resulttimestamp = Utils::now();
@@ -89,7 +79,7 @@ namespace Woffler {
         }
 
         void Player::resetPositionAtLevel(uint64_t idlvl) {
-            _dao->update(_player, [&](auto& p) {
+            _dao->update(_entKey, [&](auto& p) {
                 p.idlvl = idlvl;
                 p.tryposition = 0;
                 p.currentposition = 0;
@@ -109,14 +99,14 @@ namespace Woffler {
         void Player::checkPlayer() {
             check(
                 _dao->isEnt(),
-                string("Account ") + _player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + _self.to_string() + string(" first.")
+                string("Account ") + _entKey.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + _self.to_string() + string(" first.")
             ); 
         }
 
         void Player::checkNoPlayer() {      
             check(
                 !_dao->isEnt(), 
-                string("Account ") + _player.to_string() + string(" is already registred.")
+                string("Account ") + _entKey.to_string() + string(" is already registred.")
             );
         }
 

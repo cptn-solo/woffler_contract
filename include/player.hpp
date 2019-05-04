@@ -1,6 +1,4 @@
-#include <utils.hpp>
-#include <constants.hpp>
-#include <accessor.hpp>
+#include <entity.hpp>
 
 namespace Woffler {
     using namespace eosio;
@@ -29,43 +27,38 @@ namespace Woffler {
         
         struct DAO: Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
             DAO(players& _players, uint64_t _playerV);
+            static uint64_t keyValue(name account) {
+                return account.value;
+            }
             void remove();
             bool isAccountRegistred(name account);
         };
 
-        class Player {
+        class Player: Entity<players, DAO, name> {
             public:
 
-                Player(name self, name account);
-                ~Player();
+            Player(name self, name account);
 
-                void checkReferrer(name referrer);
-                void checkPlayer();
-                void checkNoPlayer();
-                void checkActivePlayer();
-                void checkState(Const::playerstate state);
-                void checkBalanceCovers(asset amount);
-                void checkBalanceZero();
-                void checkSwitchBranchAllowed();
-                void checkLevelUnlockTrialAllowed(uint64_t idlvl);
+            void checkReferrer(name referrer);
+            void checkPlayer();
+            void checkNoPlayer();
+            void checkActivePlayer();
+            void checkState(Const::playerstate state);
+            void checkBalanceCovers(asset amount);
+            void checkBalanceZero();
+            void checkSwitchBranchAllowed();
+            void checkLevelUnlockTrialAllowed(uint64_t idlvl);
 
-                void createPlayer(name payer, name referrer);                            
-                void addBalance(asset amount, name payer);
-                void subBalance(asset amount, name payer);
-                void switchRootLevel(uint64_t idlvl);
-                void useTry();
-                void useTry(uint8_t position);
-                void commitTurn(Const::playerstate result);
-                void resetPositionAtLevel(uint64_t idlvl);
+            void createPlayer(name payer, name referrer);                            
+            void addBalance(asset amount, name payer);
+            void subBalance(asset amount, name payer);
+            void switchRootLevel(uint64_t idlvl);
+            void useTry();
+            void useTry(uint8_t position);
+            void commitTurn(Const::playerstate result);
+            void resetPositionAtLevel(uint64_t idlvl);
 
-                void rmAccount();        
-                
-            private:
-
-                name _self;
-                name _player;            
-                players _players;     
-                DAO* _dao = NULL;
+            void rmAccount();                        
         };
 
     }
