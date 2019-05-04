@@ -8,7 +8,7 @@ namespace Woffler {
             this->_self = self;
             this->_owner = owner;
             
-            DAO d(_channels, _owner);
+            DAO d(_channels, _owner.value);
             this->_dao = &d;
         }
         
@@ -19,7 +19,7 @@ namespace Woffler {
         
         void Channel::upsertChannel(name payer) {
             
-            if (_dao->isRegistred()) {
+            if (_dao->isEnt()) {
                 _dao->update(payer, [&](auto& c) {
                     c.height++;     
                 });
@@ -31,26 +31,8 @@ namespace Woffler {
             }
         }
 
-        DAO::DAO(channels& channels, name owner): _citr(channels.find(owner.value)), _channels{channels} {}
-        
-        template<typename Lambda>
-        void DAO::create(name payer, Lambda&& creator) {
-            _citr = _channels.emplace(payer, std::forward<Lambda&&>(creator)); 
+        DAO::DAO(channels& _channels, uint64_t _ownerV): 
+            Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {
         }
-
-        template<typename Lambda>
-        void DAO::update(name payer, Lambda&& updater) {
-            _channels.modify(_citr, payer, std::forward<Lambda&&>(updater)); 
-        }
-
-        bool DAO::isRegistred() {      
-            return _citr != _channels.end();
-        }
-
-        const wflchannel& DAO::getChannel() {
-            check(isRegistred(), "Channel not registred.");
-            return *_citr;
-        }            
     }
-    
 } // namespace Woffler 

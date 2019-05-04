@@ -1,5 +1,6 @@
 #include <utils.hpp>
 #include <constants.hpp>
+#include <accessor.hpp>
 
 namespace Woffler {
     using namespace eosio;
@@ -18,24 +19,8 @@ namespace Woffler {
         } wflchannel;
         typedef multi_index<"channels"_n, wflchannel> channels; 
         
-        struct DAO {
-            public:
-
-                DAO(channels& channels, name owner);      
-
-                template<typename Lambda>
-                void create(name payer, Lambda&& creator);
-
-                template<typename Lambda>
-                void update(name payer, Lambda&& updater);
-                
-                bool isRegistred();
-                const wflchannel& getChannel();
-            
-            private:
-
-                channels& _channels;     
-                channels::const_iterator _citr;
+        struct DAO: Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
+            DAO(channels& channels, uint64_t ownerV);
         };
 
         class Channel {
