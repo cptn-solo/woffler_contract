@@ -1,6 +1,4 @@
-#include <utils.hpp>
-#include <constants.hpp>
-#include <accessor.hpp>
+#include <entity.hpp>
 
 namespace Woffler {
     using namespace eosio;
@@ -21,22 +19,15 @@ namespace Woffler {
         
         struct DAO: Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
             DAO(channels& _channels, uint64_t _ownerV);
+            static uint64_t keyValue(name owner) {
+                return owner.value;
+            }
         };
 
-        class Channel {
+        class Channel: Entity<channels, DAO, name> {
             public:
-
-                Channel(name self, name owner);
-                ~Channel();
-                
-                void upsertChannel(name payer);
-
-            private:
-
-                name _self;
-                name _owner;            
-                channels _channels;     
-                DAO* _dao = NULL;
+            Channel(name self, name owner);                
+            void upsertChannel(name payer);
         };
     }
 }
