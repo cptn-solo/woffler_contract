@@ -8,7 +8,7 @@ namespace Woffler {
             this->_self = self;
             this->_player = account;
             
-            DAO d(_players, _player);
+            DAO d(_players, _player.value);
             this->_dao = &d;
         }        
         
@@ -67,7 +67,7 @@ namespace Woffler {
         }
 
         void Player::useTry() {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             useTry(p.tryposition);  
         }
 
@@ -79,7 +79,7 @@ namespace Woffler {
         }
 
         void Player::commitTurn(Const::playerstate result) {
-            auto player = _dao->getPlayer();
+            auto player = _dao->getEnt();
             _dao->update(_player, [&](auto& p) {
                 p.currentposition = player.tryposition;
                 p.levelresult = result;
@@ -108,20 +108,20 @@ namespace Woffler {
 
         void Player::checkPlayer() {
             check(
-                _dao->isAccountRegistred(),
+                _dao->isEnt(),
                 string("Account ") + _player.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + _self.to_string() + string(" first.")
             ); 
         }
 
         void Player::checkNoPlayer() {      
             check(
-                !_dao->isAccountRegistred(), 
+                !_dao->isEnt(), 
                 string("Account ") + _player.to_string() + string(" is already registred.")
             );
         }
 
         void Player::checkActivePlayer() {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             check(
                 p.idlvl != 0,
                 "First select branch to play on with action switchbrnch."
@@ -129,7 +129,7 @@ namespace Woffler {
         }
 
         void Player::checkState(Const::playerstate state) {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             checkActivePlayer();    
             check(
                 p.levelresult == state,
@@ -138,7 +138,7 @@ namespace Woffler {
         }
 
         void Player::checkBalanceCovers(asset amount) {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             check(
                 p.activebalance >= amount, 
                 string("Not enough active balance in your account. Current active balance: ") + p.activebalance.to_string().c_str() 
@@ -146,7 +146,7 @@ namespace Woffler {
         }
 
         void Player::checkBalanceZero() {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             check(//warning! works only for records, emplaced in contract's host scope
                 p.activebalance == asset{0, Const::acceptedSymbol},
                 string("Please withdraw funds first. Current active balance: ") + p.activebalance.to_string().c_str()
@@ -154,7 +154,7 @@ namespace Woffler {
         }
 
         void Player::checkSwitchBranchAllowed() {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             check(
                 p.levelresult == Const::playerstate::INIT ||
                 p.levelresult == Const::playerstate::SAFE,
@@ -163,7 +163,7 @@ namespace Woffler {
         }
 
         void Player::checkLevelUnlockTrialAllowed(uint64_t idlvl) {
-            auto p = _dao->getPlayer();
+            auto p = _dao->getEnt();
             check(
                 p.idlvl == idlvl,
                 "Player must be at previous level to unlock next one."
@@ -183,38 +183,16 @@ namespace Woffler {
         
         #pragma region ** DAO implementation **
 
-        DAO::DAO(players& players, name player): _pitr(players.find(player.value)), _players{players} {}
+        DAO::DAO(players& _players, uint64_t _playerV): 
+            Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {
+        }
         
-        template<typename Lambda>
-        void DAO::create(name payer, Lambda&& creator) {
-            _pitr = _players.emplace(payer, std::forward<Lambda&&>(creator)); 
-        }
-
-        template<typename Lambda>
-        void DAO::update(name payer, Lambda&& updater) {
-            _players.modify(_pitr, payer, std::forward<Lambda&&>(updater)); 
-        }
-
         void DAO::remove() {
-            _players.erase(_pitr);      
-        }
-
-        /*** 
-          usage (check for existance before use!!!):
-          auto p = getPlayer();
-          print("player: ", name{p.account});
-        */
-        const wflplayer& DAO::getPlayer() {
-            check(isAccountRegistred(), "Account not registred.");
-            return *_pitr;
-        }
-            
-        bool DAO::isAccountRegistred() {      
-            return _pitr != _players.end();
+            _idx.erase(_itr);      
         }
 
         bool DAO::isAccountRegistred(name account) {      
-            return _players.find(account.value) != _players.end();
+            return _idx.find(account.value) != _idx.end();
         }
 
         #pragma endregion

@@ -1,5 +1,6 @@
 #include <utils.hpp>
 #include <constants.hpp>
+#include <accessor.hpp>
 
 namespace Woffler {
     using namespace eosio;
@@ -26,27 +27,10 @@ namespace Woffler {
         
         typedef multi_index<"players"_n, wflplayer> players;  
         
-        struct DAO {
-            public:
-
-                DAO(players& players, name player);      
-
-                template<typename Lambda>
-                void create(name payer, Lambda&& creator);
-
-                template<typename Lambda>
-                void update(name payer, Lambda&& updater);
-
-                void remove();
-                
-                bool isAccountRegistred();
-                bool isAccountRegistred(name account);
-                const wflplayer& getPlayer();
-            
-            private:
-
-                players& _players;     
-                players::const_iterator _pitr;
+        struct DAO: Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
+            DAO(players& _players, uint64_t _playerV);
+            void remove();
+            bool isAccountRegistred(name account);
         };
 
         class Player {

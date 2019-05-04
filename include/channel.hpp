@@ -20,7 +20,7 @@ namespace Woffler {
         typedef multi_index<"channels"_n, wflchannel> channels; 
         
         struct DAO: Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
-            DAO(channels& channels, uint64_t ownerV);
+            DAO(channels& _channels, uint64_t _ownerV);
         };
 
         class Channel {

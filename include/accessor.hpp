@@ -1,3 +1,4 @@
+#pragma once
 namespace Woffler {
     template <typename Idx, typename Ent, typename Itr, typename V>
     struct Accessor {
@@ -14,7 +15,7 @@ namespace Woffler {
             bool isEnt();
             const Ent& getEnt();
         
-        private:
+        protected:
 
             Idx& _idx;     
             Itr _itr;
