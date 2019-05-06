@@ -5,8 +5,12 @@
 namespace Woffler {
     namespace Player {
         Player::Player(name self, name account) : Entity<players, DAO, name>(self, account) {
-        }        
-        
+        }
+
+        name Player::getChannel() {
+            return _dao->getEnt().channel;
+        }   
+
         void Player::createPlayer(name payer, name referrer) {
             check(
                 _entKey == _self || referrer != _entKey, //only contract account can be register by his own
@@ -24,6 +28,7 @@ namespace Woffler {
                 p.account = _entKey;
                 p.channel = referrer;
             });
+            auto _p = _dao->getEnt();
         }
 
         void Player::addBalance(asset amount, name payer) {    
@@ -36,12 +41,12 @@ namespace Woffler {
         void Player::subBalance(asset amount, name payer) {
             checkBalanceCovers(amount);
             _dao->update(payer, [&](auto& p) {
-                p.activebalance -= amount;     
-            });     
+                p.activebalance -= amount;
+            });
         }
 
         void Player::rmAccount() {
-            checkBalanceZero();
+            checkBalanceZero();            
             _dao->remove();
         }
 
@@ -89,9 +94,13 @@ namespace Woffler {
             });
         }
 
+        bool Player::isPlayer() {
+            return _dao->isEnt();
+        }
+
         void Player::checkReferrer(name referrer) {
             check(
-                _dao->isAccountRegistred(referrer),
+                _dao->isEnt(referrer.value),
                 string("Account ") + referrer.to_string() + string(" is not registred in game conract.")
             );
         }
@@ -177,14 +186,6 @@ namespace Woffler {
             Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {
         }
         
-        void DAO::remove() {
-            _idx.erase(_itr);      
-        }
-
-        bool DAO::isAccountRegistred(name account) {      
-            return _idx.find(account.value) != _idx.end();
-        }
-
         #pragma endregion
     }
     

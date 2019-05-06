@@ -30,15 +30,15 @@ namespace Woffler {
             static uint64_t keyValue(name account) {
                 return account.value;
             }
-            void remove();
-            bool isAccountRegistred(name account);
         };
 
         class Player: Entity<players, DAO, name> {
             public:
-
             Player(name self, name account);
-
+            
+            name getChannel();
+            
+            bool isPlayer();
             void checkReferrer(name referrer);
             void checkPlayer();
             void checkNoPlayer();
