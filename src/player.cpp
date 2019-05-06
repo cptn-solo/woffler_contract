@@ -8,7 +8,7 @@ namespace Woffler {
         }
 
         name Player::getChannel() {
-            return _dao->getEnt().channel;
+            return getEnt<wflplayer>().channel;
         }   
 
         void Player::createPlayer(name payer, name referrer) {
@@ -24,35 +24,35 @@ namespace Woffler {
             //account can't be registred twice
             checkNoPlayer();
 
-            _dao->create(payer, [&](auto& p) {
+            create(payer, [&](auto& p) {
                 p.account = _entKey;
                 p.channel = referrer;
             });
-            auto _p = _dao->getEnt();
+            auto _p = getEnt<wflplayer>();
         }
 
         void Player::addBalance(asset amount, name payer) {    
             checkPlayer();
-            _dao->update(payer, [&](auto& p) {
+            update(payer, [&](auto& p) {
                 p.activebalance += amount;     
             });      
         }
 
         void Player::subBalance(asset amount, name payer) {
             checkBalanceCovers(amount);
-            _dao->update(payer, [&](auto& p) {
+            update(payer, [&](auto& p) {
                 p.activebalance -= amount;
             });
         }
 
         void Player::rmAccount() {
             checkBalanceZero();            
-            _dao->remove();
+            remove();
         }
 
         void Player::switchRootLevel(uint64_t idlvl) {
             //position player in root level of the branch
-            _dao->update(_entKey, [&](auto& p) {
+            update(_entKey, [&](auto& p) {
                 p.idlvl = idlvl;
                 p.triesleft = Const::retriesCount;     
                 p.levelresult = Const::playerstate::SAFE;
@@ -62,20 +62,20 @@ namespace Woffler {
         }
 
         void Player::useTry() {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             useTry(p.tryposition);  
         }
 
         void Player::useTry(uint8_t position) {
-            _dao->update(_entKey, [&](auto& p) {
+            update(_entKey, [&](auto& p) {
                 p.tryposition = position;
                 p.triesleft -= 1;
             });
         }
 
         void Player::commitTurn(Const::playerstate result) {
-            auto player = _dao->getEnt();
-            _dao->update(_entKey, [&](auto& p) {
+            auto player = getEnt<wflplayer>();
+            update(_entKey, [&](auto& p) {
                 p.currentposition = player.tryposition;
                 p.levelresult = result;
                 p.resulttimestamp = Utils::now();
@@ -84,7 +84,7 @@ namespace Woffler {
         }
 
         void Player::resetPositionAtLevel(uint64_t idlvl) {
-            _dao->update(_entKey, [&](auto& p) {
+            update(_entKey, [&](auto& p) {
                 p.idlvl = idlvl;
                 p.tryposition = 0;
                 p.currentposition = 0;
@@ -95,32 +95,32 @@ namespace Woffler {
         }
 
         bool Player::isPlayer() {
-            return _dao->isEnt();
+            return isEnt();
         }
 
         void Player::checkReferrer(name referrer) {
             check(
-                _dao->isEnt(referrer.value),
+                isEnt(referrer),
                 string("Account ") + referrer.to_string() + string(" is not registred in game conract.")
             );
         }
 
         void Player::checkPlayer() {
             check(
-                _dao->isEnt(),
+                isEnt(),
                 string("Account ") + _entKey.to_string() + string(" is not registred in game conract. Please signup or send some funds to ") + _self.to_string() + string(" first.")
             ); 
         }
 
         void Player::checkNoPlayer() {      
             check(
-                !_dao->isEnt(), 
+                !isEnt(), 
                 string("Account ") + _entKey.to_string() + string(" is already registred.")
             );
         }
 
         void Player::checkActivePlayer() {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             check(
                 p.idlvl != 0,
                 "First select branch to play on with action switchbrnch."
@@ -128,7 +128,7 @@ namespace Woffler {
         }
 
         void Player::checkState(Const::playerstate state) {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             checkActivePlayer();    
             check(
                 p.levelresult == state,
@@ -137,7 +137,7 @@ namespace Woffler {
         }
 
         void Player::checkBalanceCovers(asset amount) {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             check(
                 p.activebalance >= amount, 
                 string("Not enough active balance in your account. Current active balance: ") + p.activebalance.to_string().c_str() 
@@ -145,7 +145,7 @@ namespace Woffler {
         }
 
         void Player::checkBalanceZero() {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             check(//warning! works only for records, emplaced in contract's host scope
                 p.activebalance == asset{0, Const::acceptedSymbol},
                 string("Please withdraw funds first. Current active balance: ") + p.activebalance.to_string().c_str()
@@ -153,7 +153,7 @@ namespace Woffler {
         }
 
         void Player::checkSwitchBranchAllowed() {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             check(
                 p.levelresult == Const::playerstate::INIT ||
                 p.levelresult == Const::playerstate::SAFE,
@@ -162,7 +162,7 @@ namespace Woffler {
         }
 
         void Player::checkLevelUnlockTrialAllowed(uint64_t idlvl) {
-            auto p = _dao->getEnt();
+            auto p = getEnt<wflplayer>();
             check(
                 p.idlvl == idlvl,
                 "Player must be at previous level to unlock next one."

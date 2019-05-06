@@ -3,10 +3,13 @@ namespace Woffler {
     template <typename Idx, typename Ent, typename Itr, typename V>
     class Accessor {
         public:
-
             Accessor(Idx& idx, V val);  
             ~Accessor();
-
+            
+            template<typename I, typename A, typename PK>
+            friend class Entity;
+        
+        protected:
             template <typename Lambda>
             void create(name payer, Lambda&& creator);
             
@@ -18,13 +21,11 @@ namespace Woffler {
             bool isEnt();
             bool isEnt(V val);
             const Ent& getEnt();
-        
-        protected:
-            Ent _ent;
 
         private:
             void save(name payer);
             Idx& _idx;     
+            Ent _ent;
             Itr _itr;
     };
 
@@ -48,9 +49,11 @@ namespace Woffler {
     template<typename Idx, typename Ent, typename Itr, typename V>
     template<typename Lambda>
     void Accessor<Idx, Ent, Itr, V>::update(name payer, Lambda&& updater) {
-        //_idx.modify(_ent, payer, std::forward<Lambda&&>(updater)); 
-        updater(_ent);
-        save(payer);
+        _idx.modify(_itr, payer, std::forward<Lambda&&>(updater)); 
+        _ent = *_itr;
+        //alternative way of editing state is:
+        //updater(_ent);
+        //save(payer);
     }
     template<typename Idx, typename Ent, typename Itr, typename V>
     void Accessor<Idx, Ent, Itr, V>::save(name payer) {

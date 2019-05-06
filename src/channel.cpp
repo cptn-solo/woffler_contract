@@ -6,22 +6,22 @@ namespace Woffler {
         }
         
         void Channel::upsertChannel(name payer) {
-            if (_dao->isEnt()) {
-                _dao->update(payer, [&](auto& c) {
+            if (isEnt()) {
+                update(payer, [&](auto& c) {
                     c.height++;     
                 });
             } 
             else {
-                _dao->create(payer, [&](auto& c) {
+                create(payer, [&](auto& c) {
                     c.owner = _entKey;
                 });
             }
         }
 
         void Channel::subChannel(name payer) {
-            const auto& _channel = _dao->getEnt();
+            const auto& _channel = getEnt<wflchannel>();
             if (_channel.height > 0) {
-                _dao->update(payer, [&](auto& c) {
+                update(payer, [&](auto& c) {
                     if (c.height > 0)
                         c.height--;     
                 });
