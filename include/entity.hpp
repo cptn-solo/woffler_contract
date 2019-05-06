@@ -25,9 +25,11 @@ namespace Woffler {
                         
             bool isEnt();
             bool isEnt(PK val);
-            
+
             template <typename Ent>
             const Ent& getEnt();
+
+            PK nextPK();
 
             name _self;
             PK _entKey;            
@@ -82,5 +84,10 @@ namespace Woffler {
     template<typename Ent>
     const Ent& Entity<Idx, A, PK>::getEnt() {
         return _dao->getEnt();
+    }
+
+    template<typename Idx, typename A, typename PK>
+    PK Entity<Idx, A, PK>::nextPK() {
+        return Utils::nextPrimariKey(_dao->_idx.available_primary_key());
     }
 }

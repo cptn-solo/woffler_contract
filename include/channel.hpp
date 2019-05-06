@@ -17,7 +17,7 @@ namespace Woffler {
         } wflchannel;
         typedef multi_index<"channels"_n, wflchannel> channels; 
         
-        struct DAO: Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
+        class DAO: Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
             DAO(channels& _channels, uint64_t _ownerV);
             static uint64_t keyValue(name owner) {
                 return owner.value;
