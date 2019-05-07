@@ -40,3 +40,19 @@ INTENT. The intent of the `{{ withdraw }}` action is to withdraw player's funds 
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+(name owner, uint64_t idmeta, asset pot)
+<h1 class="contract">branch</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (player name whos stake will be registred first in the ledger of created branch)
+* `idmeta` (ID of branch presets to be used as created branch presets)
+* `pot` (amount to be put in the branch stake for the player created a branch)
+
+### Intent
+INTENT. The intent of the `{{ branch }}` action is to create new root branch taking an earlier created presets as a template.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

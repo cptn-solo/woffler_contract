@@ -5,7 +5,7 @@
   "cdt": "",
   "output": "",
   "scripts": {
-    "build": "eosio-cpp -abigen -I ./include -contract woffler -o woffler.wasm src/main.cpp src/player.cpp src/channel.cpp"
+    "build": "eosio-cpp -abigen -I ./include -contract woffler -o woffler.wasm src/main.cpp"
   },
   "deploy": {
     "mainnet": "",

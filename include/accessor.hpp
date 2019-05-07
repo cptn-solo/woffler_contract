@@ -22,9 +22,10 @@ namespace Woffler {
             bool isEnt(V val);
             const Ent& getEnt();
 
+            Idx& _idx;     
+            
         private:
             void save(name payer);
-            Idx& _idx;     
             Ent _ent;
             Itr _itr;
     };

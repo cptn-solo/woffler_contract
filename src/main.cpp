@@ -1,7 +1,8 @@
 #include <utils.hpp>
 #include <constants.hpp>
-#include <player.hpp>
-#include <channel.hpp>
+#include "player.cpp"
+#include "channel.cpp"
+#include "branch.cpp"
 
 namespace Woffler {
     using namespace eosio;
@@ -79,6 +80,15 @@ namespace Woffler {
             transferAction t_action(contract, {self, "active"_n});
             t_action.send(self, to, amount, memo);
         }
-
+        
+        //create root branch after meta is created/selected from existing
+        //register pot value as owner's stake in root branch created
+        ACTION branch(name owner, uint64_t idmeta, asset pot) {
+            require_auth(owner);
+            
+            auto self = get_self();
+            Branch::Branch branch(self, 0);
+            branch.checkBranch();
+        }
     };
 }

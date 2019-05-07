@@ -1,5 +1,3 @@
-#include <utils.hpp>
-#include <constants.hpp>
 #include <player.hpp>
 
 namespace Woffler {
