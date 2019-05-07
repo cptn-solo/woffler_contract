@@ -25,7 +25,8 @@ namespace Woffler {
         
         typedef multi_index<"players"_n, wflplayer> players;  
         
-        struct DAO: Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
+        class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
+            public:
             DAO(players& _players, uint64_t _playerV);
             static uint64_t keyValue(name account) {
                 return account.value;
