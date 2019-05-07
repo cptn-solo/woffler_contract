@@ -174,41 +174,6 @@ namespace woffler {
 
     private:
 
-      //sales channels with user counter and current revenue balance available to merge into channel owner's balance
-      TABLE wflchannel {
-        name owner;
-        uint64_t height = 1;
-        asset balance = asset{0, Const::acceptedSymbol};
-        
-        uint64_t primary_key() const { return owner.value; }
-      };
-      typedef multi_index<"channels"_n, wflchannel> channels; 
-
-      //branch presets and metadata (applied for all subbranches)
-      TABLE wflbrnchmeta {
-        uint64_t id;
-        name owner;
-        uint8_t lvllength;//min lvlgreens+lvlreds
-        uint8_t lvlgreens;//min 1
-        uint8_t lvlreds;//min 1
-        asset unjlmin = asset{0, Const::acceptedSymbol};
-        uint8_t unjlrate;
-        uint64_t unjlintrvl;
-        uint8_t tkrate;
-        uint64_t tkintrvl;
-        uint8_t nxtrate;
-        uint8_t spltrate;
-        asset stkmin = asset{0, Const::acceptedSymbol};
-        uint8_t stkrate;
-        asset potmin = asset{0, Const::acceptedSymbol};
-        uint8_t slsrate;
-        string url;
-        string name;
-
-        uint64_t primary_key() const { return id; }
-      };
-      typedef multi_index<"brnchmeta"_n, wflbrnchmeta> brnchmetas;
-
       //branch stakeholders with accumulated revenue and stake
       TABLE wflstake {
         uint64_t id;
