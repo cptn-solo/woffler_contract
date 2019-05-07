@@ -9,9 +9,9 @@ namespace Woffler {
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
 
     void Branch::createBranch(name payer, uint64_t idmeta) {
-      auto idbranch = nextPK();      
+      _entKey = nextPK();      
       create(payer, [&](auto& b) {
-        b.id = idbranch;
+        b.id = _entKey;
         b.idmeta = idmeta;
       });
     }
