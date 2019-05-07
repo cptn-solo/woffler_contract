@@ -21,9 +21,13 @@ namespace Woffler {
             uint32_t resulttimestamp;
             
             uint64_t primary_key() const { return account.value; }
+            uint64_t get_channel() const { return channel.value; }
+
         } wflplayer;
         
-        typedef multi_index<"players"_n, wflplayer> players;  
+        typedef multi_index<"players"_n, wflplayer,
+            indexed_by<"bychannel"_n, const_mem_fun<wflplayer, uint64_t, &wflplayer::get_channel>>
+        > players;  
         
         class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
             public:
@@ -39,16 +43,17 @@ namespace Woffler {
             
             name getChannel();
             
-            bool isPlayer();
-            void checkReferrer(name referrer);
-            void checkPlayer();
-            void checkNoPlayer();
-            void checkActivePlayer();
-            void checkState(Const::playerstate state);
-            void checkBalanceCovers(asset amount);
-            void checkBalanceZero();
-            void checkSwitchBranchAllowed();
-            void checkLevelUnlockTrialAllowed(uint64_t idlvl);
+            bool isPlayer();//true if player exists in registry
+            void checkReferrer(name referrer);//referrer exists in registry
+            void checkNotReferrer();//player is not a referrer
+            void checkPlayer();//player registred
+            void checkNoPlayer();//player NOT registred
+            void checkActivePlayer();//player is positioned in branch (playing)
+            void checkState(Const::playerstate state);//player is in specified state
+            void checkBalanceCovers(asset amount);//player's active balance is not less then specified
+            void checkBalanceZero();//player's active balance is zero
+            void checkSwitchBranchAllowed();//player can change branch
+            void checkLevelUnlockTrialAllowed(uint64_t idlvl);//player can proceed with specified level unlocking trial
 
             void createPlayer(name payer, name referrer);                            
             void addBalance(asset amount, name payer);

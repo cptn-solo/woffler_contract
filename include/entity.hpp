@@ -30,6 +30,9 @@ namespace Woffler {
             const Ent& getEnt();
 
             PK nextPK();
+            
+            template<name::raw IndexName>
+            auto getIndex();
 
             name _self;
             PK _entKey;            
@@ -89,5 +92,12 @@ namespace Woffler {
     template<typename Idx, typename A, typename PK>
     PK Entity<Idx, A, PK>::nextPK() {
         return Utils::nextPrimariKey(_dao->_idx.available_primary_key());
+    }
+
+    template<typename Idx, typename A, typename PK>
+    template<name::raw IndexName>
+    auto Entity<Idx, A, PK>::getIndex() {
+        auto idx = _idx.template get_index<name(IndexName)>();
+        return idx;
     }
 }

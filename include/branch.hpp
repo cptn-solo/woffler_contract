@@ -18,7 +18,6 @@ namespace Woffler {
 
             uint64_t primary_key() const { return id; }
             uint64_t get_idmeta() const { return idmeta; }
-            //EOSLIB_SERIALIZE(wflbranch, (id)(idrootlvl)(idparent)(idmeta)(winner)(generation))
         } wflbranch;
 
         typedef multi_index<"branches"_n, wflbranch,

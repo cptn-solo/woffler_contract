@@ -2,8 +2,11 @@
 
 namespace Woffler {
   namespace Branch {    
-    Branch::Branch(name self, uint64_t idbranch) : Entity<branches, DAO, uint64_t>(self, idbranch) {
-    }
+    Branch::Branch(name self, uint64_t idbranch) : 
+      Entity<branches, DAO, uint64_t>(self, idbranch) {}
+
+    DAO::DAO(branches& _branches, uint64_t idbranch): 
+        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
 
     void Branch::createBranch(name payer, uint64_t idmeta) {
       auto idbranch = nextPK();      
@@ -54,14 +57,9 @@ namespace Woffler {
     }
     
     bool Branch::isIndexedByMeta(uint64_t idmeta) {
-        auto idxbymeta = _idx.get_index<"bymeta"_n>();
+        auto idxbymeta = getIndex<"bymeta"_n>();
         auto itrbymeta = idxbymeta.find(idmeta);  
         return itrbymeta != idxbymeta.end();
-    }
-    
-    DAO::DAO(branches& _branches, uint64_t idbranch): 
-        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {
-    }
-
+    }    
   }
 }

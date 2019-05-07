@@ -2,8 +2,11 @@
 
 namespace Woffler {
     namespace Channel {
-        Channel::Channel(name self, name owner) : Entity<channels, DAO, name>(self, owner) {
-        }
+        Channel::Channel(name self, name owner) : 
+            Entity<channels, DAO, name>(self, owner) {}
+
+        DAO::DAO(channels& _channels, uint64_t _ownerV): 
+            Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {}
         
         void Channel::upsertChannel(name payer) {
             if (isEnt()) {
@@ -26,10 +29,6 @@ namespace Woffler {
                         c.height--;     
                 });
             }
-        }
-
-        DAO::DAO(channels& _channels, uint64_t _ownerV): 
-            Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {
         }
     }
 } // namespace Woffler 

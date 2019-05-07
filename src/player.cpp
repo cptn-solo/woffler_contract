@@ -2,8 +2,11 @@
 
 namespace Woffler {
     namespace Player {
-        Player::Player(name self, name account) : Entity<players, DAO, name>(self, account) {
-        }
+        Player::Player(name self, name account) : 
+            Entity<players, DAO, name>(self, account) {}
+        
+        DAO::DAO(players& _players, uint64_t _playerV): 
+            Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {}
 
         name Player::getChannel() {
             return getEnt<wflplayer>().channel;
@@ -44,7 +47,8 @@ namespace Woffler {
         }
 
         void Player::rmAccount() {
-            checkBalanceZero();            
+            checkBalanceZero();
+            checkNotReferrer();          
             remove();
         }
 
@@ -101,6 +105,17 @@ namespace Woffler {
                 isEnt(referrer),
                 string("Account ") + referrer.to_string() + string(" is not registred in game conract.")
             );
+        }
+
+        void Player::checkNotReferrer() {
+            auto player = getEnt<wflplayer>();
+            auto idxchannel = getIndex<"bychannel"_n>();
+            auto itrchannel = idxchannel.find(_entKey.value);
+            check(
+                itrchannel == idxchannel.end(),
+                string("Can't remove account ") + _entKey.to_string() + string(" as it is registred as a referrer for other accounts.")
+            );
+            return ;
         }
 
         void Player::checkPlayer() {
@@ -177,14 +192,5 @@ namespace Woffler {
                 "No retries left"
             );
         }        
-        
-        #pragma region ** DAO implementation **
-
-        DAO::DAO(players& _players, uint64_t _playerV): 
-            Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {
-        }
-        
-        #pragma endregion
     }
-    
 } // namespace Woffler 
