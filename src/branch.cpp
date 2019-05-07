@@ -54,9 +54,9 @@ namespace Woffler {
       );
     }  
 
-    void Branch::checkBranchMetaUsage(uint64_t idmeta) {
+    void Branch::checkBranchMetaNotUsed(uint64_t idmeta) {
       check(
-        isIndexedByMeta(idmeta),
+        !isIndexedByMeta(idmeta),
         "Branch metadata is already used in branches."
       );
     }

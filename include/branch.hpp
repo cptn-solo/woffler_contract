@@ -1,3 +1,4 @@
+#pragma once
 #include <entity.hpp>
 
 namespace Woffler {
@@ -41,7 +42,7 @@ namespace Woffler {
       void checkBranch();
       void checkStartBranch();
       void checkEmptyBranch();
-      void checkBranchMetaUsage(uint64_t idmeta);
+      void checkBranchMetaNotUsed(uint64_t idmeta);
 
       void createBranch(name payer, uint64_t idmeta);
       void setRootLevel(name payer, uint64_t idrootlvl);

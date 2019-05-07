@@ -12,6 +12,22 @@ INTENT. The intent of the `{{ signup }}` action is to register account as a game
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
+<h1 class="contract">withdraw</h1>
+
+### Parameters
+Input parameters:
+
+* `from` (player name to withdraw from)
+* `to` (account name to transfer asset to)
+* `amount` (amount to be withdrawn)
+* `memo` (memo for the transfer)
+
+### Intent
+INTENT. The intent of the `{{ withdraw }}` action is to withdraw player's funds from contract's account.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
 <h1 class="contract">forget</h1>
 
 ### Parameters
@@ -25,18 +41,30 @@ INTENT. The intent of the `{{ forget }}` action is to remove player's account re
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">withdraw</h1>
+<h1 class="contract">brnchmeta</h1>
 
 ### Parameters
 Input parameters:
 
-* `from` (player name to withdraw from)
-* `to` (account name to transfer asset to)
-* `amount` (amount to be withdrawn)
-* `memo` (memo for the transfer)
+* `owner` (branch presets owner)
+* `meta` (branch metadata, or presets)
 
 ### Intent
-INTENT. The intent of the `{{ withdraw }}` action is to withdraw player's funds from contract's account.
+INTENT. The intent of the `{{ brnchmeta }}` action is to create new or update existing set of branch presets. Branch presets is used to create new branches of levels and to configure parameters and gameplay of these levels.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">cleanbrmeta</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (branch presets owner)
+* `idmeta` (ID of branch presets to be deleted)
+
+### Intent
+INTENT. The intent of the `{{ cleanbrmeta }}` action is to remove the set of branch presets with specified ID from the contract storage.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

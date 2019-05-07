@@ -36,37 +36,7 @@ namespace woffler {
       //merge channel balance into owner's active balance
       ACTION chnmergebal(name owner);
 
-      #pragma endregion
-      
-      #pragma region ** Branch presets (wflBranchMeta): **
-      
-      //create meta for root branch(es) - active balance must cover at least.
-      //owner pays for ram to avoid spamming via branch meta creation.
-      //only owner can modify branch metadata.
-      ACTION brnchmeta(name owner, 
-        uint64_t id,
-        uint8_t lvllength,//min lvlgreens+lvlreds
-        uint8_t lvlgreens,//min 1
-        uint8_t lvlreds,//min 1
-        asset unjlmin,
-        uint8_t unjlrate,
-        uint64_t unjlintrvl,
-        uint8_t tkrate,
-        uint64_t tkintrvl,
-        uint8_t nxtrate,
-        uint8_t spltrate,
-        asset stkmin,
-        uint8_t stkrate,
-        asset potmin,
-        uint8_t slsrate,
-        string url,
-        string name
-      );
-      
-      //remove branch meta owned
-      ACTION cleanbrmeta(name owner, uint64_t idmeta);
-          
-      #pragma endregion
+      #pragma endregion            
 
       #pragma region ** Branches (wflBranch): **
 

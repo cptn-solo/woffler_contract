@@ -43,7 +43,20 @@ namespace Woffler {
 
     class BranchMeta: Entity<brnchmetas, DAO, uint64_t> {
       public:
-      BranchMeta(name self, uint64_t idmeta);
+      BranchMeta(name self, name owner, uint64_t idmeta);
+      BranchMeta(name self, name owner, wflbrnchmeta meta);
+
+      void checkIsMeta();
+      void checkCells();
+      void checkOwner();
+      void checkNotUsedInBranches();
+
+      void upsertBranchMeta();
+      void removeBranchMeta();
+
+      private:
+      wflbrnchmeta _meta;
+      name _owner;
     };
 
   }
