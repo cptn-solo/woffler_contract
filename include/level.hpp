@@ -34,7 +34,7 @@ namespace Woffler {
       public:
       DAO(levels& _levels, uint64_t idlevel);
       static uint64_t keyValue(uint64_t idlevel) {
-          return idlevel;
+        return idlevel;
       }
     };
 

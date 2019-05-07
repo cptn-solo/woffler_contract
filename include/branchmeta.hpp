@@ -37,7 +37,7 @@ namespace Woffler {
       public:
       DAO(brnchmetas& _brnchmetas, uint64_t idmeta);
       static uint64_t keyValue(uint64_t idmeta) {
-          return idmeta;
+        return idmeta;
       }
     };
 

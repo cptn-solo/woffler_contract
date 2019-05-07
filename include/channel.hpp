@@ -22,7 +22,7 @@ namespace Woffler {
       public:
       DAO(channels& _channels, uint64_t _ownerV);
       static uint64_t keyValue(name owner) {
-          return owner.value;
+        return owner.value;
       }
     };
 

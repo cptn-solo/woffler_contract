@@ -172,50 +172,8 @@ namespace woffler {
 
       #pragma endregion
 
-    private:
+    private:      
 
-      //branch stakeholders with accumulated revenue and stake
-      TABLE wflstake {
-        uint64_t id;
-        uint64_t idbranch;
-        name owner;
-        asset stake = asset{0, Const::acceptedSymbol};
-        asset revenue = asset{0, Const::acceptedSymbol};
-
-        uint64_t primary_key() const { return id; }
-        uint64_t get_idbranch() const { return idbranch; }
-        uint128_t get_ownedbrnch() const { return Utils::combineIds(owner.value, idbranch); }
-      };
-      typedef multi_index<"stakes"_n, wflstake,
-        indexed_by<"bybranch"_n, const_mem_fun<wflstake, uint64_t, &wflstake::get_idbranch>>,
-        indexed_by<"byownedbrnch"_n, const_mem_fun<wflstake, uint128_t, &wflstake::get_ownedbrnch>>
-      > stakes;
-
-      //branch quests
-      TABLE wflquest {
-        uint64_t id;      
-        name owner;
-        asset balance = asset{0, Const::acceptedSymbol};
-        std::vector<uint64_t> hashes;
-        asset minprice = asset{0, Const::acceptedSymbol};
-        asset maxprice = asset{0, Const::acceptedSymbol};
-        string apiurl;
-
-        uint64_t primary_key() const { return id; }
-      };
-      typedef multi_index<"quests"_n, wflquest> quests;
-
-      //branch-to-quest references
-      TABLE wflbrquest {
-        uint64_t id;
-        uint64_t idbranch;
-        uint64_t idquest;
-        name owner;
-        
-        uint64_t primary_key() const { return id; }
-      };
-      typedef multi_index<"brquest"_n, wflbrquest> brquests;    
-      
       void upsertChannel(name owner);
       void checkBranchMetaUsage(uint64_t idmeta);
 

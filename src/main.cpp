@@ -5,6 +5,9 @@
 #include "branch.cpp"
 #include "level.cpp"
 #include "branchmeta.cpp"
+#include "stake.cpp"
+#include "quest.cpp"
+#include "branchquest.cpp"
 
 namespace Woffler {
   using namespace eosio;
