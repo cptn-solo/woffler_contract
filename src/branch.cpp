@@ -8,6 +8,11 @@ namespace Woffler {
     DAO::DAO(branches& _branches, uint64_t idbranch): 
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
 
+    uint64_t Branch::getRootLevel() {
+      auto b = getEnt<wflbranch>();
+      return b.idrootlvl;
+    }
+
     void Branch::createBranch(name payer, uint64_t idmeta) {
       _entKey = nextPK();      
       create(payer, [&](auto& b) {

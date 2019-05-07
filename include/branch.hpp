@@ -35,6 +35,9 @@ namespace Woffler {
     class Branch: Entity<branches, DAO, uint64_t> {
       public:
       Branch(name self, uint64_t idbranch);
+      
+      uint64_t getRootLevel();
+      
       void checkBranch();
       void checkStartBranch();
       void checkEmptyBranch();
@@ -42,7 +45,7 @@ namespace Woffler {
 
       void createBranch(name payer, uint64_t idmeta);
       void setRootLevel(name payer, uint64_t idrootlvl);
-
+      
       bool isIndexedByMeta(uint64_t idmeta);
     };
   }

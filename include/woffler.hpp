@@ -11,29 +11,8 @@ namespace woffler {
       using contract::contract;
       woffler(name receiver, name code, datastream<const char*> ds): 
         contract(receiver, code, ds) {}
-      
-      #pragma region ** Contract: **
-      
-      //signup new player with custom sales channel (via referral link)
-      ACTION signup(name account, name channel);
-      
-      //forget player (without balance check yet, TBD!)
-      ACTION forget(name account);
-
-      //withdraw player's funds to arbitrary account (need auth by player)
-      ACTION withdraw (name from, name to, asset amount, const string& memo);
-
-      [[eosio::on_notify("eosio.token::transfer")]]
-      void transferHandler(name from, name to, asset amount, string memo);
-          
-      using transferAction = action_wrapper<"transfer"_n, &woffler::transferHandler>;
-      
-      #pragma endregion
-
+            
       #pragma region ** Player (wflPlayer): **
-
-      //set current root branch for player and position at 1st level
-      ACTION switchbrnch(name player, uint64_t idbranch);
 
       //use try to change position in current level from safe to green. last try will change position automatically
       ACTION tryturn(name player);

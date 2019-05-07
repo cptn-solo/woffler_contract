@@ -8,26 +8,6 @@ namespace woffler {
 
   #pragma region ** wflPlayer**
 
-  void woffler::switchbrnch(name player, uint64_t idbranch) {
-    require_auth(player);
-
-    auto self = get_self();
-
-    Player _player(self, player);  
-    _player.checkSwitchBranchAllowed();
-  
-    //find branch of the level
-    Branch _branch(self, idbranch);
-    _branch.checkStartBranch();
-  
-    //check if branch is unlocked (its root level is not locked)
-    Level _level(self, _branch.idrootlvl);
-    _level.checkUnlockedLevel();
-  
-    //position player in root level of the branch
-    _player.switchRootLevel(_branch.idrootlvl);
-  }
-
   void woffler::tryturn(name player) {
     require_auth(player);
     

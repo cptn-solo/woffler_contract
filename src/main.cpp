@@ -96,5 +96,28 @@ namespace Woffler {
       Branch::Branch branch(self, 0);
       branch.checkBranch();
     }
+    
+    //set current root branch for player and position at 1st level  
+    ACTION switchbrnch(name account, uint64_t idbranch) {
+      require_auth(account);
+
+      auto self = get_self();
+
+      Player::Player player(self, account);
+      player.checkSwitchBranchAllowed();
+    
+      //find branch of the level
+      Branch::Branch branch(self, idbranch);
+      branch.checkStartBranch();
+
+      uint64_t idrootlvl = branch.getRootLevel();
+    
+      //check if branch is unlocked (its root level is not locked)
+      Level::Level level(self, idrootlvl);
+      level.checkUnlockedLevel();
+    
+      //position player in root level of the branch
+      player.switchRootLevel(idrootlvl);
+    }
   };
 }
