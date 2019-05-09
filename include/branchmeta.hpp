@@ -1,3 +1,4 @@
+#pragma once
 #include <entity.hpp>
 
 namespace Woffler {
@@ -43,20 +44,17 @@ namespace Woffler {
 
     class BranchMeta: Entity<brnchmetas, DAO, uint64_t> {
       public:
-      BranchMeta(name self, name owner, uint64_t idmeta);
-      BranchMeta(name self, name owner, wflbrnchmeta meta);
+      BranchMeta(name self, uint64_t idmeta);
 
+      wflbrnchmeta getMeta();
+      
       void checkIsMeta();
-      void checkCells();
-      void checkOwner();
+      void checkCells(wflbrnchmeta meta);
+      void checkOwner(name owner);
       void checkNotUsedInBranches();
 
-      void upsertBranchMeta();
-      void removeBranchMeta();
-
-      private:
-      wflbrnchmeta _meta;
-      name _owner;
+      void upsertBranchMeta(name owner, wflbrnchmeta meta);
+      void removeBranchMeta(name owner);
     };
 
   }

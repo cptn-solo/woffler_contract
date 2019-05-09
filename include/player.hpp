@@ -1,3 +1,4 @@
+#pragma once
 #include <entity.hpp>
 
 namespace Woffler {
@@ -57,6 +58,7 @@ namespace Woffler {
       void createPlayer(name payer, name referrer);
       void addBalance(asset amount, name payer);
       void subBalance(asset amount, name payer);
+      void switchBranch(uint64_t idbranch);
       void switchRootLevel(uint64_t idlvl);
       void useTry();
       void useTry(uint8_t position);

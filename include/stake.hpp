@@ -1,3 +1,4 @@
+#pragma once
 #include <entity.hpp>
 
 namespace Woffler {
@@ -36,6 +37,8 @@ namespace Woffler {
     class Stake: Entity<stakes, DAO, uint64_t> {
       public:
       Stake(name self, uint64_t idstake);
+      
+      void registerStake(name owner, uint64_t idbranch, asset amount);
     };
 
   }

@@ -36,10 +36,6 @@ namespace Woffler {
         Player::Player player(self, from);
         if (!player.isPlayer()) {
           player.createPlayer(self, self);
-
-          //transfer always register a user under contract's sales channel
-          Channel::Channel channel(self, self);
-          channel.upsertChannel(self);//contract pays RAM for the sales channels' record
         }
         player.addBalance(amount, self);
       }
@@ -55,14 +51,8 @@ namespace Woffler {
     ACTION signup(name account, name referrer) {
       require_auth(account);
 
-      auto self = get_self();
-      auto _referrer = (referrer ? referrer : _self);
-
-      Player::Player player(self, account);
-      player.createPlayer(account, _referrer);//player pays RAM to store his record
-
-      Channel::Channel channel(self, _referrer);
-      channel.upsertChannel(self);//contract pays RAM for the sales channels' record
+      Player::Player player(get_self(), account);
+      player.createPlayer(account, referrer);//player pays RAM to store his record
     }
 
     //withdraw player's funds to arbitrary account (need auth by player)
@@ -83,14 +73,8 @@ namespace Woffler {
     ACTION forget(name account) {
       require_auth(account);
 
-      auto self = get_self();
-
-      Player::Player player(self, account);
-      auto referrer = player.getChannel();
+      Player::Player player(get_self(), account);
       player.rmAccount();
-
-      Channel::Channel channel(self, referrer);
-      channel.subChannel(self);
     }
     
     #pragma endregion
@@ -103,16 +87,16 @@ namespace Woffler {
     ACTION brnchmeta(name owner, BranchMeta::wflbrnchmeta meta) {
         require_auth(owner);
 
-        BranchMeta::BranchMeta branchmeta(get_self(), owner, meta);
-        branchmeta.upsertBranchMeta();
+        BranchMeta::BranchMeta branchmeta(get_self(), meta.id);
+        branchmeta.upsertBranchMeta(owner, meta);
       }
 
     //remove branch meta owned
-    ACTION cleanbrmeta(name owner, uint64_t idmeta) {
+    ACTION rmbrmeta(name owner, uint64_t idmeta) {
       require_auth(owner);
 
-      BranchMeta::BranchMeta branchmeta(get_self(), owner, idmeta);
-      branchmeta.removeBranchMeta();
+      BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
+      branchmeta.removeBranchMeta(owner);
     }
 
     #pragma endregion
@@ -122,33 +106,19 @@ namespace Woffler {
     //register pot value as owner's stake in root branch created
     ACTION branch(name owner, uint64_t idmeta, asset pot) {
       require_auth(owner);
-
+      
       Branch::Branch branch(get_self(), 0);
-      branch.checkBranch();
+      branch.createBranch(owner, idmeta, pot);      
     }
+    
     #pragma endregion
 
     //set current root branch for player and position at 1st level
     ACTION switchbrnch(name account, uint64_t idbranch) {
       require_auth(account);
 
-      auto self = get_self();
-
-      Player::Player player(self, account);
-      player.checkSwitchBranchAllowed();
-
-      //find branch of the level
-      Branch::Branch branch(self, idbranch);
-      branch.checkStartBranch();
-
-      uint64_t idrootlvl = branch.getRootLevel();
-
-      //check if branch is unlocked (its root level is not locked)
-      Level::Level level(self, idrootlvl);
-      level.checkUnlockedLevel();
-
-      //position player in root level of the branch
-      player.switchRootLevel(idrootlvl);
+      Player::Player player(get_self(), account);      
+      player.switchBranch(idbranch);//position player in root level of the branch
     }
   };
 }

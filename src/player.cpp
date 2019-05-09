@@ -1,4 +1,7 @@
 #include <player.hpp>
+#include <channel.hpp>
+#include <branch.hpp>
+#include <level.hpp>
 
 namespace Woffler {
   namespace Player {
@@ -13,13 +16,15 @@ namespace Woffler {
     }
 
     void Player::createPlayer(name payer, name referrer) {
+      auto _referrer = (referrer ? referrer : _self);
+
       check(
-        _entKey == _self || referrer != _entKey, //only contract account can be register by his own
+        _entKey == _self || _referrer != _entKey, //only contract account can be register by his own
         "One can not be a sales channel for himself"
       );
 
       //channel's account must exist at the moment of player signup unless channel isn't the contract itself
-      if (referrer != _entKey)
+      if (_referrer != _entKey)
         checkReferrer(referrer);
 
       //account can't be registred twice
@@ -29,7 +34,9 @@ namespace Woffler {
         p.account = _entKey;
         p.channel = referrer;
       });
-      auto _p = getEnt<wflplayer>();
+      
+      Channel::Channel channel(_self, _referrer);
+      channel.upsertChannel(_self);//contract pays RAM for the sales channels' record
     }
 
     void Player::addBalance(asset amount, name payer) {
@@ -49,7 +56,27 @@ namespace Woffler {
     void Player::rmAccount() {
       checkBalanceZero();
       checkNotReferrer();
+      
+      Channel::Channel channel(_self, getChannel());
+      channel.subChannel(_self);
+
       remove();
+    }
+
+    void Player::switchBranch(uint64_t idbranch) {
+      checkSwitchBranchAllowed();
+
+      //find branch of the level
+      Branch::Branch branch(_self, idbranch);
+      branch.checkStartBranch();
+
+      uint64_t idrootlvl = branch.getRootLevel();
+
+      //check if branch is unlocked (its root level is not locked)
+      Level::Level level(_self, idrootlvl);
+      level.checkUnlockedLevel();
+
+      switchRootLevel(idrootlvl);
     }
 
     void Player::switchRootLevel(uint64_t idlvl) {

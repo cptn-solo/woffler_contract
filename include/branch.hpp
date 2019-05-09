@@ -44,7 +44,7 @@ namespace Woffler {
       void checkEmptyBranch();
       void checkBranchMetaNotUsed(uint64_t idmeta);
 
-      void createBranch(name payer, uint64_t idmeta);
+      void createBranch(name owner, uint64_t idmeta, asset pot);
       void setRootLevel(name payer, uint64_t idrootlvl);
       
       bool isIndexedByMeta(uint64_t idmeta);

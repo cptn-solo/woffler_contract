@@ -3,40 +3,38 @@
 
 namespace Woffler {
   namespace BranchMeta {
-    BranchMeta::BranchMeta(name self, name owner, uint64_t idmeta) :
-      Entity<brnchmetas, DAO, uint64_t>(self, idmeta), _meta{} {
-        this->_owner = owner;
-      }
-
-    BranchMeta::BranchMeta(name self, name owner, wflbrnchmeta meta) :
-      Entity<brnchmetas, DAO, uint64_t>(self, meta.id), _meta{meta} {
-        this->_owner = owner;
+    BranchMeta::BranchMeta(name self, uint64_t idmeta) :
+      Entity<brnchmetas, DAO, uint64_t>(self, idmeta) {
       }
 
     DAO::DAO(brnchmetas& _brnchmetas, uint64_t idmeta):
         Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
 
-    void BranchMeta::upsertBranchMeta() {
-      checkCells();
-      if (_meta.id >= 1) {
-        checkOwner();
+    wflbrnchmeta BranchMeta::getMeta() {
+      return getEnt<wflbrnchmeta>();
+    } 
+    
+    void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {
+      checkCells(meta);
+      if (_entKey >=1) {
+        checkOwner(owner);
         checkNotUsedInBranches();
 
-        update(_owner, [&](auto& m) {
-          m = _meta;
+        update(owner, [&](auto& m) {
+          m = meta;
         });
       }
       else {
         _entKey = nextPK();
-        _meta.id = _entKey;
-        create(_owner, [&](auto& m) {
-          m = _meta;
+        meta.id = _entKey;
+        create(owner, [&](auto& m) {
+          m = meta;
         });
       }
     }
 
-    void BranchMeta::removeBranchMeta() {
-      checkOwner();
+    void BranchMeta::removeBranchMeta(name owner) {
+      checkOwner(owner);
       checkNotUsedInBranches();
 
       remove();
@@ -49,10 +47,10 @@ namespace Woffler {
       );
     }
 
-    void BranchMeta::checkOwner() {
+    void BranchMeta::checkOwner(name owner) {
         auto m = getEnt<wflbrnchmeta>();
         check(
-          _owner == m.owner,
+          owner == m.owner,
           "Branch metadata can be modified only by its owner"
         );
     }
@@ -63,9 +61,9 @@ namespace Woffler {
         branch.checkBranchMetaNotUsed(_entKey);
     }
 
-    void BranchMeta::checkCells() {
+    void BranchMeta::checkCells(wflbrnchmeta meta) {
       check(
-        _meta.lvllength <= Const::maxLvlLength && _meta.lvlreds >= 1  && _meta.lvlgreens >= 1 && _meta.lvllength >= (_meta.lvlreds + _meta.lvlgreens + 1),
+        meta.lvllength <= Const::maxLvlLength && meta.lvlreds >= 1  && meta.lvlgreens >= 1 && meta.lvllength >= (meta.lvlreds + meta.lvlgreens + 1),
         string("Please comply to level rules: lvllength <= ") + std::to_string(Const::maxLvlLength) + string(" AND lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens + 1)")
       );
     }

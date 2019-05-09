@@ -88,62 +88,6 @@ namespace woffler {
 
   #pragma region ** wflBranch**
 
-  void woffler::branch(name owner, uint64_t idmeta, asset pot) {
-    require_auth(owner);
-    print("Creating branch with idmeta: ", std::to_string(idmeta));
-    
-    //create root branch with root level after meta is created/selected from existing
-    auto self = get_self();
-    
-    brnchmetas _metas(self, self.value);    
-    auto _meta = _metas.find(idmeta);
-    check(
-      _meta != _metas.end(),
-      "No branch metadata found for id"
-    );
-
-    auto minPot = (((_meta->stkmin * 100) / _meta->stkrate) * 100) / _meta->spltrate;
-    check(
-      /*
-      pot - value to be placed to the root level upon creation; must be covered by creator's active balance;
-      spltrate - % of level's current pot moved to new branch upon split action from winner;
-      stkrate - % of level's current pot need to be staked by each pretender to be a stakeholder of the branch upon split;
-      stkmin - minimum value accepted as "stake" for the branch;
-
-      pot * spltrate% * stkrate% > stkmin
-      (((pot * spltrate)/100) * stkrate)/100 > stkmin
-      (((pot * spltrate)/100) * stkrate) > stkmin * 100
-      ((pot * spltrate)/100) > (stkmin * 100) / stkrate
-      pot > (((stkmin * 100) / stkrate) * 100) / spltrate
-
-      for stkmin = 10, stkrate = 3, spltrate = 50 we'll get minimum pot value as
-      (((10*100)/3)*100)/50 = 666
-
-      for stkmin = 1, stkrate = 10, spltrate = 50 we'll get minimum pot value as
-      (((1*100)/10)*100)/50 = 20
-      
-      */
-      minPot <= pot,    
-      string("Branch minimum pot is ")+minPot.to_string().c_str()
-    );
-    
-    //cut owner's active balance for pot value (will fail if not enough funds)
-    Player _player(self, owner);
-    _player.subBalance(pot, owner);
-
-    Branch _branch(self, 0);
-    _branch.createBranch(owner, idmeta);
-    
-    //register players's and house stake
-    auto playerStake = (pot * (100 - Const::houseShare)) / 100;
-    registerStake(owner, _branch.idbranch, playerStake);
-
-    auto houseStake = (pot * Const::houseShare) / 100;
-    registerStake(self, _branch.idbranch, houseStake);
-
-    print(" Root branch created, id: ", std::to_string(_branch.idbranch), ", pot: ", asset{pot});
-  }
-
   void woffler::rootlvl(name owner, uint64_t idbranch) {
     require_auth(owner);
     print("Creating root level for branch with id: ", std::to_string(idbranch));
@@ -444,38 +388,7 @@ namespace woffler {
     check(false, "Not implemented");
   }
 
-  void woffler::registerStake(name owner, uint64_t idbranch, 
-    asset amount
-  ) {
-    auto self = get_self();
-    stakes _stakes(self, self.value);
 
-    //find stake and add amount, or emplace if not found
-    auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
-    auto stkidx = _stakes.get_index<name("byownedbrnch")>();
-    const auto& stake = stkidx.find(ownedBranchId);          
-
-    auto currentStake = amount;        
-
-    if (stake == stkidx.end()) {
-      auto idstake = Utils::nextPrimariKey(_stakes.available_primary_key());
-      _stakes.emplace(owner, [&](auto& s) {
-        s.id = idstake;
-        s.idbranch = idbranch;
-        s.owner = owner;
-        s.stake = amount;
-        s.revenue = asset{0, Const::acceptedSymbol};//only for emplace. modify should not change revenue!
-      });
-    } 
-    else {
-      _stakes.modify(*stake, owner, [&](auto& s) {
-        s.stake += amount;     
-      });    
-      currentStake = stake->stake;
-    }
-
-    print(" Branch stake registred, current stake owned: ", asset{currentStake});
-  }
   
   #pragma endregion
 }

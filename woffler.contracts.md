@@ -55,7 +55,7 @@ INTENT. The intent of the `{{ brnchmeta }}` action is to create new or update ex
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">cleanbrmeta</h1>
+<h1 class="contract">rmbrmeta</h1>
 
 ### Parameters
 Input parameters:
@@ -64,7 +64,7 @@ Input parameters:
 * `idmeta` (ID of branch presets to be deleted)
 
 ### Intent
-INTENT. The intent of the `{{ cleanbrmeta }}` action is to remove the set of branch presets with specified ID from the contract storage.
+INTENT. The intent of the `{{ rmbrmeta }}` action is to remove the set of branch presets with specified ID from the contract storage.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

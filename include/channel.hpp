@@ -1,3 +1,4 @@
+#pragma once
 #include <entity.hpp>
 
 namespace Woffler {
