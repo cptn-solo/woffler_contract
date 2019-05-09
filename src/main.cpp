@@ -102,6 +102,7 @@ namespace Woffler {
     #pragma endregion
 
     #pragma region ** wflBranch**
+    
     //create root branch after meta is created/selected from existing
     //register pot value as owner's stake in root branch created
     ACTION branch(name owner, uint64_t idmeta, asset pot) {
@@ -111,6 +112,15 @@ namespace Woffler {
       branch.createBranch(owner, idmeta, pot);      
     }
     
+    //create root level with all branch stake (from all owners)
+    //generate cells for root level
+    ACTION rootlvl(name owner, uint64_t idbranch) {
+      require_auth(owner);
+      
+      Branch::Branch branch(get_self(), idbranch);
+      branch.createRootLevel(owner);
+    }
+
     #pragma endregion
 
     //set current root branch for player and position at 1st level

@@ -31,5 +31,29 @@ namespace Woffler {
         });    
       }
     }
+
+    void Stake::branchStake(name owner, uint64_t idbranch, asset& total, asset& owned) {
+      //calculating branch stake total (all stakeholders)
+      auto stkidx = getIndex<"bybranch"_n>();
+      auto stkitr = stkidx.lower_bound(idbranch);
+      while(stkitr != stkidx.end()) {
+        total += stkitr->stake;
+        if (stkitr->owner == owner) 
+          owned += stkitr->stake;
+
+        stkitr++;
+      }
+    }
+
+    void Stake::checkIsStakeholder(name owner, uint64_t idbranch) {
+      auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
+      auto stkidx = getIndex<"byownedbrnch"_n>();
+      const auto& stake = stkidx.find(ownedBranchId);
+      check(
+        stake != stkidx.end(),
+        "Account doesn't own stake in the branch."
+      );
+
+    }
   }
 }

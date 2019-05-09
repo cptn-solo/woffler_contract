@@ -66,6 +66,38 @@ namespace Woffler {
       stake.registerStake(_self, _entKey, houseStake);
     }
 
+    void Branch::createRootLevel(name owner) {
+      checkEmptyBranch();
+
+      //find stake to use as pot value for root level
+      asset branchStake = asset{0, Const::acceptedSymbol};
+      asset ownerStake = asset{0, Const::acceptedSymbol};
+
+      Stake::Stake stake(_self, 0);
+      stake.branchStake(owner, _entKey, branchStake, ownerStake);
+
+      check(
+        ownerStake > asset{0, Const::acceptedSymbol},
+        "Only root branch stakeholder allowed to create a root level for the branch"
+      );
+      
+      //add pot value from owner's active balance to the root level's pot
+      uint64_t idrootlvl = addLevel(owner, branchStake);      
+      setRootLevel(owner, idrootlvl);
+    }
+    
+    uint64_t Branch::addLevel(name owner, asset pot) {      
+      //getting branch meta to decide on level presets
+      BranchMeta::BranchMeta meta(_self, getEnt<wflbranch>().idmeta);    
+      BranchMeta::wflbrnchmeta _meta = meta.getMeta();
+
+      //emplacing new (root) level
+      Level::Level level(_self, 0);
+      uint64_t idlevel = level.createLevel(owner, pot, _entKey, _meta);
+
+      return idlevel;
+    }
+
     void Branch::setRootLevel(name payer, uint64_t idrootlvl) {
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;

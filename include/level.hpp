@@ -1,6 +1,7 @@
 #pragma once
 #include <entity.hpp>
 #include <cell.hpp>
+#include <branchmeta.hpp>
 
 namespace Woffler {
   using namespace eosio;
@@ -47,7 +48,8 @@ namespace Woffler {
       void checkLockedLevel();
       void checkUnlockedLevel();
       
-      void createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength);
+      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength);
+      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, BranchMeta::wflbrnchmeta meta);
       void generateRedCells(name payer, uint8_t redcnt, uint8_t lvllength);
       void unlockTrial(name payer, uint8_t greencnt, uint8_t lvllength);
       void addPot(name payer, asset potbalance);

@@ -44,10 +44,6 @@ namespace woffler {
       //register pot value as owner's stake in root branch created
       ACTION branch(name owner, uint64_t idmeta, asset pot);
 
-      //create root level with all branch stake (from all owners)
-      //generate cells for root level
-      ACTION rootlvl(name owner, uint64_t idbranch);
-
       //link quest created earlier to the specified branch (see qstsetmeta)
       ACTION addquest(name owner, uint64_t idbranch, uint64_t idquest);
       

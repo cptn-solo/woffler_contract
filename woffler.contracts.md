@@ -84,6 +84,20 @@ INTENT. The intent of the `{{ branch }}` action is to create new root branch tak
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
+<h1 class="contract">rootlvl</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (account creating a root level. Must have stake in the root branch of the created level)
+* `idbranch` (ID of branch where the root level is created)
+
+### Intent
+INTENT. The intent of the `{{ rootlvl }}` action is to create new root level for a given root branch. All stake of the branch is put into the pot of the created level.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
 <h1 class="contract">switchbrnch</h1>
 
 ### Parameters

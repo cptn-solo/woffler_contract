@@ -7,8 +7,12 @@ namespace Woffler {
 
     DAO::DAO(levels& _levels, uint64_t idlevel): 
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, idlevel) {}
-    
-    void Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength) {
+
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, BranchMeta::wflbrnchmeta meta) {
+      return createLevel(payer, potbalance, idbranch, meta.id, meta.lvlreds, meta.lvllength);
+    }
+
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength) {
       _entKey = nextPK();      
       create(payer, [&](auto& l) {
         l.id = _entKey;
@@ -17,6 +21,7 @@ namespace Woffler {
         l.potbalance = potbalance;
       });
       generateRedCells(payer, redcnt, lvllength);
+      return _entKey;
     }
 
     void Level::generateRedCells(name payer, uint8_t redcnt, uint8_t lvllength) {

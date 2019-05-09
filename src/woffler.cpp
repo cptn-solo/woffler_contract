@@ -88,32 +88,6 @@ namespace woffler {
 
   #pragma region ** wflBranch**
 
-  void woffler::rootlvl(name owner, uint64_t idbranch) {
-    require_auth(owner);
-    print("Creating root level for branch with id: ", std::to_string(idbranch));
-    
-    auto self = get_self();
-    
-    Branch _branch(self, idbranch);
-    _branch.checkEmptyBranch();
-
-    //find stake to use as pot value for root level
-    stakes _stakes(self, self.value);
-
-    auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
-    auto stkidx = _stakes.get_index<name("byownedbrnch")>();
-    auto stake = stkidx.find(ownedBranchId);          
-
-    check(
-      stake != stkidx.end(),
-      "Only stakeholder of a branch can create root level for it"
-    );
-    
-    //add pot value from owner's active balance to the root level's pot
-    uint64_t idrootlvl = addLevel(owner, idbranch, _branch.idmeta);
-    _branch.setRootLevel(owner, idrootlvl);
-  }
-
   void woffler::addquest(name owner, uint64_t idbranch, 
     uint64_t idquest
   ) {
@@ -148,38 +122,6 @@ namespace woffler {
   
   #pragma region wflLevel
   
-  uint64_t woffler::addLevel(name owner, uint64_t idbranch, uint64_t idmeta) {
-    auto self = get_self();
-    
-    //find stake to use as pot value for root level
-    stakes _stakes(self, self.value);
-
-    //calculating branch stake total (all stakeholders)
-    auto stkidx = _stakes.get_index<name("bybranch")>();
-    auto stkitr = stkidx.lower_bound(idbranch);
-    auto branchStake = asset{0, Const::acceptedSymbol};
-    while(stkitr != stkidx.end()) {
-      branchStake+=stkitr->stake;
-      stkitr++;
-    }
-
-    //getting branch meta to decide on level presets
-    brnchmetas _metas(self, self.value);    
-    auto _meta = _metas.find(idmeta);
-    check(
-      _meta != _metas.end(),
-      "No branch metadata found for branch"
-    );
-
-    //emplacing new (root) level
-    Level _level(self, 0);
-    _level.createLevel(owner, branchStake, idbranch, idmeta, _meta->lvlreds, _meta->lvllength);
-
-    print("Root level created with id: ", std::to_string(_level.idlevel) , ", pot balance: ", asset{branchStake}, " for branch: ", std::to_string(idbranch));    
-    
-    return _level.idlevel;
-  }
-
   void woffler::unlocklvl(name owner, uint64_t idlevel) {
     require_auth(owner);
     auto self = get_self();
