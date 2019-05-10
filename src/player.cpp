@@ -154,6 +154,24 @@ namespace Woffler {
       });
     }
 
+    void Player::claimGreen() {
+      checkState(Const::playerstate::GREEN);
+
+      auto _player = getEnt<wflplayer>();
+      resetPositionAtLevel(_player.idlvl);
+    }
+
+    void Player::claimRed() {
+      checkState(Const::playerstate::RED);
+
+      auto _player = getEnt<wflplayer>();
+      
+      Level::Level level(_self, _player.idlvl);      
+      auto _level = level.getLevel();
+      uint64_t idlevel = (_level.idparent > 0 ? _level.idparent : _level.id);
+      resetPositionAtLevel(idlevel);
+    }
+
     void Player::resetPositionAtLevel(uint64_t idlvl) {
       update(_entKey, [&](auto& p) {
         p.idlvl = idlvl;

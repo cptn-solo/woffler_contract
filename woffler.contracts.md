@@ -151,3 +151,29 @@ INTENT. The intent of the `{{ committurn }}` action is to commit position change
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">claimgreen</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to claim his current result)
+
+### Intent
+INTENT. The intent of the `{{ claimgreen }}` action is to reset player's GREEN position to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">claimred</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to claim his current result)
+
+### Intent
+INTENT. The intent of the `{{ claimred }}` action is to commit player's position after turn result "red cell" (position player to prev. level's zero cell).
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

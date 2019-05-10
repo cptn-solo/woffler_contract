@@ -8,33 +8,6 @@ namespace woffler {
 
   #pragma region ** wflPlayer**
 
-  void woffler::claimred(name player) {
-    require_auth(player);
-
-    auto self = get_self();
-
-    Player _player(self, player);
-    _player.checkState(Const::playerstate::RED);
-
-    Level _level(self, (*_player.player)->idlvl);
-    _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
-
-    /* Claim logic */  
-    uint64_t idlevel = (_level.idparent > 0 ? _level.idparent : _level.idlevel);
-    _player.resetPositionAtLevel(idlevel);
-  }
-
-  void woffler::claimgreen(name player) {
-    
-    require_auth(player);          
-
-    Player _player(get_self(), player);
-    _player.checkState(Const::playerstate::GREEN);
-    
-    /* Claim logic */  
-    _player.resetPositionAtLevel((*_player.player)->idlvl);
-  }
-
   void woffler::claimtake(name player) {
 
   }

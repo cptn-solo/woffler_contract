@@ -172,9 +172,23 @@ namespace Woffler {
       
       Player::Player player(get_self(), account);
       player.commitTurn();
-
     }
 
+    //reset player's GREEN position to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
+    ACTION claimgreen(name account) {
+      require_auth(account);          
+
+      Player::Player player(get_self(), account);
+      player.claimGreen();
+    }
+
+    //commit player's position after turn result "red cell" (position player to prev. level's zero)
+    ACTION claimred(name account) {
+      require_auth(account);
+
+      Player::Player player(get_self(), account);
+      player.claimRed();
+    }
     
     #pragma endregion
   };

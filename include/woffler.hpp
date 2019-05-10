@@ -14,12 +14,6 @@ namespace woffler {
             
       #pragma region ** Player (wflPlayer): **
     
-      //commit player's position after turn result "red cell" (position player to prev. level's zero)
-      ACTION claimred(name player);
-
-      //reset player's GREEN position to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
-      ACTION claimgreen(name player);
-
       //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
       ACTION claimtake(name player);
 

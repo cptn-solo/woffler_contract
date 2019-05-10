@@ -65,6 +65,9 @@ namespace Woffler {
       void useTry();
       void useTry(uint8_t position);
       void commitTurn(Const::playerstate result);
+
+      void claimGreen();
+      void claimRed();
       void resetPositionAtLevel(uint64_t idlvl);
 
       void rmAccount();
