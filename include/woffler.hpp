@@ -37,13 +37,7 @@ namespace woffler {
       #pragma endregion
 
       #pragma region ** Branch Stakes (wflStake): **
-      
-      //increase volume of root branch starting pot:
-      //cut amount from owner's active balance
-      //register amount as owner's stake in specified branch
-      //if branch already has a root lvl, add amount to its pot 
-      ACTION stkaddval(name owner, uint64_t idbranch, asset amount);
-
+        
       //merge branch stake revenue into owner's active balance
       ACTION stktakervn(name owner, uint64_t idbranch);
 
@@ -73,11 +67,6 @@ namespace woffler {
       //bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
       ACTION splitbet(name player);
 
-      //DEBUG actions for level generation debug 
-      ACTION gencells(name account, uint8_t size, uint8_t maxval);
-      ACTION regencells(name owner, uint64_t idlevel);
-      ACTION rmlevel(name owner, uint64_t idlevel);
-      
       #pragma endregion
 
       #pragma region ** Quests (wflQuest): **

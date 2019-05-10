@@ -38,6 +38,7 @@ namespace Woffler {
       public:
       Stake(name self, uint64_t idstake);
       
+      void addStake(name owner, uint64_t idbranch, asset amount);
       void registerStake(name owner, uint64_t idbranch, asset amount);
       void branchStake(name owner, uint64_t idbranch, asset& total, asset& owned);
 

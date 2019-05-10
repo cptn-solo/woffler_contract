@@ -8,6 +8,37 @@ namespace Woffler {
     DAO::DAO(stakes& _stakes, uint64_t idstake): 
       Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, idstake) {}
     
+    void Stake::addStake(name owner, uint64_t idbranch, asset amount) {
+      Branch::Branch branch(_self, idbranch);
+      branch.checkBranch();
+
+      //cut owner's active balance for pot value (will fail if not enough funds)
+      Player::Player player(_self, owner);
+      player.subBalance(amount, owner);
+      
+      auto _branch = branch.getBranch();
+
+      if (_branch.generation > 1) {
+        //non-root branches don't directly share profit with contract's account (house)
+        registerStake(owner, idbranch, amount);
+      } 
+      else {
+        //register players's and house stake
+        auto houseStake = (amount * Const::houseShare) / 100;
+        auto playerStake = (amount - houseStake);
+
+        registerStake(owner, idbranch, playerStake);
+        registerStake(_self, idbranch, houseStake);
+      }
+
+      //if root level is created already - append staked value to the root level's pot
+      if(_branch.idrootlvl > 0) {
+        Level::Level level(_self, _branch.idrootlvl);
+        level.checkLevel();
+        level.addPot(owner, amount);
+      }      
+    }
+
     void Stake::registerStake(name owner, uint64_t idbranch, asset amount) {
       //find stake and add amount, or emplace if not found
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    

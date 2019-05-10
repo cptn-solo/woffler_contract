@@ -13,7 +13,7 @@ namespace Woffler {
     wfllevel {
       uint64_t id;
       uint64_t idparent = 0;
-      uint64_t idbranch;      
+      uint64_t idbranch;
       uint64_t idchbranch = 0;
       uint64_t idmeta;
       asset potbalance = asset{0, Const::acceptedSymbol};
@@ -45,11 +45,11 @@ namespace Woffler {
       Level(name self, uint64_t idlevel);
 
       wfllevel getLevel();
-      
-      void checkLevel();        
+
+      void checkLevel();
       void checkLockedLevel();
       void checkUnlockedLevel();
-      
+
       uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength);
       uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, BranchMeta::wflbrnchmeta meta);
       void unlockLevel(name owner);
@@ -57,9 +57,11 @@ namespace Woffler {
       void unlockTrial(name payer, uint8_t greencnt, uint8_t lvllength);
       void addPot(name payer, asset potbalance);
 
-      Const::playerstate cellTypeAtPosition(uint8_t position);                
-      
-      template<class T>
+      Const::playerstate cellTypeAtPosition(uint8_t position);
+
+      void regenCells(name owner);//debug mostly
+
+      template<typename T>
       static std::vector<T> generateCells(randomizer& rnd, T size, T maxval) {
         std::vector<T> data(size);
         Cell::generator<T> generator(rnd, maxval, size);
@@ -74,7 +76,7 @@ namespace Woffler {
         auto data = generateCells<uint8_t>(rnd, size, maxval);
         Utils::printVectorInt<uint8_t>(data);
       }
-      
+
       //DEBUG:
       void rmLevel();
     };

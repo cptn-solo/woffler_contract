@@ -46,6 +46,15 @@ namespace Woffler {
     #pragma endregion
 
     #pragma region ** Contract (on-off boarding and deposit/withdraw): **
+
+    void checkAdmin(name account) {
+      require_auth(account);
+      auto self = get_self();
+      check(
+        account == self,
+        string("Debug mode available only to contract owner: ") + self.to_string()
+      );      
+    }
     
     //signup new player with custom sales channel (via referral link)
     ACTION signup(name account, name referrer) {
@@ -79,7 +88,7 @@ namespace Woffler {
     
     #pragma endregion
     
-    #pragma region ** Branch presets (wflBranchMeta): **
+    #pragma region ** wflBranchMeta **
 
     //create meta for root branch(es) - active balance must cover at least.
     //owner pays for ram to avoid spamming via branch meta creation.
@@ -123,14 +132,9 @@ namespace Woffler {
 
     //DEBUG actions for branch generation debug 
     ACTION setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl) {
-      require_auth(owner);
-      auto self = get_self();
-      check(
-        owner == self,
-        string("Debug mode available only to contract owner: ") + self.to_string()
-      );
+      checkAdmin(owner);
 
-      Branch::Branch branch(self, idbranch);
+      Branch::Branch branch(get_self(), idbranch);
       branch.setRootLevel(owner, idrootlvl);
     }
 
@@ -144,6 +148,29 @@ namespace Woffler {
 
       Level::Level level(get_self(), idlevel);
       level.unlockLevel(owner);
+    }
+
+    //DEBUG: testing cells generation for a given level and meta
+    ACTION regencells(name owner, uint64_t idlevel) {
+      checkAdmin(owner);
+
+      Level::Level level(get_self(), idlevel);
+      level.regenCells(owner);
+    }
+
+    //DEBUG: testing cell randomizer
+    ACTION gencells(name account, uint8_t size, uint8_t maxval) {
+      checkAdmin(account);
+
+      Level::Level::debugGenerateCells(account, 1, size, maxval);
+    }
+
+    //DEBUG: testing level delete
+    ACTION rmlevel(name account, uint64_t idlevel) {
+      checkAdmin(account);
+
+      Level::Level level(get_self(), idlevel);
+      level.rmLevel();
     }
     
     #pragma endregion
@@ -191,5 +218,17 @@ namespace Woffler {
     }
     
     #pragma endregion
+    
+    #pragma region ** wflStake **
+
+    ACTION stkaddval(name owner, uint64_t idbranch, asset amount) {
+      require_auth(owner);
+      
+      Stake::Stake stake(get_self(), 0);
+      stake.addStake(owner, idbranch, amount);
+    }
+    
+    #pragma endregion
+
   };
 }

@@ -95,6 +95,18 @@ namespace Woffler {
       return levelresult;
     }
 
+    void Level::regenCells(name owner) {
+      checkLevel();
+
+      auto _level = getEnt<wfllevel>();
+      //getting branch meta to decide on level presets
+      BranchMeta::BranchMeta meta(_self, _level.idmeta);    
+      auto _meta = meta.getMeta();
+
+      generateRedCells(owner, _meta.lvlreds, _meta.lvllength);
+      unlockTrial(owner, _meta.lvlgreens, _meta.lvllength);
+    }
+
     void Level::rmLevel() {
       checkLevel();
       remove();

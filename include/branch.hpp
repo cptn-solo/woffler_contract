@@ -37,6 +37,7 @@ namespace Woffler {
       public:
       Branch(name self, uint64_t idbranch);
       
+      wflbranch getBranch();
       uint64_t getRootLevel();
       
       void checkBranch();

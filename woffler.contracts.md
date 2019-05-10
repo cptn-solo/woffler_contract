@@ -177,3 +177,22 @@ INTENT. The intent of the `{{ claimred }}` action is to commit player's position
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">stkaddval</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (account of the player going to stake on the branch)
+* `idbranch` (ID of the branch to stake on)
+* `amount` (amount to be moved from owner's active balance to branch stake)
+
+### Intent
+INTENT. The intent of the `{{ stkaddval }}` action is to ncrease volume of root branch starting pot and to add owner's funds to the branch stake:
+
+* cut amount from owner's active balance;
+* register amount as owner's stake in specified branch;
+* if branch already has a root lvl, add amount to its pot.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

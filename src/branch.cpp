@@ -11,6 +11,10 @@ namespace Woffler {
     DAO::DAO(branches& _branches, uint64_t idbranch): 
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
 
+    wflbranch Branch::getBranch() {
+      return getEnt<wflbranch>();
+    }
+    
     uint64_t Branch::getRootLevel() {
       auto b = getEnt<wflbranch>();
       return b.idrootlvl;
