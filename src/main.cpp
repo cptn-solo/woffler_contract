@@ -226,6 +226,17 @@ namespace Woffler {
       
       Stake::Stake stake(get_self(), 0);
       stake.addStake(owner, idbranch, amount);
+    }  
+
+    #pragma endregion
+
+    #pragma region ** wflChannel **
+    
+    ACTION chnmergebal(name owner) {
+      require_auth(owner);
+      
+      Channel::Channel channel(get_self(), owner);
+      channel.mergeBalance();
     }
     
     #pragma endregion

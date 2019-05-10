@@ -21,9 +21,6 @@ namespace woffler {
 
       #pragma region ** Sales channels (wflChannel): **
 
-      //merge channel balance into owner's active balance
-      ACTION chnmergebal(name owner);
-
       #pragma endregion            
 
       #pragma region ** Branches (wflBranch): **

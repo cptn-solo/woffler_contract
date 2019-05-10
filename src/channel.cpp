@@ -1,4 +1,5 @@
 #include <channel.hpp>
+#include <player.hpp>
 
 namespace Woffler {
   namespace Channel {
@@ -29,6 +30,18 @@ namespace Woffler {
             c.height--;     
         });
       }
+    }
+
+    void Channel::mergeBalance() {
+      auto achannel = getEnt<wflchannel>();      
+      auto amount = achannel.balance;
+
+      update(_entKey, [&](auto& c) {
+        c.balance = asset{0, Const::acceptedSymbol};     
+      });
+
+      Player::Player player(_self, _entKey);
+      player.addBalance(amount, _entKey);      
     }
   }
 } // namespace Woffler 

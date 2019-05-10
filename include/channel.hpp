@@ -32,6 +32,7 @@ namespace Woffler {
       Channel(name self, name owner);
       void upsertChannel(name payer);
       void subChannel(name payer);
+      void mergeBalance();
     };
   }
 }

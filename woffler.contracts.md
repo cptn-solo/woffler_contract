@@ -196,3 +196,16 @@ INTENT. The intent of the `{{ stkaddval }}` action is to ncrease volume of root 
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">chnmergebal</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (account of the sales channel's owner)
+
+### Intent
+INTENT. The intent of the `{{ chnmergebal }}` action is to merge sales channel balance (net income from referrals) into channel owner's active balance.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

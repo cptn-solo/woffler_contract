@@ -60,30 +60,6 @@ namespace woffler {
   #pragma region wflChannel
   
   //*** Sales channel scope methods (wflChannel) ***//
-
-  void woffler::chnmergebal(name owner) {
-    auto self = get_self();
-    require_auth(owner);
-    
-    channels _channels(self, self.value);
-    auto achannel = _channels.find(owner.value);
-
-    check(
-      achannel != _channels.end(),
-      "No channel found"
-    );
-    
-    auto amount = achannel->balance;
-
-    _channels.modify(achannel, owner, [&](auto& c) {
-      c.balance = asset{0, Const::acceptedSymbol};     
-    });
-
-    Player _player(self, owner);
-    _player.addBalance(amount, owner);
-    
-    print("Channel balance merged: ", asset{amount});
-  }
   
   #pragma endregion
 
