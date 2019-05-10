@@ -121,8 +121,33 @@ namespace Woffler {
       branch.createRootLevel(owner);
     }
 
+    //DEBUG actions for branch generation debug 
+    ACTION setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl) {
+      require_auth(owner);
+      auto self = get_self();
+      check(
+        owner == self,
+        string("Debug mode available only to contract owner: ") + self.to_string()
+      );
+
+      Branch::Branch branch(self, idbranch);
+      branch.setRootLevel(owner, idrootlvl);
+    }
+
     #pragma endregion
 
+    #pragma region ** wflLevel **
+
+    //generate cells for a given level and mark level unlocked if compatible green/red set found
+    ACTION unlocklvl(name owner, uint64_t idlevel) {
+      require_auth(owner);
+
+      Level::Level level(get_self(), idlevel);
+      level.unlockLevel(owner);
+    }
+    
+    #pragma endregion
+    
     //set current root branch for player and position at 1st level
     ACTION switchbrnch(name account, uint64_t idbranch) {
       require_auth(account);

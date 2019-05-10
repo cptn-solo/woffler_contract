@@ -99,6 +99,7 @@ namespace Woffler {
     }
 
     void Branch::setRootLevel(name payer, uint64_t idrootlvl) {
+      checkBranch();
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
       });    

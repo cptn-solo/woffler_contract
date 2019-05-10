@@ -98,6 +98,20 @@ INTENT. The intent of the `{{ rootlvl }}` action is to create new root level for
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
+<h1 class="contract">unlocklvl</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (account to unlock the level with - a pretender)
+* `idlevel` (ID of the level to be unlocked)
+
+### Intent
+INTENT. The intent of the `{{ unlocklvl }}` action is to generate cells for a given level and mark level unlocked if compatible green/red set was found by the pretender. If a level being unlocked is the Root level of the Root branch, pretender must own stake in the branch. If a level is general one, pretender must stand in the previous level and be Green.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
 <h1 class="contract">switchbrnch</h1>
 
 ### Parameters

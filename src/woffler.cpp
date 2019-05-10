@@ -104,68 +104,9 @@ namespace woffler {
 
   }
 
-  //DEBUG: update idrootlvl
-  void woffler::setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl) {
-    require_auth(owner);
-    auto self = get_self();
-    check(
-      owner == self,
-      string("Debug mode available only to contract owner: ") + self.to_string()
-    );
-
-    Branch _branch(self, idbranch);
-    _branch.checkBranch();
-
-    _branch.setRootLevel(owner, idrootlvl);
-  }
   #pragma endregion   
   
   #pragma region wflLevel
-  
-  void woffler::unlocklvl(name owner, uint64_t idlevel) {
-    require_auth(owner);
-    auto self = get_self();
-    
-    //find level to unlock
-    Level _level(self, idlevel);
-    _level.checkLockedLevel();
-
-    //find player
-    Player _player(self, owner);
-    _player.checkPlayer();
-
-    /* Restrictions check */
-    if (_level.root) {//root level can be unlocked only by stakeholder, unlimited retries count
-      //find stake to use as pot value for root level
-      stakes _stakes(self, self.value);
-
-      auto ownedBranchId = Utils::combineIds(owner.value, _level.idbranch);    
-      auto stkidx = _stakes.get_index<name("byownedbrnch")>();
-      const auto& stake = stkidx.find(ownedBranchId);          
-
-      check(
-        stake != stkidx.end(),
-        "Only stakeholder of a branch can unlock root level for it"
-      );
-    }
-    else {//"next" level can be unlocked only from GREEN position, retries count limited
-      _player.checkLevelUnlockTrialAllowed(_level.idparent);
-      _player.useTry();
-    }
-
-    /* Generate cells */  
-
-    //getting branch meta to decide on level presets
-    brnchmetas _metas(self, self.value);    
-    auto _meta = _metas.find(_level.idmeta);
-    
-    _level.unlockTrial(owner, _meta->lvlgreens, _meta->lvllength);
-
-    if (!_level.root && !_level.locked) {
-      //process NEXT workflow: position player to the unlocked level
-      _player.resetPositionAtLevel(_level.idlevel);
-    }
-  }
 
   void woffler::nextlvl(name player) {
     require_auth(player);

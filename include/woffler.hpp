@@ -40,19 +40,12 @@ namespace woffler {
 
       #pragma region ** Branches (wflBranch): **
 
-      //create root branch after meta is created/selected from existing
-      //register pot value as owner's stake in root branch created
-      ACTION branch(name owner, uint64_t idmeta, asset pot);
-
       //link quest created earlier to the specified branch (see qstsetmeta)
       ACTION addquest(name owner, uint64_t idbranch, uint64_t idquest);
       
       //unlink quest from the specified branch
       ACTION rmquest(name owner, uint64_t idbranch, uint64_t idquest);
       
-      //DEBUG actions for branch generation debug 
-      ACTION setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl);
-
       #pragma endregion
 
       #pragma region ** Branch Stakes (wflStake): **
@@ -69,9 +62,6 @@ namespace woffler {
       #pragma endregion
 
       #pragma region ** Levels (wflLevel): **
-      
-      //generate cells for a given level and mark level unlocked if compatible green/red set found
-      ACTION unlocklvl(name owner, uint64_t idlevel);
       
       //position player to the next level
       //if not yet exists - initialize new locked level in current branch 
