@@ -60,6 +60,8 @@ namespace Woffler {
       void subBalance(asset amount, name payer);
       void switchBranch(uint64_t idbranch);
       void switchRootLevel(uint64_t idlvl);
+      void tryTurn();
+      void commitTurn();
       void useTry();
       void useTry(uint8_t position);
       void commitTurn(Const::playerstate result);

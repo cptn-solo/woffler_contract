@@ -147,7 +147,9 @@ namespace Woffler {
     }
     
     #pragma endregion
-    
+
+    #pragma region ** wflPlayer **
+        
     //set current root branch for player and position at 1st level
     ACTION switchbrnch(name account, uint64_t idbranch) {
       require_auth(account);
@@ -155,5 +157,25 @@ namespace Woffler {
       Player::Player player(get_self(), account);      
       player.switchBranch(idbranch);//position player in root level of the branch
     }
+        
+    //use try to change position in current level from safe to green. last try will change position automatically
+    ACTION tryturn(name account) {
+      require_auth(account);
+
+      Player::Player player(get_self(), account);
+      player.tryTurn();
+    }
+    
+    //commit position change in current level
+    ACTION committurn(name account) {
+      require_auth(account);
+      
+      Player::Player player(get_self(), account);
+      player.commitTurn();
+
+    }
+
+    
+    #pragma endregion
   };
 }

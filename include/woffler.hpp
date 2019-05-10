@@ -13,13 +13,7 @@ namespace woffler {
         contract(receiver, code, ds) {}
             
       #pragma region ** Player (wflPlayer): **
-
-      //use try to change position in current level from safe to green. last try will change position automatically
-      ACTION tryturn(name player);
-      
-      //commit position change in current level
-      ACTION committurn(name player);
-
+    
       //commit player's position after turn result "red cell" (position player to prev. level's zero)
       ACTION claimred(name player);
 

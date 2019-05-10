@@ -125,3 +125,29 @@ INTENT. The intent of the `{{ switchbrnch }}` action is to select root branch to
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">tryturn</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to use his try)
+
+### Intent
+INTENT. The intent of the `{{ tryturn }}` action is to use try to change position in current level from safe to green. last try will change position automatically.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">committurn</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to commit his current result)
+
+### Intent
+INTENT. The intent of the `{{ committurn }}` action is to commit position change in current level.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

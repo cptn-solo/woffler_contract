@@ -1,6 +1,7 @@
 #include <player.hpp>
 #include <channel.hpp>
 #include <branch.hpp>
+#include <branchmeta.hpp>
 #include <level.hpp>
 
 namespace Woffler {
@@ -88,6 +89,47 @@ namespace Woffler {
         p.tryposition = 0;
         p.currentposition = 0;
       });
+    }
+
+    void Player::tryTurn() {
+      checkState(Const::playerstate::SAFE);
+      
+      auto _player = getEnt<wflplayer>();
+      
+      /* Turn logic */
+      //find player's current level 
+      Level::Level level(_self, _player.idlvl);
+      level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
+      auto _level = level.getLevel();
+
+      //getting branch meta to decide on level presets
+      BranchMeta::BranchMeta meta(_self, _level.idmeta);    
+      auto _meta = meta.getMeta();
+
+      if (_player.triesleft >= 1) {
+        //get current position and produce tryposition by generating random offset
+        auto rnd = randomizer::getInstance(_entKey, _player.idlvl);
+        auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta.lvllength;
+        useTry(tryposition);    
+      }
+
+      if (_player.triesleft == 0) {
+        auto levelresult = level.cellTypeAtPosition(_player.tryposition);
+        commitTurn(levelresult);
+      }
+    }
+
+    void Player::commitTurn() {
+      checkState(Const::playerstate::SAFE);
+
+      auto _player = getEnt<wflplayer>();
+
+      Level::Level level(_self, _player.idlvl);
+      level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
+      auto _level = level.getLevel();
+
+      auto levelresult = level.cellTypeAtPosition(_player.tryposition);
+      commitTurn(levelresult);
     }
 
     void Player::useTry() {

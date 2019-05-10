@@ -26,6 +26,9 @@ namespace Woffler {
       generateRedCells(payer, redcnt, lvllength);
       return _entKey;
     }
+    wfllevel Level::getLevel() {
+      return getEnt<wfllevel>();
+    } 
 
     void Level::unlockLevel(name owner) {
       checkLockedLevel();

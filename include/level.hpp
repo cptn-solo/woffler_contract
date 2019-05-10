@@ -44,6 +44,8 @@ namespace Woffler {
       public:
       Level(name self, uint64_t idlevel);
 
+      wfllevel getLevel();
+      
       void checkLevel();        
       void checkLockedLevel();
       void checkUnlockedLevel();

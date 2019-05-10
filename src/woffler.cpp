@@ -8,51 +8,6 @@ namespace woffler {
 
   #pragma region ** wflPlayer**
 
-  void woffler::tryturn(name player) {
-    require_auth(player);
-    
-    auto self = get_self();
-
-    Player _player(self, player);
-    _player.checkState(Const::playerstate::SAFE);
-    
-    /* Turn logic */
-    //find player's current level 
-    Level _level(self, (*_player.player)->idlvl);
-    _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
-
-    //getting branch meta to decide on level presets
-    brnchmetas _metas(self, self.value);    
-    auto _meta = _metas.find(_level.idmeta);
-
-    if ((*_player.player)->triesleft >= 1) {
-      //get current position and produce tryposition by generating random offset
-      auto rnd = randomizer::getInstance(player, (*_player.player)->idlvl);
-      auto tryposition = ((*_player.player)->currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta->lvllength;
-      _player.useTry(tryposition);    
-    }
-
-    if ((*_player.player)->triesleft == 0) {
-      Const::playerstate levelresult = _level.cellTypeAtPosition((*_player.player)->tryposition);
-      _player.commitTurn(levelresult);
-    }
-  }
-
-  void woffler::committurn(name player) {
-    require_auth(player);
-    
-    auto self = get_self();
-
-    Player _player(self, player);
-    _player.checkState(Const::playerstate::SAFE);
-
-    Level _level(self, (*_player.player)->idlvl);
-    _level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
-
-    auto levelresult = _level.cellTypeAtPosition((*_player.player)->tryposition);
-    _player.commitTurn(levelresult);
-  }
-
   void woffler::claimred(name player) {
     require_auth(player);
 
