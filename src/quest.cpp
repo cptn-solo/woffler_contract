@@ -7,5 +7,8 @@ namespace Woffler {
 
     DAO::DAO(quests& _quests, uint64_t idquest): 
         Accessor<quests, wflquest, quests::const_iterator, uint64_t>::Accessor(_quests, idquest) {}
+
+    DAO::DAO(quests& _quests, quests::const_iterator itr): 
+        Accessor<quests, wflquest, quests::const_iterator, uint64_t>::Accessor(_quests, itr) {}
   }
 }

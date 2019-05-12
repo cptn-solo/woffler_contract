@@ -11,6 +11,9 @@ namespace Woffler {
     DAO::DAO(branches& _branches, uint64_t idbranch): 
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
 
+    DAO::DAO(branches& _branches, branches::const_iterator itr): 
+        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, itr) {}
+
     wflbranch Branch::getBranch() {
       return getEnt<wflbranch>();
     }
@@ -96,7 +99,7 @@ namespace Woffler {
       BranchMeta::wflbrnchmeta _meta = meta.getMeta();
 
       //emplacing new (root) level
-      Level::Level level(_self, 0);
+      Level::Level level(_self);
       uint64_t idlevel = level.createLevel(owner, pot, _entKey, _meta);
 
       return idlevel;
@@ -106,6 +109,12 @@ namespace Woffler {
       checkBranch();
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
+      });    
+    }
+
+    void Branch::setWinner(name player) {
+      update(player, [&](auto& b) {
+        b.winner = player;
       });    
     }
 

@@ -10,6 +10,9 @@ namespace Woffler {
     DAO::DAO(brnchmetas& _brnchmetas, uint64_t idmeta):
         Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
 
+    DAO::DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr):
+        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, itr) {}
+
     wflbrnchmeta BranchMeta::getMeta() {
       return getEnt<wflbrnchmeta>();
     } 

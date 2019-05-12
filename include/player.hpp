@@ -32,6 +32,7 @@ namespace Woffler {
     class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
       public:
       DAO(players& _players, uint64_t _playerV);
+      DAO(players& _players, players::const_iterator itr);
       static uint64_t keyValue(name account) {
         return account.value;
       }
@@ -41,6 +42,7 @@ namespace Woffler {
       public:
       Player(name self, name account);
 
+      wflplayer getPlayer();
       name getChannel();
 
       bool isPlayer();//true if player exists in registry

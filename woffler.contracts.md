@@ -209,3 +209,20 @@ INTENT. The intent of the `{{ chnmergebal }}` action is to merge sales channel b
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">nextlvl</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to extend current branch with new level)
+
+### Intent
+INTENT. The intent of the `{{ nextlvl }}` action is to position player to the next level. If nex level does not yet exists - new level will be initialised in current branch:
+
+* split pot according to level's branch metadata(`nxtrate`);
+* make the player a branch winner;
+* as new level is locked when created, the winner has 3 tries to unlock it, if no luck - positioned to current level's zero cell.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

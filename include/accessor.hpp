@@ -4,14 +4,14 @@ namespace Woffler {
   class Accessor {
     public:
     Accessor(Idx& idx, V val);
+    Accessor(Idx& idx, Itr itr);
     ~Accessor();
 
     template<typename I, typename A, typename PK>
     friend class Entity;
 
     protected:
-    template <typename Lambda>
-    void create(name payer, Lambda&& creator);
+    void fetchByKey(V entKey);
 
     template <typename Lambda>
     void update(name payer, Lambda&& updater);
@@ -21,7 +21,7 @@ namespace Woffler {
     bool isEnt();
     bool isEnt(V val);
     const Ent& getEnt();
-
+    
     Idx& _idx;
 
     private:
@@ -31,7 +31,11 @@ namespace Woffler {
   };
 
   template<typename Idx, typename Ent, typename Itr, typename V>
-  Accessor<Idx, Ent, Itr, V>::Accessor(Idx& idx, V val): _itr(idx.find(val)), _idx{idx} {
+  Accessor<Idx, Ent, Itr, V>::Accessor(Idx& idx, V val): Accessor(idx, idx.find(val)) {
+  }
+
+  template<typename Idx, typename Ent, typename Itr, typename V>
+  Accessor<Idx, Ent, Itr, V>::Accessor(Idx& idx, Itr itr): _itr(itr), _idx{idx} {
     if (isEnt())
       _ent = *_itr;
   }
@@ -40,11 +44,10 @@ namespace Woffler {
   Accessor<Idx, Ent, Itr, V>::~Accessor() {
     print("Accessor destroyed \n");
   }
-
+  
   template<typename Idx, typename Ent, typename Itr, typename V>
-  template<typename Lambda>
-  void Accessor<Idx, Ent, Itr, V>::create(name payer, Lambda&& creator) {
-    _itr = _idx.emplace(payer, std::forward<Lambda&&>(creator));
+  void Accessor<Idx, Ent, Itr, V>::fetchByKey(V entKey) {
+    _itr = _idx.find(entKey);
     _ent = *_itr;
   }
 
@@ -81,7 +84,6 @@ namespace Woffler {
 
   template<typename Idx, typename Ent, typename Itr, typename V>
   const Ent& Accessor<Idx, Ent, Itr, V>::getEnt() {
-    check(isEnt(), "Object not found.");
     return *_itr;
   }
 }

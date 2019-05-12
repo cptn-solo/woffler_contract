@@ -150,6 +150,18 @@ namespace Woffler {
       level.unlockLevel(owner);
     }
 
+    //position player to the next level
+    //if not yet exists - initialize new locked level in current branch 
+    //split pot according to level's branch metadata(`nxtrate`), 
+    //make the player a branch winner
+    //as new level is locked, winner have 3 tries to unlock it, if no luck - zero-ed in current level
+    ACTION nextlvl(name account) {
+      require_auth(account);
+
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.nextLevel();
+    }
+
     //DEBUG: testing cells generation for a given level and meta
     ACTION regencells(name owner, uint64_t idlevel) {
       checkAdmin(owner);

@@ -8,6 +8,9 @@ namespace Woffler {
     DAO::DAO(stakes& _stakes, uint64_t idstake): 
       Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, idstake) {}
     
+    DAO::DAO(stakes& _stakes, stakes::const_iterator itr): 
+      Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
+    
     void Stake::addStake(name owner, uint64_t idbranch, asset amount) {
       Branch::Branch branch(_self, idbranch);
       branch.checkBranch();

@@ -29,6 +29,7 @@ namespace Woffler {
     class DAO: public Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>  {
       public:
       DAO(stakes& _stakes, uint64_t idstake);
+      DAO(stakes& _stakes, stakes::const_iterator itr);
       static uint64_t keyValue(uint64_t idstake) {
         return idstake;
       }

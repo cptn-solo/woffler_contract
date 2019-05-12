@@ -1,15 +1,23 @@
 #include <level.hpp>
-#include <player.hpp>
 #include <stake.hpp>
-#include <branchmeta.hpp>
 
 namespace Woffler {
   namespace Level {    
     Level::Level(name self, uint64_t idlevel) : 
       Entity<levels, DAO, uint64_t>(self, idlevel) {}
 
+    Level::Level(name self) : Level(self, 0) {}
+
+    PlayerLevel::PlayerLevel(name self, name account) : 
+      Level(self), player(self, account) {
+        fetchByKey(player.getPlayer().idlvl);
+    }
+
     DAO::DAO(levels& _levels, uint64_t idlevel): 
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, idlevel) {}
+
+    DAO::DAO(levels& _levels, levels::const_iterator itr): 
+        Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
     uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, BranchMeta::wflbrnchmeta meta) {
       return createLevel(payer, potbalance, idbranch, meta.id, meta.lvlreds, meta.lvllength);
@@ -86,7 +94,7 @@ namespace Woffler {
 
     Const::playerstate Level::cellTypeAtPosition(uint8_t position) {
       auto levelresult = Const::playerstate::SAFE;
-      auto l = getEnt<wfllevel>();
+      auto l = getLevel();
       if (std::find(l.redcells.begin(), l.redcells.end(), position) != l.redcells.end()) {
         levelresult = Const::playerstate::RED;
       } else if (std::find(l.greencells.begin(), l.greencells.end(), position) != l.greencells.end()) {
@@ -98,7 +106,7 @@ namespace Woffler {
     void Level::regenCells(name owner) {
       checkLevel();
 
-      auto _level = getEnt<wfllevel>();
+      auto _level = getLevel();
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, _level.idmeta);    
       auto _meta = meta.getMeta();
@@ -120,7 +128,7 @@ namespace Woffler {
     }
 
     void Level::checkLockedLevel() {
-      auto l = getEnt<wfllevel>();
+      auto l = getLevel();
       check(
         l.locked,
         "Level is already unlocked."
@@ -128,11 +136,70 @@ namespace Woffler {
     }
 
     void Level::checkUnlockedLevel() {
-      auto l = getEnt<wfllevel>();
+      auto l = getLevel();
       check(
         !l.locked,
         "Level is locked."
-      );
+      );    
     }
+
+    wfllevel Level::getNextLevel() {
+      auto l = getLevel();
+      auto idx = getIndex<"byparent"_n>();
+      auto itr = idx.find(l.id);
+      if (itr != idx.end()) return *itr;
+      
+      return wfllevel{};
+    }
+
+    #pragma region ** PlayerLevel **
+    
+    void PlayerLevel::nextLevel() {
+      player.checkState(Const::playerstate::GREEN);
+      
+      auto _player = player.getPlayer();
+      auto _curl = getLevel();
+      auto _nxtl = getNextLevel();
+      //getting branch meta to decide on level presets
+      BranchMeta::BranchMeta meta(_self, _curl.idmeta);      
+      auto _meta = meta.getMeta();
+
+      if (_nxtl.id == 0) { //create locked        
+        //setting new winner of current branch
+        Branch::Branch branch(_self, _curl.idbranch);
+        branch.setWinner(_player.account);
+
+        //decide on new level's pot
+        asset nxtPot = (_curl.potbalance * _meta.nxtrate) / 100;
+        if (nxtPot < _meta.potmin)
+          nxtPot = _curl.potbalance;
+        
+        createLevel(_player.account, nxtPot, _curl.idbranch, _meta);
+        update(_player.account, [&](auto& l) {
+          l.potbalance -= nxtPot;
+        });
+      }
+      else if (_nxtl.locked) { //check for unlock & reposition player if true        
+        if (_player.triesleft > 0) { //unlock trial
+          player.useTry();//tries--
+          auto rnd = randomizer::getInstance(_player.account, _nxtl.id);
+          _idx.modify(_nxtl, _player.account, [&](auto& l) {//updating lvl record fetched earlier
+            l.greencells = generateCells(rnd, _meta.lvlgreens, _meta.lvllength);
+            l.locked = Utils::hasIntersection<uint8_t>(l.greencells, l.redcells);
+          });
+          if (!_nxtl.locked) { //unlocked, reposition to next level
+            player.resetPositionAtLevel(_nxtl.id);
+          }
+        }
+        else { //no tries left, reset position in current level
+          player.resetPositionAtLevel(_curl.id);
+        }        
+      }
+      else {
+        player.resetPositionAtLevel(_nxtl.id);
+      }
+    }
+    
+    #pragma endregion
   }
 }

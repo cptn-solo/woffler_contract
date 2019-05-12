@@ -2,6 +2,7 @@
 #include <entity.hpp>
 #include <cell.hpp>
 #include <branchmeta.hpp>
+#include <player.hpp>
 
 namespace Woffler {
   using namespace eosio;
@@ -35,16 +36,22 @@ namespace Woffler {
     class DAO: public Accessor<levels, wfllevel, levels::const_iterator, uint64_t>  {
       public:
       DAO(levels& _levels, uint64_t idlevel);
+      DAO(levels& _levels, levels::const_iterator itr);
       static uint64_t keyValue(uint64_t idlevel) {
         return idlevel;
       }
     };
 
-    class Level: Entity<levels, DAO, uint64_t> {
+    class Level: public Entity<levels, DAO, uint64_t> {
+      protected:
+      void setIdLevel(uint64_t idlevel);
+      
       public:
       Level(name self, uint64_t idlevel);
+      Level(name self);
 
       wfllevel getLevel();
+      wfllevel getNextLevel();
 
       void checkLevel();
       void checkLockedLevel();
@@ -79,6 +86,17 @@ namespace Woffler {
 
       //DEBUG:
       void rmLevel();
+    };
+
+    class PlayerLevel: public Level {      
+      public:
+      PlayerLevel(name self, name account);
+
+      void nextLevel();
+      
+      private:
+      Player::Player player;
+
     };
   }
 }

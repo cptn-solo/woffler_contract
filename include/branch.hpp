@@ -28,6 +28,7 @@ namespace Woffler {
     class DAO: public Accessor<branches, wflbranch, branches::const_iterator, uint64_t>  {
       public:
       DAO(branches& _branches, uint64_t idbranch);
+      DAO(branches& _branches, branches::const_iterator itr);
       static uint64_t keyValue(uint64_t idbranch) {
           return idbranch;
       }
@@ -49,6 +50,7 @@ namespace Woffler {
       void createRootLevel(name owner);
       uint64_t addLevel(name owner, asset pot);
       void setRootLevel(name payer, uint64_t idrootlvl);
+      void setWinner(name player);
       
       bool isIndexedByMeta(uint64_t idmeta);
     };

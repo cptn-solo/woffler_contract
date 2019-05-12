@@ -25,6 +25,7 @@ namespace Woffler {
     class DAO: public Accessor<quests, wflquest, quests::const_iterator, uint64_t>  {
       public:
       DAO(quests& _quests, uint64_t idquest);
+      DAO(quests& _quests, quests::const_iterator itr);
       static uint64_t keyValue(uint64_t idquest) {
         return idquest;
       }

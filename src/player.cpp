@@ -12,8 +12,15 @@ namespace Woffler {
     DAO::DAO(players& _players, uint64_t _playerV):
       Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {}
 
+    DAO::DAO(players& _players, players::const_iterator itr):
+      Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, itr) {}
+
+    wflplayer Player::getPlayer() {
+      return getEnt<wflplayer>();
+    }
+    
     name Player::getChannel() {
-      return getEnt<wflplayer>().channel;
+      return getPlayer().channel;
     }
 
     void Player::createPlayer(name payer, name referrer) {
@@ -94,7 +101,7 @@ namespace Woffler {
     void Player::tryTurn() {
       checkState(Const::playerstate::SAFE);
       
-      auto _player = getEnt<wflplayer>();
+      auto _player = getPlayer();
       
       /* Turn logic */
       //find player's current level 
@@ -122,7 +129,7 @@ namespace Woffler {
     void Player::commitTurn() {
       checkState(Const::playerstate::SAFE);
 
-      auto _player = getEnt<wflplayer>();
+      auto _player = getPlayer();
 
       Level::Level level(_self, _player.idlvl);
       level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
@@ -133,7 +140,7 @@ namespace Woffler {
     }
 
     void Player::useTry() {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       useTry(p.tryposition);
     }
 
@@ -145,7 +152,7 @@ namespace Woffler {
     }
 
     void Player::commitTurn(Const::playerstate result) {
-      auto player = getEnt<wflplayer>();
+      auto player = getPlayer();
       update(_entKey, [&](auto& p) {
         p.currentposition = player.tryposition;
         p.levelresult = result;
@@ -157,14 +164,14 @@ namespace Woffler {
     void Player::claimGreen() {
       checkState(Const::playerstate::GREEN);
 
-      auto _player = getEnt<wflplayer>();
+      auto _player = getPlayer();
       resetPositionAtLevel(_player.idlvl);
     }
 
     void Player::claimRed() {
       checkState(Const::playerstate::RED);
 
-      auto _player = getEnt<wflplayer>();
+      auto _player = getPlayer();
       
       Level::Level level(_self, _player.idlvl);      
       auto _level = level.getLevel();
@@ -195,7 +202,7 @@ namespace Woffler {
     }
 
     void Player::checkNotReferrer() {
-      auto player = getEnt<wflplayer>();
+      auto player = getPlayer();
       auto idxchannel = getIndex<"bychannel"_n>();
       auto itrchannel = idxchannel.find(_entKey.value);
       check(
@@ -220,7 +227,7 @@ namespace Woffler {
     }
 
     void Player::checkActivePlayer() {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       check(
         p.idlvl != 0,
         "First select branch to play on with action switchbrnch."
@@ -228,7 +235,7 @@ namespace Woffler {
     }
 
     void Player::checkState(Const::playerstate state) {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       checkActivePlayer();
       check(
         p.levelresult == state,
@@ -237,7 +244,7 @@ namespace Woffler {
     }
 
     void Player::checkBalanceCovers(asset amount) {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       check(
         p.activebalance >= amount,
         string("Not enough active balance in your account. Current active balance: ") + p.activebalance.to_string().c_str()
@@ -245,7 +252,7 @@ namespace Woffler {
     }
 
     void Player::checkBalanceZero() {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       check(//warning! works only for records, emplaced in contract's host scope
         p.activebalance == asset{0, Const::acceptedSymbol},
         string("Please withdraw funds first. Current active balance: ") + p.activebalance.to_string().c_str()
@@ -253,7 +260,7 @@ namespace Woffler {
     }
 
     void Player::checkSwitchBranchAllowed() {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       check(
         p.levelresult == Const::playerstate::INIT ||
         p.levelresult == Const::playerstate::SAFE,
@@ -262,7 +269,7 @@ namespace Woffler {
     }
 
     void Player::checkLevelUnlockTrialAllowed(uint64_t idlvl) {
-      auto p = getEnt<wflplayer>();
+      auto p = getPlayer();
       check(
         p.idlvl == idlvl,
         "Player must be at previous level to unlock next one."

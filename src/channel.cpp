@@ -9,6 +9,9 @@ namespace Woffler {
     DAO::DAO(channels& _channels, uint64_t _ownerV): 
       Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {}
     
+    DAO::DAO(channels& _channels, channels::const_iterator itr): 
+      Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, itr) {}
+    
     void Channel::upsertChannel(name payer) {
       if (isEnt()) {
         update(payer, [&](auto& c) {

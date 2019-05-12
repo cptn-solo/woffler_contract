@@ -37,6 +37,7 @@ namespace Woffler {
     class DAO: public Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>  {
       public:
       DAO(brnchmetas& _brnchmetas, uint64_t idmeta);
+      DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr);
       static uint64_t keyValue(uint64_t idmeta) {
         return idmeta;
       }
