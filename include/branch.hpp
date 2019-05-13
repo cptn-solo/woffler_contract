@@ -48,7 +48,7 @@ namespace Woffler {
 
       void createBranch(name owner, uint64_t idmeta, asset pot);
       void createRootLevel(name owner);
-      uint64_t addLevel(name owner, asset pot);
+      uint64_t addRootLevel(name owner, asset pot);
       void setRootLevel(name payer, uint64_t idrootlvl);
       void setWinner(name player);
       

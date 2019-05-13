@@ -89,18 +89,18 @@ namespace Woffler {
       );
       
       //add pot value from owner's active balance to the root level's pot
-      uint64_t idrootlvl = addLevel(owner, branchStake);      
+      uint64_t idrootlvl = addRootLevel(owner, branchStake);      
       setRootLevel(owner, idrootlvl);
     }
     
-    uint64_t Branch::addLevel(name owner, asset pot) {      
+    uint64_t Branch::addRootLevel(name owner, asset pot) {      
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, getEnt<wflbranch>().idmeta);    
       BranchMeta::wflbrnchmeta _meta = meta.getMeta();
 
       //emplacing new (root) level
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, pot, _entKey, _meta);
+      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, _meta);
 
       return idlevel;
     }

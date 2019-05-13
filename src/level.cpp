@@ -19,15 +19,16 @@ namespace Woffler {
     DAO::DAO(levels& _levels, levels::const_iterator itr): 
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
-    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, BranchMeta::wflbrnchmeta meta) {
-      return createLevel(payer, potbalance, idbranch, meta.id, meta.lvlreds, meta.lvllength);
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, BranchMeta::wflbrnchmeta meta) {
+      return createLevel(payer, potbalance, idbranch, idparent, meta.id, meta.lvlreds, meta.lvllength);
     }
 
-    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength) {
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength) {
       _entKey = nextPK();      
       create(payer, [&](auto& l) {
         l.id = _entKey;
         l.idbranch = idbranch;
+        l.idparent = idparent;
         l.idmeta = idmeta;
         l.potbalance = potbalance;
       });
@@ -104,8 +105,6 @@ namespace Woffler {
     }
 
     void Level::regenCells(name owner) {
-      checkLevel();
-
       auto _level = getLevel();
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, _level.idmeta);    
@@ -116,7 +115,6 @@ namespace Woffler {
     }
 
     void Level::rmLevel() {
-      checkLevel();
       remove();
     }
     
@@ -143,15 +141,6 @@ namespace Woffler {
       );    
     }
 
-    wfllevel Level::getNextLevel() {
-      auto l = getLevel();
-      auto idx = getIndex<"byparent"_n>();
-      auto itr = idx.find(l.id);
-      if (itr != idx.end()) return *itr;
-      
-      return wfllevel{};
-    }
-
     #pragma region ** PlayerLevel **
     
     void PlayerLevel::nextLevel() {
@@ -159,12 +148,15 @@ namespace Woffler {
       
       auto _player = player.getPlayer();
       auto _curl = getLevel();
-      auto _nxtl = getNextLevel();
+      
+      auto nextidx = getIndex<"byparent"_n>();
+      auto nextlitr = nextidx.find(_curl.id);
+
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, _curl.idmeta);      
       auto _meta = meta.getMeta();
 
-      if (_nxtl.id == 0) { //create locked        
+      if (nextlitr == nextidx.end()) { //create locked        
         //setting new winner of current branch
         Branch::Branch branch(_self, _curl.idbranch);
         branch.setWinner(_player.account);
@@ -173,22 +165,26 @@ namespace Woffler {
         asset nxtPot = (_curl.potbalance * _meta.nxtrate) / 100;
         if (nxtPot < _meta.potmin)
           nxtPot = _curl.potbalance;
+
+        //create new level with nex pot
+        Level nextL(_self);
+        uint64_t nextId = nextL.createLevel(_player.account, nxtPot, _curl.idbranch, _curl.id, _meta);
         
-        createLevel(_player.account, nxtPot, _curl.idbranch, _meta);
+        //cut current level's pot
         update(_player.account, [&](auto& l) {
           l.potbalance -= nxtPot;
         });
       }
-      else if (_nxtl.locked) { //check for unlock & reposition player if true        
+      else if (nextlitr->locked) { //check for unlock & reposition player if true        
         if (_player.triesleft > 0) { //unlock trial
           player.useTry();//tries--
-          auto rnd = randomizer::getInstance(_player.account, _nxtl.id);
-          _idx.modify(_nxtl, _player.account, [&](auto& l) {//updating lvl record fetched earlier
+          auto rnd = randomizer::getInstance(_player.account, nextlitr->id);
+          _idx.modify(*nextlitr, _player.account, [&](auto& l) {//updating lvl record fetched earlier
             l.greencells = generateCells(rnd, _meta.lvlgreens, _meta.lvllength);
             l.locked = Utils::hasIntersection<uint8_t>(l.greencells, l.redcells);
           });
-          if (!_nxtl.locked) { //unlocked, reposition to next level
-            player.resetPositionAtLevel(_nxtl.id);
+          if (!nextlitr->locked) { //unlocked, reposition to next level
+            player.resetPositionAtLevel(nextlitr->id);
           }
         }
         else { //no tries left, reset position in current level
@@ -196,7 +192,7 @@ namespace Woffler {
         }        
       }
       else {
-        player.resetPositionAtLevel(_nxtl.id);
+        player.resetPositionAtLevel(nextlitr->id);
       }
     }
     
