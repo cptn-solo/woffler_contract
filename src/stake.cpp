@@ -79,6 +79,10 @@ namespace Woffler {
       }
     }
 
+    void Stake::rmStake() {
+      remove();
+    }
+
     void Stake::checkIsStakeholder(name owner, uint64_t idbranch) {
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
       auto stkidx = getIndex<"byownedbrnch"_n>();

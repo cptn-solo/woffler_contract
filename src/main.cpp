@@ -161,30 +161,7 @@ namespace Woffler {
       Level::PlayerLevel plevel(get_self(), account);
       plevel.nextLevel();
     }
-
-    //DEBUG: testing cells generation for a given level and meta
-    ACTION regencells(name owner, uint64_t idlevel) {
-      checkAdmin(owner);
-
-      Level::Level level(get_self(), idlevel);
-      level.regenCells(owner);
-    }
-
-    //DEBUG: testing cell randomizer
-    ACTION gencells(name account, uint8_t size, uint8_t maxval) {
-      checkAdmin(account);
-
-      Level::Level::debugGenerateCells(account, 1, size, maxval);
-    }
-
-    //DEBUG: testing level delete
-    ACTION rmlevel(name account, uint64_t idlevel) {
-      checkAdmin(account);
-
-      Level::Level level(get_self(), idlevel);
-      level.rmLevel();
-    }
-    
+        
     #pragma endregion
 
     #pragma region ** wflPlayer **
@@ -253,5 +230,47 @@ namespace Woffler {
     
     #pragma endregion
 
+    #pragma region ** DEBUG **
+
+    //DEBUG: testing cells generation for a given level and meta
+    ACTION regencells(name owner, uint64_t idlevel) {
+      checkAdmin(owner);
+
+      Level::Level level(get_self(), idlevel);
+      level.regenCells(owner);
+    }
+
+    //DEBUG: testing cell randomizer
+    ACTION gencells(name account, uint8_t size) {
+      checkAdmin(account);
+
+      Level::Level::debugGenerateCells(account, 1, size);
+    }
+
+    //DEBUG: testing level delete
+    ACTION rmlevel(name account, uint64_t idlevel) {
+      checkAdmin(account);
+
+      Level::Level level(get_self(), idlevel);
+      level.rmLevel();
+    }
+
+    //DEBUG: testing
+    ACTION rmbranch(name account, uint64_t idbranch) {
+      checkAdmin(account);
+
+      Branch::Branch branch(get_self(), idbranch);
+      branch.rmBranch();
+    }
+
+    //DEBUG: testing
+    ACTION rmstake(name account, uint64_t idstake) {
+      checkAdmin(account);
+      
+      Stake::Stake stake(get_self(), idstake);
+      stake.rmStake();
+    }
+    
+    #pragma endregion
   };
 }

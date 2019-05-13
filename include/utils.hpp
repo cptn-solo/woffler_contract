@@ -43,4 +43,8 @@ namespace Utils {
     return !v3.empty();
   }
 
+  bool hasIntersection(uint16_t& v1, uint16_t& v2) {    
+    return (v1&v2) > 0;
+  }
+
 }

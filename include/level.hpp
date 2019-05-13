@@ -3,7 +3,6 @@
 #include <cell.hpp>
 #include <branchmeta.hpp>
 #include <player.hpp>
-#include <math.h>
 
 namespace Woffler {
   using namespace eosio;
@@ -19,8 +18,8 @@ namespace Woffler {
       uint64_t idchbranch = 0;
       uint64_t idmeta;
       asset potbalance = asset{0, Const::acceptedSymbol};
-      std::vector<uint8_t> redcells;
-      std::vector<uint8_t> greencells;
+      uint16_t redcells;
+      uint16_t greencells;
       bool locked = true;
       bool root = true;
 
@@ -58,11 +57,11 @@ namespace Woffler {
       void checkRootLevel();
       void checkUnlockedLevel();
 
-      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength);
+      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt);
       uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, BranchMeta::wflbrnchmeta meta);
       void unlockRootLevel(name owner);
-      void generateRedCells(name payer, uint8_t redcnt, uint8_t lvllength);
-      void unlockTrial(name payer, uint8_t greencnt, uint8_t lvllength);
+      void generateRedCells(name payer, uint8_t redcnt);
+      void unlockTrial(name payer, uint8_t greencnt);
       void addPot(name payer, asset potbalance);
 
       Const::playerstate cellTypeAtPosition(uint8_t position);
@@ -81,18 +80,15 @@ namespace Woffler {
       template<typename T>
       static uint16_t generateCells(randomizer& rnd, T size) {
         uint16_t data = 0;
-        Cell::generator<T> generator(rnd, 16, size);
-        for (size_t i = 1; i <= size; i++) {
-          data += pow(2, generator());
-        }        
+        Cell::generator<T> generator(rnd, 16, size);//max length is 16 as we are using uint16_t
+        for (size_t i = 0; i < size; i++)
+          data += (1<<generator());        
         return data;
       }
 
       //DEBUG:
-      static void debugGenerateCells(name account, uint64_t num, uint8_t size, uint8_t maxval) {
+      static void debugGenerateCells(name account, uint64_t num, uint8_t size) {
         auto rnd = randomizer::getInstance(account, num);
-        // auto data = generateCells<uint8_t>(rnd, size, maxval);
-        // Utils::printVectorInt<uint8_t>(data);
         auto data = generateCells<uint8_t>(rnd, size);
         print_f("cells data: % \n", std::to_string(data));
       }

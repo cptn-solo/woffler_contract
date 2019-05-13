@@ -116,7 +116,7 @@ namespace Woffler {
       if (_player.triesleft >= 1) {
         //get current position and produce tryposition by generating random offset
         auto rnd = randomizer::getInstance(_entKey, _player.idlvl);
-        auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % _meta.lvllength;
+        auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
         useTry(tryposition);    
       }
 

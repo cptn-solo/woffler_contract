@@ -42,6 +42,7 @@ namespace Woffler {
       void addStake(name owner, uint64_t idbranch, asset amount);
       void registerStake(name owner, uint64_t idbranch, asset amount);
       void branchStake(name owner, uint64_t idbranch, asset& total, asset& owned);
+      void rmStake();
 
       void checkIsStakeholder(name owner, uint64_t idbranch);
     };

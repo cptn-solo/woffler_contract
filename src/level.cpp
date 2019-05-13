@@ -20,10 +20,10 @@ namespace Woffler {
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
     uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, BranchMeta::wflbrnchmeta meta) {
-      return createLevel(payer, potbalance, idbranch, idparent, meta.id, meta.lvlreds, meta.lvllength);
+      return createLevel(payer, potbalance, idbranch, idparent, meta.id, meta.lvlreds);
     }
 
-    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt, uint8_t lvllength) {
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt) {
       _entKey = nextPK();      
       create(payer, [&](auto& l) {
         l.id = _entKey;
@@ -32,7 +32,7 @@ namespace Woffler {
         l.idmeta = idmeta;
         l.potbalance = potbalance;
       });
-      generateRedCells(payer, redcnt, lvllength);
+      generateRedCells(payer, redcnt);
       return _entKey;
     }
     wfllevel Level::getLevel() {
@@ -55,21 +55,21 @@ namespace Woffler {
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, _level.idmeta);      
       auto _meta = meta.getMeta();      
-      unlockTrial(owner, _meta.lvlgreens, _meta.lvllength);
+      unlockTrial(owner, _meta.lvlgreens);
     }
 
-    void Level::generateRedCells(name payer, uint8_t redcnt, uint8_t lvllength) {
+    void Level::generateRedCells(name payer, uint8_t redcnt) {
       auto rnd = randomizer::getInstance(payer, _entKey);
       update(payer, [&](auto& l) {
-        l.redcells = generateCells(rnd, redcnt, lvllength);
+        l.redcells = generateCells(rnd, redcnt);
       });
     }  
 
-    void Level::unlockTrial(name payer, uint8_t greencnt, uint8_t lvllength) {
+    void Level::unlockTrial(name payer, uint8_t greencnt) {
       auto rnd = randomizer::getInstance(payer, _entKey);
       update(payer, [&](auto& l) {
-        l.greencells = generateCells(rnd, greencnt, lvllength);
-        l.locked = Utils::hasIntersection<uint8_t>(l.greencells, l.redcells);
+        l.greencells = generateCells(rnd, greencnt);
+        l.locked = Utils::hasIntersection(l.greencells, l.redcells);
       });
     }
 
@@ -80,11 +80,14 @@ namespace Woffler {
     }
 
     Const::playerstate Level::cellTypeAtPosition(uint8_t position) {
+      check(position <= Const::lvlLength, "Position in the level can't exceed 16");
+      
       auto levelresult = Const::playerstate::SAFE;
       auto l = getLevel();
-      if (std::find(l.redcells.begin(), l.redcells.end(), position) != l.redcells.end()) {
+      uint16_t pos16 = 1<<position;
+      if (Utils::hasIntersection(pos16, l.redcells)) {
         levelresult = Const::playerstate::RED;
-      } else if (std::find(l.greencells.begin(), l.greencells.end(), position) != l.greencells.end()) {
+      } else if (Utils::hasIntersection(pos16, l.greencells)) {
         levelresult = Const::playerstate::GREEN;
       }
       return levelresult;
@@ -96,8 +99,8 @@ namespace Woffler {
       BranchMeta::BranchMeta meta(_self, _level.idmeta);    
       auto _meta = meta.getMeta();
 
-      generateRedCells(owner, _meta.lvlreds, _meta.lvllength);
-      unlockTrial(owner, _meta.lvlgreens, _meta.lvllength);
+      generateRedCells(owner, _meta.lvlreds);
+      unlockTrial(owner, _meta.lvlgreens);
     }
 
     void Level::rmLevel() {
@@ -174,8 +177,8 @@ namespace Woffler {
           player.useTry();//tries--
           auto rnd = randomizer::getInstance(_player.account, nextlitr->id);
           _idx.modify(*nextlitr, _player.account, [&](auto& l) {//updating lvl record fetched earlier
-            l.greencells = generateCells(rnd, _meta.lvlgreens, _meta.lvllength);
-            l.locked = Utils::hasIntersection<uint8_t>(l.greencells, l.redcells);
+            l.greencells = generateCells(rnd, _meta.lvlgreens);
+            l.locked = Utils::hasIntersection(l.greencells, l.redcells);
           });
           if (!nextlitr->locked) { //unlocked, reposition to next level
             player.resetPositionAtLevel(nextlitr->id);

@@ -12,9 +12,8 @@ namespace Woffler {
     wflbrnchmeta {
       uint64_t id;
       name owner;
-      uint8_t lvllength;//min lvlgreens+lvlreds
-      uint8_t lvlgreens;//min 1
-      uint8_t lvlreds;//min 1
+      uint16_t lvlgreens;//min 1
+      uint16_t lvlreds;//min 1
       asset unjlmin = asset{0, Const::acceptedSymbol};
       uint8_t unjlrate;
       uint64_t unjlintrvl;

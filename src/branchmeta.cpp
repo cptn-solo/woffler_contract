@@ -66,8 +66,8 @@ namespace Woffler {
 
     void BranchMeta::checkCells(wflbrnchmeta meta) {
       check(
-        meta.lvllength <= Const::maxLvlLength && meta.lvlreds >= 1  && meta.lvlgreens >= 1 && meta.lvllength >= (meta.lvlreds + meta.lvlgreens + 1),
-        string("Please comply to level rules: lvllength <= ") + std::to_string(Const::maxLvlLength) + string(" AND lvlreds >= 1  AND lvlgreens >= 1 AND lvllength >= (lvlreds + lvlgreens + 1)")
+        meta.lvlreds >= 1  && meta.lvlgreens >= 1 && Const::lvlLength >= (meta.lvlreds + meta.lvlgreens + 1),
+        string("Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND 16 >= (lvlreds + lvlgreens + 1)")
       );
     }
   }

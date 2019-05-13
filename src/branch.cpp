@@ -118,6 +118,10 @@ namespace Woffler {
       });    
     }
 
+    void Branch::rmBranch() {
+      remove();
+    }
+
     void Branch::checkBranch() {
       check(
         isEnt(),
