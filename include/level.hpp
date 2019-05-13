@@ -69,7 +69,7 @@ namespace Woffler {
       void regenCells(name owner);//debug mostly
 
       template<typename T>
-      static std::vector<T> generateCells(randomizer& rnd, T size, T maxval) {
+      static std::vector<T> generateCells(randomizer& rnd, T size, T maxval) {//DEPRECATED
         std::vector<T> data(size);
         Cell::generator<T> generator(rnd, maxval, size);
         std::generate(data.begin(), data.end(), generator);
