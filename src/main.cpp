@@ -147,7 +147,7 @@ namespace Woffler {
       require_auth(owner);
 
       Level::Level level(get_self(), idlevel);
-      level.unlockLevel(owner);
+      level.unlockRootLevel(owner);
     }
 
     //position player to the next level

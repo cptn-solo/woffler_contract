@@ -39,37 +39,23 @@ namespace Woffler {
       return getEnt<wfllevel>();
     } 
 
-    void Level::unlockLevel(name owner) {
+    void Level::unlockRootLevel(name owner) {
       checkLockedLevel();
-
-      //find player
-      Player::Player player(_self, owner);
-      player.checkPlayer();
 
       auto _level = getEnt<wfllevel>();
       /* Restrictions check */
-      if (_level.root) {//root level can be unlocked only by stakeholder, unlimited retries count
-        //find stake to use as pot value for root level
-        Stake::Stake stake(_self, 0);
-        stake.checkIsStakeholder(owner, _level.idbranch);
-      }
-      else {//"next" level can be unlocked only from GREEN position, retries count limited
-        player.checkLevelUnlockTrialAllowed(_entKey);
-        player.useTry();
-      }
+      checkRootLevel();
 
+      //find stake to use as pot value for root level
+      Stake::Stake stake(_self, 0);
+      stake.checkIsStakeholder(owner, _level.idbranch);
+      
       /* Generate cells */  
 
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, _level.idmeta);      
-      auto _meta = meta.getMeta();
-      
+      auto _meta = meta.getMeta();      
       unlockTrial(owner, _meta.lvlgreens, _meta.lvllength);
-
-      if (!_level.root && !_level.locked) {
-        //process NEXT workflow: position player to the unlocked level
-        player.resetPositionAtLevel(_level.id);
-      }
     }
 
     void Level::generateRedCells(name payer, uint8_t redcnt, uint8_t lvllength) {
@@ -123,6 +109,14 @@ namespace Woffler {
         isEnt(),
         "Level not found."
       );            
+    }
+
+    void Level::checkRootLevel() {
+      auto l = getLevel();
+      check(
+        l.root,
+        "Please use this action to unlock Root levels only. Root level can be unlocked only by its branch stakeholder, unlimited retries count."
+      );
     }
 
     void Level::checkLockedLevel() {
