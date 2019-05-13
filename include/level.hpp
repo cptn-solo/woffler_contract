@@ -69,15 +69,6 @@ namespace Woffler {
       void regenCells(name owner);//debug mostly
 
       template<typename T>
-      static std::vector<T> generateCells(randomizer& rnd, T size, T maxval) {//DEPRECATED
-        std::vector<T> data(size);
-        Cell::generator<T> generator(rnd, maxval, size);
-        std::generate(data.begin(), data.end(), generator);
-
-        return data;
-      }
-
-      template<typename T>
       static uint16_t generateCells(randomizer& rnd, T size) {
         uint16_t data = 0;
         Cell::generator<T> generator(rnd, 16, size);//max length is 16 as we are using uint16_t
