@@ -3,10 +3,11 @@
 #include <cell.hpp>
 #include <branchmeta.hpp>
 #include <player.hpp>
+#include <math.h>
 
 namespace Woffler {
   using namespace eosio;
-  using std::string;
+  using std::string;  
   namespace Level {
     //branch levels
     typedef struct
@@ -77,11 +78,23 @@ namespace Woffler {
         return data;
       }
 
+      template<typename T>
+      static uint16_t generateCells(randomizer& rnd, T size) {
+        uint16_t data = 0;
+        Cell::generator<T> generator(rnd, 16, size);
+        for (size_t i = 1; i <= size; i++) {
+          data += pow(2, generator());
+        }        
+        return data;
+      }
+
       //DEBUG:
       static void debugGenerateCells(name account, uint64_t num, uint8_t size, uint8_t maxval) {
         auto rnd = randomizer::getInstance(account, num);
-        auto data = generateCells<uint8_t>(rnd, size, maxval);
-        Utils::printVectorInt<uint8_t>(data);
+        // auto data = generateCells<uint8_t>(rnd, size, maxval);
+        // Utils::printVectorInt<uint8_t>(data);
+        auto data = generateCells<uint8_t>(rnd, size);
+        print_f("cells data: % \n", std::to_string(data));
       }
 
       //DEBUG:
