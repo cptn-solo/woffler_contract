@@ -132,12 +132,11 @@ namespace Woffler {
     
     //revenue share, called as deferred action
     ACTION tipbranch(uint64_t idbranch, asset amount) {
-      auto self = get_self();
-      require_auth(self);
+      require_auth(get_self());
       
       print("Tipping branch with id <", std::to_string(idbranch), "> with amount: ", asset{amount}, ".\n");
 
-      Branch::Branch branch(self, idbranch);
+      Branch::Branch branch(get_self(), idbranch);
       branch.allocateRevshare(amount);
     }
 
@@ -230,8 +229,7 @@ namespace Woffler {
     }  
 
     ACTION tipstkhldrs(uint64_t idbranch, asset amount, asset maxstake) {
-      auto self = get_self();
-      require_auth(self);
+      require_auth(get_self());
       
       print("Tipping stakeholders of branch with id <", std::to_string(idbranch), "> with total amount: ", asset{amount}, ", allocation base: ", asset{maxstake}, ".\n");
 
@@ -253,12 +251,11 @@ namespace Woffler {
     
     //revenue share, called as deferred action
     ACTION tipchannel(name channel, asset amount) {
-      auto self = get_self();
-      require_auth(self);
+      require_auth(get_self());
       
       print("Tipping channel <", name{channel}, "> with amount: ", asset{amount}, ".\n");
 
-      Channel::Channel chnl(self, channel);
+      Channel::Channel chnl(get_self(), channel);
       chnl.addBalance(amount);
     }
     
@@ -268,7 +265,7 @@ namespace Woffler {
 
     //DEBUG: testing cells generation for a given level and meta
     ACTION regencells(uint64_t idlevel) {
-      checkAdmin(get_self());
+      require_auth(get_self());
 
       Level::Level level(get_self(), idlevel);
       level.regenCells(get_self());
@@ -276,14 +273,14 @@ namespace Woffler {
 
     //DEBUG: testing cell randomizer
     ACTION gencells(uint8_t size) {
-      checkAdmin(get_self());
+      require_auth(get_self());
 
       Level::Level::debugGenerateCells(get_self(), 1, size);
     }
 
     //DEBUG: testing level delete
     ACTION teleport(name account, uint64_t idlevel, uint8_t position) {
-      checkAdmin(get_self());
+      require_auth(get_self());
 
       Player::Player player(get_self(), account);
       player.reposition(idlevel, position);
@@ -291,7 +288,7 @@ namespace Woffler {
 
     //DEBUG actions for branch generation debug 
     ACTION setrootlvl(uint64_t idbranch, uint64_t idrootlvl) {
-      checkAdmin(get_self());
+      require_auth(get_self());
 
       Branch::Branch branch(get_self(), idbranch);
       branch.setRootLevel(get_self(), idrootlvl);
@@ -299,7 +296,7 @@ namespace Woffler {
 
     //DEBUG: testing level delete
     ACTION rmlevel(uint64_t idlevel) {
-      checkAdmin(get_self());
+      require_auth(get_self());
 
       Level::Level level(get_self(), idlevel);
       level.rmLevel();
@@ -307,7 +304,7 @@ namespace Woffler {
 
     //DEBUG: testing
     ACTION rmbranch(uint64_t idbranch) {
-      checkAdmin(get_self());
+      require_auth(get_self());
 
       Branch::Branch branch(get_self(), idbranch);
       branch.rmBranch();
@@ -315,7 +312,7 @@ namespace Woffler {
 
     //DEBUG: testing
     ACTION rmstake(uint64_t idstake) {
-      checkAdmin(get_self());
+      require_auth(get_self());
       
       Stake::Stake stake(get_self(), idstake);
       stake.rmStake();

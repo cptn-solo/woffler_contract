@@ -127,7 +127,7 @@ namespace Woffler {
       //if generation of the branch > 1, deferred action must calculate and defer nested action to share with parent
       transaction out{};
       out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(idbranch, amount));
-      out.delay_sec = 1;
+      out.delay_sec = 2;
       out.send(Utils::deferredTXId("tipbranch"), _self);
     }
     

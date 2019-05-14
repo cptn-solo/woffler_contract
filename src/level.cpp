@@ -210,14 +210,14 @@ namespace Woffler {
       if (unjailAmount < _meta.unjlmin)
         unjailAmount = _meta.unjlmin;
 
-      print("Un-jail amount: ", asset{unjailAmount}, "\n");
+      // print("Un-jail amount: ", asset{unjailAmount}, "\n");
       
       //cut player's active balance with unjail payment value
       player.subBalance(unjailAmount, _player.account);//will fail if balance not cover amount being cut
 
       //calculate revenue share
       auto revshareAmount = (unjailAmount * _meta.unjlrate) / 100;
-      print("Rev.share amount: ", asset{revshareAmount}, "\n");
+      // print("Rev.share amount: ", asset{revshareAmount}, "\n");
 
       //cut unjail vaule with revenue share
       unjailAmount -= revshareAmount;
@@ -230,7 +230,7 @@ namespace Woffler {
       Channel::Channel channel(_self, _player.channel);      
       auto channelAmount = (revshareAmount * (channel.getRate() + _meta.slsrate)) / 100;    
 
-      print("Referrer amount: ", asset{channelAmount}, "\n");
+      // print("Referrer amount: ", asset{channelAmount}, "\n");
 
       //cut unjail vaule with sales channel fee
       unjailAmount -= channelAmount;
@@ -238,14 +238,14 @@ namespace Woffler {
       //put sales channel fee into sales channel balance (!defer)
       channel.deferRevenueShare(channelAmount);
 
-      print("Pot balance before add: ", asset{_curl.potbalance}, "\n");
+      // print("Pot balance before add: ", asset{_curl.potbalance}, "\n");
 
       //put remaining unjail payment into level's pot
       update(_player.account, [&](auto& l) {
         l.potbalance += unjailAmount;
       });
 
-      print("Added to the pot: ", asset{unjailAmount}, "\n");
+      // print("Added to the pot: ", asset{unjailAmount}, "\n");
       
       //reset player's state, retries and position in current level's zero cell
       player.resetPositionAtLevel(_curl.id);
