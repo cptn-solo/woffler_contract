@@ -53,7 +53,7 @@ namespace Woffler {
       transaction out{};
       out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipchannel"_n, std::make_tuple(_entKey, amount));
       out.delay_sec = 1;
-      out.send(Utils::now(), _self);
+      out.send(Utils::deferredTXId("tipchannel"), _self);
     }
 
     void Channel::addBalance(asset amount) {

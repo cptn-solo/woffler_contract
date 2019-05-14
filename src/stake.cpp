@@ -95,7 +95,7 @@ namespace Woffler {
       transaction out{};
       out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipstkhldrs"_n, std::make_tuple(idbranch, amount, totalstake));
       out.delay_sec = 1;
-      out.send(Utils::now(), _self);
+      out.send(Utils::deferredTXId("tipstkhldrs"), _self);
     }
 
     void Stake::allocateRevshare(uint64_t idbranch, asset amount, asset totalstake) {

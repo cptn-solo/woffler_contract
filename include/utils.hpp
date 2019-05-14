@@ -24,6 +24,10 @@ namespace Utils {
   inline uint128_t combineIds(const uint64_t& x, const uint64_t& y) {
     return (uint128_t{x} << 64) | y;
   }
+  
+  inline uint128_t deferredTXId(const std::string& prefix) {
+    return (uint128_t{name(prefix).value}<<64)|now();
+  }
 
   bool hasIntersection(uint16_t& v1, uint16_t& v2) {    
     return (v1&v2) > 0;

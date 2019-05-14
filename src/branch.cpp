@@ -128,7 +128,7 @@ namespace Woffler {
       transaction out{};
       out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(idbranch, amount));
       out.delay_sec = 1;
-      out.send(Utils::now(), _self);
+      out.send(Utils::deferredTXId("tipbranch"), _self);
     }
     
     void Branch::allocateRevshare(asset amount) {
