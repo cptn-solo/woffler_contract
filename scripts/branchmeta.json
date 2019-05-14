@@ -15,5 +15,6 @@
   "unjlintrvl": 600, 
   "unjlmin": "1.0000 EOS", 
   "unjlrate": 1, 
+  "winnerrate": 30, 
   "url": "https://main-belt.space"
 }
