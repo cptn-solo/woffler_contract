@@ -73,6 +73,9 @@ namespace Woffler {
       void resetPositionAtLevel(uint64_t idlvl);
 
       void rmAccount();
+      
+      //DEBUG:
+      void reposition(uint64_t idlevel, uint8_t position);
     };
   }
 }

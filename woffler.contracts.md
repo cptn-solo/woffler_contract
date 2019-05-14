@@ -226,3 +226,20 @@ INTENT. The intent of the `{{ nextlvl }}` action is to position player to the ne
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">unjail</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to make payment for un-jail)
+
+### Intent
+INTENT. The intent of the `{{ unjail }}` action is to reset player's position and retries count in current level's zero cell for a certain payment:
+
+* payment rules are defined in the branch metadata of current level (see table [brnchmeta] of the game contract);
+* payment is calculated as ([current level's pot]*[unjlrate]/100);
+* payment can't be less then ([unjlmin]).
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

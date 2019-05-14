@@ -96,7 +96,7 @@ namespace Woffler {
     uint64_t Branch::addRootLevel(name owner, asset pot) {      
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, getEnt<wflbranch>().idmeta);    
-      BranchMeta::wflbrnchmeta _meta = meta.getMeta();
+      auto _meta = meta.getMeta();
 
       //emplacing new (root) level
       Level::Level level(_self);
@@ -118,6 +118,51 @@ namespace Woffler {
       });    
     }
 
+    void Branch::deferRevenueShare(asset amount) {
+      deferRevenueShare(amount, _entKey);
+    }
+
+    void Branch::deferRevenueShare(asset amount, uint64_t idbranch) {
+      //prepare and send deferred action to share amount between stakeholders branch
+      //if generation of the branch > 1, deferred action must calculate and defer nested action to share with parent
+      transaction out{};
+      out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(idbranch, amount));
+      out.delay_sec = 1;
+      out.send(Utils::now(), _self);
+    }
+    
+    void Branch::allocateRevshare(asset amount) {
+      auto _branch = getBranch();
+
+      //get parent branch
+      if (_branch.idparent > 0) {
+        //if exists then cut (amount/generation) and call deferRevenueShare on parent branch
+
+        auto parentShare = amount / _branch.generation;
+        amount -= parentShare;
+        deferRevenueShare(parentShare, _branch.idparent);
+        print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{parentShare}, "./n");
+      }      
+
+      //cut branch winner amount
+      if (_branch.winner) {
+        BranchMeta::BranchMeta meta(_self, _branch.idmeta);
+        auto _meta = meta.getMeta();
+        auto winnerShare = (amount * _meta.winnerrate) / 100;
+
+        amount -= winnerShare;
+
+        Player::Player player(_self, _branch.winner);
+        player.addBalance(winnerShare, _self);
+        print("Branch winner <", name(_branch.winner), "> get: ", asset{winnerShare}, "./n");
+      }
+      
+      //call stake.allocateRevshare(id, amount)
+      Stake::Stake stake(_self, 0);
+      asset totalStake = stake.branchStake(_entKey);
+      stake.deferRevenueShare(_entKey, amount, totalStake);
+    }
+    
     void Branch::rmBranch() {
       remove();
     }

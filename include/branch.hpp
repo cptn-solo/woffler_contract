@@ -51,6 +51,9 @@ namespace Woffler {
       uint64_t addRootLevel(name owner, asset pot);
       void setRootLevel(name payer, uint64_t idrootlvl);
       void setWinner(name player);
+      void deferRevenueShare(asset amount);
+      void deferRevenueShare(asset amount, uint64_t idbranch);
+      void allocateRevshare(asset amount);
       void rmBranch();
       
       bool isIndexedByMeta(uint64_t idmeta);

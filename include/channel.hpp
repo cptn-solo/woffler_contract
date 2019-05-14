@@ -31,8 +31,14 @@ namespace Woffler {
     class Channel: Entity<channels, DAO, name> {
       public:
       Channel(name self, name owner);
+
+      wflchannel getChannel();
+      uint8_t getRate();
+      
       void upsertChannel(name payer);
       void subChannel(name payer);
+      void deferRevenueShare(asset amount);
+      void addBalance(asset amount);
       void mergeBalance();
     };
   }

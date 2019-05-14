@@ -286,5 +286,14 @@ namespace Woffler {
         "No retries left"
       );
     }
+
+    //DEBUG:
+    void Player::reposition(uint64_t idlevel, uint8_t position) {
+      update(_entKey, [&](auto& p) {
+        p.idlvl = idlevel;
+        p.tryposition = position;
+        p.triesleft = Const::retriesCount;
+      });
+    }
   }
 } // namespace Woffler

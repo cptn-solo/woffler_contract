@@ -42,7 +42,6 @@ namespace Woffler {
 
   template<typename Idx, typename Ent, typename Itr, typename V>
   Accessor<Idx, Ent, Itr, V>::~Accessor() {
-    print("Accessor destroyed \n");
   }
   
   template<typename Idx, typename Ent, typename Itr, typename V>

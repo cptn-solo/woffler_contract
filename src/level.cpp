@@ -1,5 +1,7 @@
 #include <level.hpp>
 #include <stake.hpp>
+#include <branch.hpp>
+#include <channel.hpp>
 
 namespace Woffler {
   namespace Level {    
@@ -192,7 +194,63 @@ namespace Woffler {
         player.resetPositionAtLevel(nextlitr->id);
       }
     }
-    
+
+    void PlayerLevel::unjailPlayer() {
+      player.checkState(Const::playerstate::RED);
+      
+      auto _player = player.getPlayer();
+      auto _curl = getLevel();
+      
+      //getting branch meta to decide on level presets
+      BranchMeta::BranchMeta meta(_self, _curl.idmeta);      
+      auto _meta = meta.getMeta();      
+
+      //calculate unjail price
+      auto unjailAmount = (_curl.potbalance * _meta.unjlrate) / 100;
+      if (unjailAmount < _meta.unjlmin)
+        unjailAmount = _meta.unjlmin;
+
+      print("Un-jail amount: ", asset{unjailAmount}, "\n");
+      
+      //cut player's active balance with unjail payment value
+      player.subBalance(unjailAmount, _player.account);//will fail if balance not cover amount being cut
+
+      //calculate revenue share
+      auto revshareAmount = (unjailAmount * _meta.unjlrate) / 100;
+      print("Rev.share amount: ", asset{revshareAmount}, "\n");
+
+      //cut unjail vaule with revenue share
+      unjailAmount -= revshareAmount;
+
+      //put revenue share into branch stakeholders' revenue (!defer, recursion to parent branches)
+      Branch::Branch branch(_self, _curl.idbranch);
+      branch.deferRevenueShare(revshareAmount);//branch winner will get some here, all winners along branch hierarchy 
+
+      //calculate sales channel fee for remaining unjail value
+      Channel::Channel channel(_self, _player.channel);      
+      auto channelAmount = (revshareAmount * (channel.getRate() + _meta.slsrate)) / 100;    
+
+      print("Referrer amount: ", asset{channelAmount}, "\n");
+
+      //cut unjail vaule with sales channel fee
+      unjailAmount -= channelAmount;
+
+      //put sales channel fee into sales channel balance (!defer)
+      channel.deferRevenueShare(channelAmount);
+
+      print("Pot balance before add: ", asset{_curl.potbalance}, "\n");
+
+      //put remaining unjail payment into level's pot
+      update(_player.account, [&](auto& l) {
+        l.potbalance += unjailAmount;
+      });
+
+      print("Added to the pot: ", asset{unjailAmount}, "\n");
+      
+      //reset player's state, retries and position in current level's zero cell
+      player.resetPositionAtLevel(_curl.id);
+    }      
+
     #pragma endregion
   }
 }

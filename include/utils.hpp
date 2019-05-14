@@ -1,6 +1,7 @@
 #pragma once
 #include <eosio/eosio.hpp>
 #include <eosio/system.hpp>
+#include <eosio/transaction.hpp>
 #include <eosio/crypto.hpp>
 #include <eosio/asset.hpp>
 

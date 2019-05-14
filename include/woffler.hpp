@@ -42,13 +42,6 @@ namespace woffler {
 
       #pragma region ** Levels (wflLevel): **
       
-      //position player to the next level
-      //if not yet exists - initialize new locked level in current branch 
-      //split pot according to level's branch metadata(`nxtrate`), 
-      //make the player a branch winner
-      //as new level is locked, winner have 3 tries to unlock it, if no luck - zero-ed in current level
-      ACTION nextlvl(name player);
-
       //split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update)
       //player wait untill the end of `tkintrvl` set with level result upon `takelvl`
       //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level

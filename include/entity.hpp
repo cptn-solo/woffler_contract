@@ -58,7 +58,6 @@ namespace Woffler {
       delete _dao;
       _dao = NULL;
     }
-    print("Entity destroyed \n");
   }
 
   template<typename Idx, typename A, typename PK>

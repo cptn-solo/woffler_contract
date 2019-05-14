@@ -129,13 +129,16 @@ namespace Woffler {
       Branch::Branch branch(get_self(), idbranch);
       branch.createRootLevel(owner);
     }
+    
+    //revenue share, called as deferred action
+    ACTION tipbranch(uint64_t idbranch, asset amount) {
+      auto self = get_self();
+      require_auth(self);
+      
+      print("Tipping branch with id <", std::to_string(idbranch), "> with amount: ", asset{amount}, ".\n");
 
-    //DEBUG actions for branch generation debug 
-    ACTION setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl) {
-      checkAdmin(owner);
-
-      Branch::Branch branch(get_self(), idbranch);
-      branch.setRootLevel(owner, idrootlvl);
+      Branch::Branch branch(self, idbranch);
+      branch.allocateRevshare(amount);
     }
 
     #pragma endregion
@@ -160,6 +163,15 @@ namespace Woffler {
 
       Level::PlayerLevel plevel(get_self(), account);
       plevel.nextLevel();
+    }
+
+    //reset player's position and retries count in current level's zero cell for a certain payment, 
+    //defined by branch rules in its metadata (unjlrate, unjlmin)
+    ACTION unjail(name account) {
+      require_auth(account);
+
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.unjailPlayer();
     }
         
     #pragma endregion
@@ -217,10 +229,21 @@ namespace Woffler {
       stake.addStake(owner, idbranch, amount);
     }  
 
+    ACTION tipstkhldrs(uint64_t idbranch, asset amount, asset maxstake) {
+      auto self = get_self();
+      require_auth(self);
+      
+      print("Tipping stakeholders of branch with id <", std::to_string(idbranch), "> with total amount: ", asset{amount}, ", allocation base: ", asset{maxstake}, ".\n");
+
+      Stake::Stake stake(get_self(), 0);
+      stake.allocateRevshare(idbranch, amount, maxstake);
+    }
+
     #pragma endregion
 
     #pragma region ** wflChannel **
     
+    //merge channel balance into channel owner's active balance
     ACTION chnmergebal(name owner) {
       require_auth(owner);
       
@@ -228,44 +251,71 @@ namespace Woffler {
       channel.mergeBalance();
     }
     
+    //revenue share, called as deferred action
+    ACTION tipchannel(name channel, asset amount) {
+      auto self = get_self();
+      require_auth(self);
+      
+      print("Tipping channel <", name{channel}, "> with amount: ", asset{amount}, ".\n");
+
+      Channel::Channel chnl(self, channel);
+      chnl.addBalance(amount);
+    }
+    
     #pragma endregion
 
     #pragma region ** DEBUG **
 
     //DEBUG: testing cells generation for a given level and meta
-    ACTION regencells(name owner, uint64_t idlevel) {
-      checkAdmin(owner);
+    ACTION regencells(uint64_t idlevel) {
+      checkAdmin(get_self());
 
       Level::Level level(get_self(), idlevel);
-      level.regenCells(owner);
+      level.regenCells(get_self());
     }
 
     //DEBUG: testing cell randomizer
-    ACTION gencells(name account, uint8_t size) {
-      checkAdmin(account);
+    ACTION gencells(uint8_t size) {
+      checkAdmin(get_self());
 
-      Level::Level::debugGenerateCells(account, 1, size);
+      Level::Level::debugGenerateCells(get_self(), 1, size);
     }
 
     //DEBUG: testing level delete
-    ACTION rmlevel(name account, uint64_t idlevel) {
-      checkAdmin(account);
+    ACTION teleport(name account, uint64_t idlevel, uint8_t position) {
+      checkAdmin(get_self());
+
+      Player::Player player(get_self(), account);
+      player.reposition(idlevel, position);
+    }
+
+    //DEBUG actions for branch generation debug 
+    ACTION setrootlvl(uint64_t idbranch, uint64_t idrootlvl) {
+      checkAdmin(get_self());
+
+      Branch::Branch branch(get_self(), idbranch);
+      branch.setRootLevel(get_self(), idrootlvl);
+    }
+
+    //DEBUG: testing level delete
+    ACTION rmlevel(uint64_t idlevel) {
+      checkAdmin(get_self());
 
       Level::Level level(get_self(), idlevel);
       level.rmLevel();
     }
 
     //DEBUG: testing
-    ACTION rmbranch(name account, uint64_t idbranch) {
-      checkAdmin(account);
+    ACTION rmbranch(uint64_t idbranch) {
+      checkAdmin(get_self());
 
       Branch::Branch branch(get_self(), idbranch);
       branch.rmBranch();
     }
 
     //DEBUG: testing
-    ACTION rmstake(name account, uint64_t idstake) {
-      checkAdmin(account);
+    ACTION rmstake(uint64_t idstake) {
+      checkAdmin(get_self());
       
       Stake::Stake stake(get_self(), idstake);
       stake.rmStake();

@@ -79,6 +79,37 @@ namespace Woffler {
       }
     }
 
+    asset Stake::branchStake(uint64_t idbranch) {
+      //calculating branch stake total (all stakeholders)
+      auto stkidx = getIndex<"bybranch"_n>();
+      auto stkitr = stkidx.lower_bound(idbranch);
+      auto total = asset{0, Const::acceptedSymbol};
+      while(stkitr != stkidx.end()) {
+        total += stkitr->stake;
+        stkitr++;
+      }
+      return total;
+    }
+
+    void Stake::deferRevenueShare(uint64_t idbranch, asset amount, asset totalstake) {
+      transaction out{};
+      out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipstkhldrs"_n, std::make_tuple(idbranch, amount, totalstake));
+      out.delay_sec = 1;
+      out.send(Utils::now(), _self);
+    }
+
+    void Stake::allocateRevshare(uint64_t idbranch, asset amount, asset totalstake) {
+      auto stkidx = getIndex<"bybranch"_n>();
+      auto stkitr = stkidx.lower_bound(idbranch);
+      while(stkitr != stkidx.end()) {
+        auto share = (amount * stkitr->stake.amount) / totalstake.amount;
+        _idx.modify(*stkitr, _self, [&](auto& s) {
+          s.revenue += share;     
+        });
+        stkitr++;
+      }
+    }
+
     void Stake::rmStake() {
       remove();
     }

@@ -25,6 +25,7 @@ namespace Woffler {
       uint8_t stkrate;
       asset potmin = asset{0, Const::acceptedSymbol};
       uint8_t slsrate;
+      uint8_t winnerrate;
       string url;
       string name;
 
