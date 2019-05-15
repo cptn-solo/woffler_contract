@@ -224,17 +224,17 @@ namespace Woffler {
     ACTION stkaddval(name owner, uint64_t idbranch, asset amount) {
       require_auth(owner);
       
-      Stake::Stake stake(get_self(), 0);
-      stake.addStake(owner, idbranch, amount);
+      Branch::Branch branch(get_self(), idbranch);
+      branch.addStake(owner, amount);
     }  
 
-    ACTION tipstkhldrs(uint64_t idbranch, asset amount, asset maxstake) {
+    ACTION tipstkhldrs(uint64_t idbranch, asset amount, uint128_t txid) {
       require_auth(get_self());
       
-      print("Tipping stakeholders of branch with id <", std::to_string(idbranch), "> with total amount: ", asset{amount}, ", allocation base: ", asset{maxstake}, ".\n");
+      print("Tipping stakeholders of branch with id <", std::to_string(idbranch), "> with total amount: ", asset{amount}, ".\n");
 
       Stake::Stake stake(get_self(), 0);
-      stake.allocateRevshare(idbranch, amount, maxstake);
+      stake.allocateRevshare(idbranch, amount, txid);
     }
 
     #pragma endregion

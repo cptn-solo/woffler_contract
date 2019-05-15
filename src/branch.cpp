@@ -68,9 +68,45 @@ namespace Woffler {
       auto houseStake = (pot * Const::houseShare) / 100;
       auto playerStake = (pot - houseStake);
 
+      appendStake(owner, playerStake);
+      appendStake(_self,houseStake);
+    }
+
+    void Branch::addStake(name owner, asset amount) {
+
+      //cut owner's active balance for pot value (will fail if not enough funds)
+      Player::Player player(_self, owner);
+      player.subBalance(amount, owner);
+      
+      auto _branch = getBranch();
+
+      if (_branch.generation > 1) {
+        //non-root branches don't directly share profit with contract's account (house)
+        appendStake(owner,amount);
+      } 
+      else {
+        //register players's and house stake
+        auto houseStake = (amount * Const::houseShare) / 100;
+        auto playerStake = (amount - houseStake);
+
+        appendStake(owner, playerStake);
+        appendStake(_self, houseStake);
+      }
+
+      //if root level is created already - append staked value to the root level's pot
+      if(_branch.idrootlvl > 0) {
+        Level::Level level(_self, _branch.idrootlvl);
+        level.addPot(owner, amount);
+      }            
+    }
+
+    void Branch::appendStake(name owner, asset amount) {
       Stake::Stake stake(_self, 0);
-      stake.registerStake(owner, _entKey, playerStake);
-      stake.registerStake(_self, _entKey, houseStake);
+      stake.registerStake(owner, _entKey, amount);
+
+      update(_self, [&](auto& b) {
+        b.totalstake += amount;
+      });
     }
 
     void Branch::createRootLevel(name owner) {

@@ -16,6 +16,7 @@ namespace Woffler {
       uint64_t idmeta;
       name winner;
       uint64_t generation = 1;
+      asset totalstake = asset{0, Const::acceptedSymbol};//appended each time stake added to avoid recalculation in runtime
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idmeta() const { return idmeta; }
@@ -49,8 +50,10 @@ namespace Woffler {
       void createBranch(name owner, uint64_t idmeta, asset pot);
       void createRootLevel(name owner);
       uint64_t addRootLevel(name owner, asset pot);
+      void addStake(name owner, asset amount);
+      void appendStake(name owner, asset amount);
       void setRootLevel(name payer, uint64_t idrootlvl);
-      void setWinner(name player);
+      void setWinner(name player);      
       void deferRevenueShare(asset amount);
       void deferRevenueShare(asset amount, uint64_t idbranch);
       void allocateRevshare(asset amount);

@@ -1,4 +1,5 @@
 #include <stake.hpp>
+#include <branch.hpp>
 
 namespace Woffler {
   namespace Stake {    
@@ -11,37 +12,6 @@ namespace Woffler {
     DAO::DAO(stakes& _stakes, stakes::const_iterator itr): 
       Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
     
-    void Stake::addStake(name owner, uint64_t idbranch, asset amount) {
-      Branch::Branch branch(_self, idbranch);
-      branch.checkBranch();
-
-      //cut owner's active balance for pot value (will fail if not enough funds)
-      Player::Player player(_self, owner);
-      player.subBalance(amount, owner);
-      
-      auto _branch = branch.getBranch();
-
-      if (_branch.generation > 1) {
-        //non-root branches don't directly share profit with contract's account (house)
-        registerStake(owner, idbranch, amount);
-      } 
-      else {
-        //register players's and house stake
-        auto houseStake = (amount * Const::houseShare) / 100;
-        auto playerStake = (amount - houseStake);
-
-        registerStake(owner, idbranch, playerStake);
-        registerStake(_self, idbranch, houseStake);
-      }
-
-      //if root level is created already - append staked value to the root level's pot
-      if(_branch.idrootlvl > 0) {
-        Level::Level level(_self, _branch.idrootlvl);
-        level.checkLevel();
-        level.addPot(owner, amount);
-      }      
-    }
-
     void Stake::registerStake(name owner, uint64_t idbranch, asset amount) {
       //find stake and add amount, or emplace if not found
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
@@ -91,23 +61,35 @@ namespace Woffler {
       return total;
     }
 
-    void Stake::deferRevenueShare(uint64_t idbranch, asset amount, asset totalstake) {
-      transaction out{};
-      out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipstkhldrs"_n, std::make_tuple(idbranch, amount, totalstake));
-      out.delay_sec = 1;
-      out.send(Utils::deferredTXId("tipstkhldrs"), _self);
-    }
+    void Stake::allocateRevshare(name owner, uint64_t idbranch, uint64_t txid) {
+      auto stkidx = getIndex<"byownedbrnch"_n>();
+      auto stkitr = stkidx.find(Utils::combineIds(owner.value, idbranch));
+      check(stkitr != stkidx.end(), "No stake in branch for this owner");
 
-    void Stake::allocateRevshare(uint64_t idbranch, asset amount, asset totalstake) {
-      auto stkidx = getIndex<"bybranch"_n>();
-      auto stkitr = stkidx.lower_bound(idbranch);
-      while(stkitr != stkidx.end()) {
-        auto share = (amount * stkitr->stake.amount) / totalstake.amount;
-        _idx.modify(*stkitr, _self, [&](auto& s) {
-          s.revenue += share;     
+      Branch::Branch branch(_self, idbranch);
+      auto _branch = branch.getBranch();
+
+      tipstakes _tipstakes(_self, _self.value);
+      auto tipitr = _tipstakes.find(txid);
+      check(tipitr != _tipstakes.end(), "No tip found");
+
+      //start with 1st tip in the queue or will miss all tips before one claimed first (no backward movement possible)
+      check(stkitr->revtxid == 0 || tipitr->id > stkitr->revtxid, "Earlier tips must be allocated first. ");
+
+      auto share = (tipitr->amount * stkitr->stake.amount) / _branch.totalstake;
+      if (share >= tipitr->amount) {//last claimer removes tip record from table to preserve RAM
+        share = tipitr->amount;
+        tipstakes.erase(*tipitr);
+      } else {
+        _tipstakes.modify(*tipitr, _self, [&](auto& t) {
+          t.amount -= share;     
         });
-        stkitr++;
       }
+      
+      _idx.modify(*stkitr, _self, [&](auto& s) {
+        s.revenue += share;     
+        s.revtxid = txid;
+      });
     }
 
     void Stake::rmStake() {
