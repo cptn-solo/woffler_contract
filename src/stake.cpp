@@ -12,7 +12,7 @@ namespace Woffler {
     DAO::DAO(stakes& _stakes, stakes::const_iterator itr): 
       Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
     
-    void Stake::registerStake(name owner, uint64_t idbranch, asset amount, uint64_t revtxid) {
+    void Stake::registerStake(name owner, uint64_t idbranch, asset amount) {
       //find stake and add amount, or emplace if not found
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
       auto stkidx = getIndex<"byownedbrnch"_n>();
@@ -25,7 +25,6 @@ namespace Woffler {
           s.idbranch = idbranch;
           s.owner = owner;
           s.stake = amount;
-          s.revtxid = revtxid;
         });
       } 
       else {
@@ -33,7 +32,6 @@ namespace Woffler {
         //in this case we've found an item to be modified already, stake is the pointer to it:
         _idx.modify(*stake, owner, [&](auto& s) {
           s.stake += amount;     
-          s.revtxid = revtxid;
         });    
       }
     }
@@ -51,49 +49,22 @@ namespace Woffler {
       }
     }
 
-    asset Stake::branchStake(uint64_t idbranch) {
-      //calculating branch stake total (all stakeholders)
-      auto stkidx = getIndex<"bybranch"_n>();
-      auto stkitr = stkidx.lower_bound(idbranch);
-      auto total = asset{0, Const::acceptedSymbol};
-      while(stkitr != stkidx.end()) {
-        total += stkitr->stake;
-        stkitr++;
-      }
-      return total;
-    }
-
-    void Stake::claimTip(name owner, uint64_t txid) {
-      branchtips _branchtips(_self, _self.value);
-      auto tipitr = _branchtips.find(txid);
-      check(tipitr != _branchtips.end(), "No tip found");
-      check(tipitr->processed, "Tip must be processed befor claim. Tip processing is a deferred action initiated by one of 'lightweight' actions: tryturn, committurn, claimred and some other");
-
+    void Stake::claimRevenue(name owner, uint64_t idbranch) {
       auto stkidx = getIndex<"byownedbrnch"_n>();
-      auto stkitr = stkidx.find(Utils::combineIds(owner.value, tipitr->idbranch));
+      auto stkitr = stkidx.find(Utils::combineIds(owner.value, idbranch));
       check(stkitr != stkidx.end(), "No stake in branch for this owner");
 
-      Branch::Branch branch(_self, tipitr->idbranch);
+      Branch::Branch branch(_self, idbranch);
       auto _branch = branch.getBranch();
+      check(_branch.tipprocessed, "Branch revenue is not yet available for claiming after last tip. Please run revshare action first");
 
-      //start with 1st tip in the queue or will miss all tips before one claimed first 
-      //(no backward movement possible as it would require to implement additional relations between tips and stakeholders)
-      check(stkitr->lasttipid == 0 || tipitr->id > stkitr->lasttipid, "Earlier tips must be allocated first. ");
-
-      auto share = (tipitr->amount * stkitr->stake.amount.value) / tipitr->base.value;
-      if (share >= tipitr->unclaimed) {//last claimer removes tip record from table to release RAM
-        share = tipitr->unclaimed;
-        branchtips.erase(*tipitr);
-      } else {
-        _branchtips.modify(*tipitr, _self, [&](auto& t) {
-          t.unclaimed -= share;     
-        });
-      }
-
-      _idx.modify(*stkitr, same_payer, [&](auto& s) {
-        s.revenue += share;     
-        s.lasttipid = txid;
+      auto share = ((_branch.totalrvnue - stkitr->revenue) * stkitr->stake.amount) / _branch.totalstake.amount;
+      _idx.modify(*stkitr, owner, [&](auto& s) {
+        s.revenue += share;
       });
+
+      Player::Player player(_self, owner);
+      player.addBalance(share, owner);
     }
 
     void Stake::rmStake() {

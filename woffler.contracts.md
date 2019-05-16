@@ -197,7 +197,7 @@ INTENT. The intent of the `{{ stkaddval }}` action is to ncrease volume of root 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">chnmergebal</h1>
+<h1 class="contract">claimchnl</h1>
 
 ### Parameters
 Input parameters:
@@ -205,7 +205,7 @@ Input parameters:
 * `owner` (account of the sales channel's owner)
 
 ### Intent
-INTENT. The intent of the `{{ chnmergebal }}` action is to merge sales channel balance (net income from referrals) into channel owner's active balance.
+INTENT. The intent of the `{{ claimchnl }}` action is to merge sales channel balance (net income from referrals) into channel owner's active balance.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
@@ -240,6 +240,17 @@ INTENT. The intent of the `{{ unjail }}` action is to reset player's position an
 * payment rules are defined in the branch metadata of current level (see table [brnchmeta] of the game contract);
 * payment is calculated as ([current level's pot]*[unjlrate]/100);
 * payment can't be less then ([unjlmin]).
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">revshare</h1>
+
+### Parameters
+Input parameters: no input parameters.
+
+### Intent
+INTENT. The intent of the `{{ revshare }}` action is to initiate revenue share allocation processing for all unprocessed branchches. One pass of the action will process one hierarchy level of branch trees at a time. Action can be called by any account or script. Contract pays all RAM in course of the action execution (actually, only deferred actions are recreated during this action).
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

@@ -102,7 +102,7 @@ namespace Woffler {
 
     void Branch::appendStake(name owner, asset amount) {
       Stake::Stake stake(_self, 0);
-      stake.registerStake(owner, _entKey, amount, getBranch().lasttipid);
+      stake.registerStake(owner, _entKey, amount);
 
       update(_self, [&](auto& b) {
         b.totalstake += amount;
@@ -155,62 +155,56 @@ namespace Woffler {
     }
 
     void Branch::deferRevenueShare(asset amount) {
-      deferRevenueShare(amount, _entKey);
+      update(_self, [&](auto& b) {
+        b.totalrvnue += amount;
+        b.tipprocessed = false;
+      });
     }
 
     void Branch::deferRevenueShare(asset amount, uint64_t idbranch) {
-      auto tipid = Utils::now();
-
-      branchtips _branchtips(_self, _self.value);      
-      _branchtips.emplace(_self, [&](auto& t) {
-        t.id = tipid;//timestamp of the block/tx
-        t.idbranch = idbranch; 
-        t.base = getBranch().totalstake; //stake snapshot
-        t.amount = amount; //initial tip amount
-        t.unclaimed = amount; //unclaimed amount will be returned to returned to the branch root level pot after 
-      });
-
-      update(_self, [&](auto& b) {
-        b.lasttipid = tipid;
-      });
+      Branch branch(_self, idbranch);
+      branch.deferRevenueShare(amount);
     }
     
-    void Branch::allocateRevshare(uint64_t tipid) {
-
-      branchtips _branchtips(_self, _self.value);
-      auto tip = _branchtips.find(tipid);
-      
-      check(tip != _branchtips.end(), "Branch tip not found");
-
-      auto amount = tipitr->amount;
+    //this method always run in context of a deferred transaction and only for unprocessed branches
+    void Branch::allocateRevshare() {
       auto _branch = getBranch();
+
+      check(!_branch.tipprocessed, "Branch already processed");
+
+      auto totalrvnue = _branch.totalrvnue;//for unprocessed branch this amount is "gross" - contains parent and winner shares
+      auto parentrvnue = _branch.parentrvnue;//"old" value, doesn't yet include new tip until "processed"
+      auto winnerrvnue = _branch.winnerrvnue;//"old" value, doesn't yet include new tip until "processed"
 
       //get parent branch
       if (_branch.idparent > 0) {
         //if exists then cut (amount/generation) and call deferRevenueShare on parent branch
 
-        auto parentShare = tip->amount / _branch.generation;
-        amount -= parentShare;
-        deferRevenueShare(parentShare, _branch.idparent);
-        print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{parentShare}, "./n");
+        parentrvnue = totalrvnue / _branch.generation;//totalrvnue is bigger then it was when parentrvnue was calculated, so this is an "increment"
+        totalrvnue -= parentrvnue;
+        auto delta = parentrvnue - _branch.parentrvnue;
+        deferRevenueShare(delta, _branch.idparent);//only delta revenue amount should be paid at a time
+        print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{delta}, "./n");
       }      
       //cut branch winner amount
       if (_branch.winner) {
         BranchMeta::BranchMeta meta(_self, _branch.idmeta);
         auto _meta = meta.getMeta();
-        auto winnerShare = (amount * _meta.winnerrate) / 100;
+        auto winnerrvnue = (totalrvnue * _meta.winnerrate) / 100;
 
-        amount -= winnerShare;
+        totalrvnue -= winnerrvnue;
 
         Player::Player player(_self, _branch.winner);
-        player.addBalance(winnerShare, _self);
-        print("Branch winner <", name(_branch.winner), "> get: ", asset{winnerShare}, "./n");
+        auto delta = winnerrvnue - _branch.winnerrvnue;
+        player.addBalance(delta, _self);//only delta revenue amount should be paid at a time
+        print("Branch winner <", name(_branch.winner), "> get: ", asset{delta}, "./n");
       }      
       
-      _branchtips.modify(tip, _self, [&](auto& t) {
-        t.amount = amount;
-        t.unclaimed = amount;
-        t.processed = true;
+      update(_self, [&](auto& b) {
+        b.totalrvnue = totalrvnue;
+        b.parentrvnue = parentrvnue;
+        b.winnerrvnue = winnerrvnue;
+        b.tipprocessed = true;
       });
     }
     
