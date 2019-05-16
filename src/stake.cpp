@@ -56,7 +56,7 @@ namespace Woffler {
 
       Branch::Branch branch(_self, idbranch);
       auto _branch = branch.getBranch();
-      check(_branch.tipprocessed, "Branch revenue is not yet available for claiming after last tip. Please run revshare action first");
+      check(_branch.tipprocessed != 0, "Branch revenue is not yet available for claiming after last tip. Please run <revshare> action first");
 
       auto share = ((_branch.totalrvnue - stkitr->revenue) * stkitr->stake.amount) / _branch.totalstake.amount;
       _idx.modify(*stkitr, owner, [&](auto& s) {

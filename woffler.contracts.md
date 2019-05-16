@@ -254,3 +254,30 @@ INTENT. The intent of the `{{ revshare }}` action is to initiate revenue share a
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">tipbranch</h1>
+
+### Parameters
+Input parameters:
+
+* `idbranch` (ID of the branch to be processed).
+
+### Intent
+INTENT. The intent of the `{{ tipbranch }}` action is to process revenue share on branch, called as deferred action.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">claimbranch</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (account of the branch stakeholder).
+* `idbranch` (ID of the branch to claim revenue from).
+
+### Intent
+INTENT. The intent of the `{{ claimbranch }}` action is to claim branch stake holder's share of branch revenue.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

@@ -95,7 +95,7 @@ namespace Woffler {
 
       Branch::branches _branches(_self, _self.value);
       auto idx = _branches.get_index<"byprocessed"_n>();
-      auto itr = idx.lower_bound(false);//only unprocessed
+      auto itr = idx.lower_bound(0);//only unprocessed
 
       while(itr != idx.end()) {
         transaction out{};
@@ -250,7 +250,7 @@ namespace Woffler {
       branch.addStake(owner, amount);
     }  
 
-    //claim branch stake holder's share of branch tip
+    //claim branch stake holder's share of branch revenue
     ACTION claimbranch(name owner, uint64_t idbranch) {
       require_auth(owner);      
 

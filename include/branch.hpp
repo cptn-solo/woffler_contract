@@ -23,16 +23,16 @@ namespace Woffler {
       asset winnerrvnue = asset{0, Const::acceptedSymbol};//total revenue paid to winner 
       asset parentrvnue = asset{0, Const::acceptedSymbol};//total revenue paid to parent branch 
       
-      bool tipprocessed = false;
+      uint64_t tipprocessed = 0;
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idmeta() const { return idmeta; }
-      bool get_tipprocessed() const { return tipprocessed; }
+      uint64_t get_tipprocessed() const { return tipprocessed; }
     } wflbranch;
 
     typedef multi_index<"branches"_n, wflbranch,
       indexed_by<"bymeta"_n, const_mem_fun<wflbranch, uint64_t, &wflbranch::get_idmeta>>,
-      indexed_by<"byprocessed"_n, const_mem_fun<wflbranch, bool, &wflbranch::get_tipprocessed>>
+      indexed_by<"byprocessed"_n, const_mem_fun<wflbranch, uint64_t, &wflbranch::get_tipprocessed>>
     > branches;
 
     class DAO: public Accessor<branches, wflbranch, branches::const_iterator, uint64_t>  {

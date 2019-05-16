@@ -157,7 +157,7 @@ namespace Woffler {
     void Branch::deferRevenueShare(asset amount) {
       update(_self, [&](auto& b) {
         b.totalrvnue += amount;
-        b.tipprocessed = false;
+        b.tipprocessed = 0;
       });
     }
 
@@ -170,7 +170,7 @@ namespace Woffler {
     void Branch::allocateRevshare() {
       auto _branch = getBranch();
 
-      check(!_branch.tipprocessed, "Branch already processed");
+      check(_branch.tipprocessed == 0, "Branch already processed");
 
       auto totalrvnue = _branch.totalrvnue;//for unprocessed branch this amount is "gross" - contains parent and winner shares
       auto parentrvnue = _branch.parentrvnue;//"old" value, doesn't yet include new tip until "processed"
@@ -204,7 +204,7 @@ namespace Woffler {
         b.totalrvnue = totalrvnue;
         b.parentrvnue = parentrvnue;
         b.winnerrvnue = winnerrvnue;
-        b.tipprocessed = true;
+        b.tipprocessed = Utils::now();
       });
     }
     
