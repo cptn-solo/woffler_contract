@@ -73,13 +73,5 @@ namespace woffler {
       ACTION qstsetbal(name owner, uint64_t idquest, asset amount);
 
       #pragma endregion
-
-    private:      
-
-      void upsertChannel(name owner);
-      void checkBranchMetaUsage(uint64_t idmeta);
-
-      uint64_t addLevel(name owner, uint64_t idbranch, uint64_t idmeta);
-      void registerStake(name owner, uint64_t idbranch, asset amount);
   };
 }

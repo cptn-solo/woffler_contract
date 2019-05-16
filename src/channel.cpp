@@ -48,14 +48,6 @@ namespace Woffler {
       }
     }
     
-    void Channel::deferRevenueShare(asset amount) {
-      //prepare and send deferred action to pay out referrer's amount
-      transaction out{};
-      out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipchannel"_n, std::make_tuple(_entKey, amount));
-      out.delay_sec = 1;
-      out.send(Utils::deferredTXId("tipchannel"), _self);
-    }
-
     void Channel::addBalance(asset amount) {
       update(_entKey, [&](auto& c) {
         c.balance += amount;     

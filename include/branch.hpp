@@ -17,6 +17,7 @@ namespace Woffler {
       name winner;
       uint64_t generation = 1;
       asset totalstake = asset{0, Const::acceptedSymbol};//appended each time stake added to avoid recalculation in runtime
+      uint64_t lasttipid = 0;//any stake addition to the branch resets it's revtxid field to value of this field to prevent wrong tip allocations
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idmeta() const { return idmeta; }
@@ -26,12 +27,32 @@ namespace Woffler {
       indexed_by<"bymeta"_n, const_mem_fun<wflbranch, uint64_t, &wflbranch::get_idmeta>>
     > branches;
 
+    //tipstkhldrs(uint64_t idbranch, asset amount, asset maxstake)
+    typedef struct
+    [[eosio::table("branchtips"), eosio::contract("woffler")]]
+    wflbrtips {
+      uint64_t id;//timestamp of the block/tx
+      uint64_t idbranch; 
+      asset base; //stake snapshot
+      asset amount; //initial tip amount
+      asset unclaimed; //unclaimed amount will be returned to the branch root (?) level pot after some timeout
+      bool processed = false;
+      
+      uint64_t primary_key() const { return id; }
+      bool get_processed() const { return processed; }
+    } wflbrtips;  
+    
+    typedef multi_index<"branchtips"_n, wflbrtips, 
+      indexed_by<"byprocessed"_n, const_mem_fun<wflbrtips, bool, &wflbranch::get_processed>>,
+    > branchtips;
+
+
     class DAO: public Accessor<branches, wflbranch, branches::const_iterator, uint64_t>  {
       public:
       DAO(branches& _branches, uint64_t idbranch);
       DAO(branches& _branches, branches::const_iterator itr);
       static uint64_t keyValue(uint64_t idbranch) {
-          return idbranch;
+        return idbranch;
       }
     };
 
@@ -56,7 +77,7 @@ namespace Woffler {
       void setWinner(name player);      
       void deferRevenueShare(asset amount);
       void deferRevenueShare(asset amount, uint64_t idbranch);
-      void allocateRevshare(asset amount);
+      void allocateRevshare(uint64_t tipid);
       void rmBranch();
       
       bool isIndexedByMeta(uint64_t idmeta);

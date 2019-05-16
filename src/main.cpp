@@ -46,15 +46,6 @@ namespace Woffler {
     #pragma endregion
 
     #pragma region ** Contract (on-off boarding and deposit/withdraw): **
-
-    void checkAdmin(name account) {
-      require_auth(account);
-      auto self = get_self();
-      check(
-        account == self,
-        string("Debug mode available only to contract owner: ") + self.to_string()
-      );      
-    }
     
     //signup new player with custom sales channel (via referral link)
     ACTION signup(name account, name referrer) {
@@ -131,13 +122,14 @@ namespace Woffler {
     }
     
     //revenue share, called as deferred action
-    ACTION tipbranch(uint64_t idbranch, asset amount) {
-      require_auth(get_self());
+    ACTION tipbranch(uint64_t idbranch, uint64_t tipid) {
+      auto self = get_self();
+      require_auth(self);
       
-      print("Tipping branch with id <", std::to_string(idbranch), "> with amount: ", asset{amount}, ".\n");
+      print("Tipping branch: <", std::to_string(idbranch), "> with tipid: <", std::to_string(tipid), ">.\n");
 
-      Branch::Branch branch(get_self(), idbranch);
-      branch.allocateRevshare(amount);
+      Branch::Branch branch(self, idbranch);
+      branch.allocateRevshare(tipid);
     }
 
     #pragma endregion
@@ -228,13 +220,17 @@ namespace Woffler {
       branch.addStake(owner, amount);
     }  
 
-    ACTION tipstkhldrs(uint64_t idbranch, asset amount, uint128_t txid) {
-      require_auth(get_self());
-      
-      print("Tipping stakeholders of branch with id <", std::to_string(idbranch), "> with total amount: ", asset{amount}, ".\n");
+    //claim branch stake holder's share of branch tip. Can be run by stake owner or by contract (deferred)
+    ACTION claimtip(name owner, uint64_t txid) {
+      auto self = get_self();
 
-      Stake::Stake stake(get_self(), 0);
-      stake.allocateRevshare(idbranch, amount, txid);
+      if (owner != self)
+        require_auth(self);
+      else
+        require_auth(owner);      
+      
+      Stake::Stake stake(self, 0);
+      stake.claimTip(owner, txid);
     }
 
     #pragma endregion
@@ -249,17 +245,25 @@ namespace Woffler {
       channel.mergeBalance();
     }
     
-    //revenue share, called as deferred action
-    ACTION tipchannel(name channel, asset amount) {
-      require_auth(get_self());
-      
-      print("Tipping channel <", name{channel}, "> with amount: ", asset{amount}, ".\n");
-
-      Channel::Channel chnl(get_self(), channel);
-      chnl.addBalance(amount);
-    }
-    
     #pragma endregion
+
+    void processTipsSchedule() {
+      auto _self = get_self();
+
+      branchtips _branchtips(self, self.value);
+      auto idx = _branchtips.get_index<"byprocessed"_n>();
+      auto itr = idx.lower_bound(false);
+      uint64_t now{Utils::now()};
+      auto unclaimed = asset{0, Const::acceptedSymbol};
+      while(itr != idx.end()) {
+        transaction out{};
+        out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(itr->idbranch, itr->id));
+        out.delay_sec = 2;
+        out.send(Utils::deferredTXId("tipbranch"), _self);
+
+        itr++;
+      }
+    }
 
     #pragma region ** DEBUG **
 

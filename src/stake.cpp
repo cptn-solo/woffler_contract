@@ -12,7 +12,7 @@ namespace Woffler {
     DAO::DAO(stakes& _stakes, stakes::const_iterator itr): 
       Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
     
-    void Stake::registerStake(name owner, uint64_t idbranch, asset amount) {
+    void Stake::registerStake(name owner, uint64_t idbranch, asset amount, uint64_t revtxid) {
       //find stake and add amount, or emplace if not found
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
       auto stkidx = getIndex<"byownedbrnch"_n>();
@@ -25,6 +25,7 @@ namespace Woffler {
           s.idbranch = idbranch;
           s.owner = owner;
           s.stake = amount;
+          s.revtxid = revtxid;
         });
       } 
       else {
@@ -32,6 +33,7 @@ namespace Woffler {
         //in this case we've found an item to be modified already, stake is the pointer to it:
         _idx.modify(*stake, owner, [&](auto& s) {
           s.stake += amount;     
+          s.revtxid = revtxid;
         });    
       }
     }
@@ -61,34 +63,36 @@ namespace Woffler {
       return total;
     }
 
-    void Stake::allocateRevshare(name owner, uint64_t idbranch, uint64_t txid) {
+    void Stake::claimTip(name owner, uint64_t txid) {
+      branchtips _branchtips(_self, _self.value);
+      auto tipitr = _branchtips.find(txid);
+      check(tipitr != _branchtips.end(), "No tip found");
+      check(tipitr->processed, "Tip must be processed befor claim. Tip processing is a deferred action initiated by one of 'lightweight' actions: tryturn, committurn, claimred and some other");
+
       auto stkidx = getIndex<"byownedbrnch"_n>();
-      auto stkitr = stkidx.find(Utils::combineIds(owner.value, idbranch));
+      auto stkitr = stkidx.find(Utils::combineIds(owner.value, tipitr->idbranch));
       check(stkitr != stkidx.end(), "No stake in branch for this owner");
 
-      Branch::Branch branch(_self, idbranch);
+      Branch::Branch branch(_self, tipitr->idbranch);
       auto _branch = branch.getBranch();
 
-      tipstakes _tipstakes(_self, _self.value);
-      auto tipitr = _tipstakes.find(txid);
-      check(tipitr != _tipstakes.end(), "No tip found");
+      //start with 1st tip in the queue or will miss all tips before one claimed first 
+      //(no backward movement possible as it would require to implement additional relations between tips and stakeholders)
+      check(stkitr->lasttipid == 0 || tipitr->id > stkitr->lasttipid, "Earlier tips must be allocated first. ");
 
-      //start with 1st tip in the queue or will miss all tips before one claimed first (no backward movement possible)
-      check(stkitr->revtxid == 0 || tipitr->id > stkitr->revtxid, "Earlier tips must be allocated first. ");
-
-      auto share = (tipitr->amount * stkitr->stake.amount) / _branch.totalstake;
-      if (share >= tipitr->amount) {//last claimer removes tip record from table to preserve RAM
-        share = tipitr->amount;
-        tipstakes.erase(*tipitr);
+      auto share = (tipitr->amount * stkitr->stake.amount.value) / tipitr->base.value;
+      if (share >= tipitr->unclaimed) {//last claimer removes tip record from table to release RAM
+        share = tipitr->unclaimed;
+        branchtips.erase(*tipitr);
       } else {
-        _tipstakes.modify(*tipitr, _self, [&](auto& t) {
-          t.amount -= share;     
+        _branchtips.modify(*tipitr, _self, [&](auto& t) {
+          t.unclaimed -= share;     
         });
       }
-      
-      _idx.modify(*stkitr, _self, [&](auto& s) {
+
+      _idx.modify(*stkitr, same_payer, [&](auto& s) {
         s.revenue += share;     
-        s.revtxid = txid;
+        s.lasttipid = txid;
       });
     }
 

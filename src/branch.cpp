@@ -102,7 +102,7 @@ namespace Woffler {
 
     void Branch::appendStake(name owner, asset amount) {
       Stake::Stake stake(_self, 0);
-      stake.registerStake(owner, _entKey, amount);
+      stake.registerStake(owner, _entKey, amount, getBranch().lasttipid);
 
       update(_self, [&](auto& b) {
         b.totalstake += amount;
@@ -159,27 +159,41 @@ namespace Woffler {
     }
 
     void Branch::deferRevenueShare(asset amount, uint64_t idbranch) {
-      //prepare and send deferred action to share amount between stakeholders branch
-      //if generation of the branch > 1, deferred action must calculate and defer nested action to share with parent
-      transaction out{};
-      out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(idbranch, amount));
-      out.delay_sec = 2;
-      out.send(Utils::deferredTXId("tipbranch"), _self);
+      auto tipid = Utils::now();
+
+      branchtips _branchtips(_self, _self.value);      
+      _branchtips.emplace(_self, [&](auto& t) {
+        t.id = tipid;//timestamp of the block/tx
+        t.idbranch = idbranch; 
+        t.base = getBranch().totalstake; //stake snapshot
+        t.amount = amount; //initial tip amount
+        t.unclaimed = amount; //unclaimed amount will be returned to returned to the branch root level pot after 
+      });
+
+      update(_self, [&](auto& b) {
+        b.lasttipid = tipid;
+      });
     }
     
-    void Branch::allocateRevshare(asset amount) {
+    void Branch::allocateRevshare(uint64_t tipid) {
+
+      branchtips _branchtips(_self, _self.value);
+      auto tip = _branchtips.find(tipid);
+      
+      check(tip != _branchtips.end(), "Branch tip not found");
+
+      auto amount = tipitr->amount;
       auto _branch = getBranch();
 
       //get parent branch
       if (_branch.idparent > 0) {
         //if exists then cut (amount/generation) and call deferRevenueShare on parent branch
 
-        auto parentShare = amount / _branch.generation;
+        auto parentShare = tip->amount / _branch.generation;
         amount -= parentShare;
         deferRevenueShare(parentShare, _branch.idparent);
         print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{parentShare}, "./n");
       }      
-
       //cut branch winner amount
       if (_branch.winner) {
         BranchMeta::BranchMeta meta(_self, _branch.idmeta);
@@ -191,12 +205,13 @@ namespace Woffler {
         Player::Player player(_self, _branch.winner);
         player.addBalance(winnerShare, _self);
         print("Branch winner <", name(_branch.winner), "> get: ", asset{winnerShare}, "./n");
-      }
+      }      
       
-      //call stake.allocateRevshare(id, amount)
-      Stake::Stake stake(_self, 0);
-      asset totalStake = stake.branchStake(_entKey);
-      stake.deferRevenueShare(_entKey, amount, totalStake);
+      _branchtips.modify(tip, _self, [&](auto& t) {
+        t.amount = amount;
+        t.unclaimed = amount;
+        t.processed = true;
+      });
     }
     
     void Branch::rmBranch() {

@@ -12,5 +12,6 @@ namespace Const {
   const uint8_t tryturnMaxDistance(12);
   const uint8_t houseShare(3);//% of each stake added to branch
   const uint8_t maxChannelRate(10);
+  const uint64_t branchTipExpSeconds(2592000);//30days
 }
 
