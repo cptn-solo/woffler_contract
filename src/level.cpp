@@ -236,7 +236,7 @@ namespace Woffler {
       unjailAmount -= channelAmount;
 
       //put sales channel fee into sales channel balance (!defer)
-      channel.addBalance(channelAmount);
+      channel.addBalance(channelAmount, _self);
 
       // print("Pot balance before add: ", asset{_curl.potbalance}, "\n");
 

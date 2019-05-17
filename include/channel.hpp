@@ -37,7 +37,7 @@ namespace Woffler {
       
       void upsertChannel(name payer);
       void subChannel(name payer);
-      void addBalance(asset amount);
+      void addBalance(asset amount, name payer);
       void mergeBalance();
     };
   }

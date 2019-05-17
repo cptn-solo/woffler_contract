@@ -184,20 +184,20 @@ namespace Woffler {
         totalrvnue -= parentrvnue;
         auto delta = parentrvnue - _branch.parentrvnue;
         deferRevenueShare(delta, _branch.idparent);//only delta revenue amount should be paid at a time
-        print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{delta}, "./n");
+        print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{delta}, ".\n");
       }      
       //cut branch winner amount
       if (_branch.winner) {
         BranchMeta::BranchMeta meta(_self, _branch.idmeta);
         auto _meta = meta.getMeta();
-        auto winnerrvnue = (totalrvnue * _meta.winnerrate) / 100;
+        winnerrvnue = (totalrvnue * _meta.winnerrate) / 100;
 
         totalrvnue -= winnerrvnue;
 
         Player::Player player(_self, _branch.winner);
         auto delta = winnerrvnue - _branch.winnerrvnue;
         player.addBalance(delta, _self);//only delta revenue amount should be paid at a time
-        print("Branch winner <", name(_branch.winner), "> get: ", asset{delta}, "./n");
+        print("Branch winner <", name(_branch.winner), "> get: ", asset{delta}, ".\n");
       }      
       
       update(_self, [&](auto& b) {

@@ -48,11 +48,11 @@ namespace Woffler {
       }
     }
     
-    void Channel::addBalance(asset amount) {
-      update(_entKey, [&](auto& c) {
+    void Channel::addBalance(asset amount, name payer) {
+      update(payer, [&](auto& c) {
         c.balance += amount;     
       });
-      print("Channel <", name{_entKey}, "> got ", asset{amount}, "\n. Channel's owner can claim balance ", asset{getChannel().balance}, " using <chnmergebal> action. \n");
+      print("Channel <", name{_entKey}, "> got ", asset{amount}, "\n. Channel's owner can claim balance ", asset{getChannel().balance}, " using <claimchnl> action. \n");
     }
 
     void Channel::mergeBalance() {

@@ -58,13 +58,19 @@ namespace Woffler {
       auto _branch = branch.getBranch();
       check(_branch.tipprocessed != 0, "Branch revenue is not yet available for claiming after last tip. Please run <revshare> action first");
 
-      auto share = ((_branch.totalrvnue - stkitr->revenue) * stkitr->stake.amount) / _branch.totalstake.amount;
-      _idx.modify(*stkitr, owner, [&](auto& s) {
-        s.revenue += share;
-      });
-
-      Player::Player player(_self, owner);
-      player.addBalance(share, owner);
+      auto share = (_branch.totalrvnue * stkitr->stake.amount) / _branch.totalstake.amount;
+      auto addition = share - stkitr->revenue;
+      if (addition.amount > 0) {
+        _idx.modify(*stkitr, owner, [&](auto& s) {
+          s.revenue += addition;
+        });
+        Player::Player player(_self, owner);
+        player.addBalance(addition, owner);
+        print("Claimed new revenue: ", asset{addition}, " , current claimed revenue: ", asset{stkitr->revenue}, " \n");
+      } 
+      else {
+        print("No new revenue, current share: ", asset{share}, " , current claimed revenue: ", asset{stkitr->revenue}, " \n");
+      }
     }
 
     void Stake::rmStake() {
