@@ -6,14 +6,6 @@
 //*** Contract scope methods ***//
 namespace woffler {
 
-  #pragma region ** wflPlayer**
-
-  void woffler::claimtake(name player) {
-
-  }
-  
-  #pragma endregion
-
   #pragma region ** wflBranch**
 
   void woffler::addquest(name owner, uint64_t idbranch, 
@@ -35,15 +27,6 @@ namespace woffler {
   #pragma endregion   
   
   #pragma region wflLevel
-
-  void woffler::nextlvl(name player) {
-    require_auth(player);
-  }
-
-  void woffler::takelvl(name player) {
-    require_auth(player);
-    //dont forget to set retries count = 0 to force a player to call `splitbet` before split branch unlock trial
-  }
 
   void woffler::splitlvl(name player) {
     require_auth(player);  

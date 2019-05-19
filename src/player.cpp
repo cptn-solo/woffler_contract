@@ -161,6 +161,16 @@ namespace Woffler {
       });
     }
 
+    void Player::commitTake(asset amount) {
+      auto player = getPlayer();
+      update(_entKey, [&](auto& p) {
+        p.levelresult = Const::playerstate::TAKE;
+        p.resulttimestamp = Utils::now();
+        p.triesleft = Const::retriesCount;
+        p.vestingbalance += amount;
+      });
+    }
+
     void Player::claimGreen() {
       checkState(Const::playerstate::GREEN);
 
@@ -177,6 +187,25 @@ namespace Woffler {
       auto _level = level.getLevel();
       uint64_t idlevel = (_level.idparent > 0 ? _level.idparent : _level.id);
       resetPositionAtLevel(idlevel);
+    }
+
+    void Player::claimTake() {      
+      checkState(Const::playerstate::TAKE);
+      
+      auto _player = getPlayer();
+      
+      Level::Level level(_self, _player.idlvl);
+      auto _level = level.getLevel();
+
+      BranchMeta::BranchMeta meta(_self, _level.idmeta);
+      auto _meta = meta.getMeta();
+      auto expiredAfter = (_player.resulttimestamp + _meta.tkintrvl) - Utils::now();
+      check(
+        expiredAfter <= 0,
+        string("TAKE state did not expired yet. Seconds left until expiration: ") + std::to_string(expiredAfter)
+      );
+
+      resetPositionAtLevel(_player.idlvl);
     }
 
     void Player::resetPositionAtLevel(uint64_t idlvl) {
@@ -287,9 +316,9 @@ namespace Woffler {
       );
     }
 
-    //DEBUG:
+    //DEBUG only, payer == contract
     void Player::reposition(uint64_t idlevel, uint8_t position) {
-      update(_entKey, [&](auto& p) {
+      update(_self, [&](auto& p) {
         p.idlvl = idlevel;
         p.tryposition = position;
         p.triesleft = Const::retriesCount;

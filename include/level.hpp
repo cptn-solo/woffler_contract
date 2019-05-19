@@ -93,6 +93,7 @@ namespace Woffler {
       PlayerLevel(name self, name account);
 
       void nextLevel();
+      void takeReward();
       void unjailPlayer();
       
       private:

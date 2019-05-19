@@ -64,12 +64,14 @@ namespace Woffler {
       void switchRootLevel(uint64_t idlvl);
       void tryTurn();
       void commitTurn();
+      void commitTake(asset amount);
       void useTry();
       void useTry(uint8_t position);
       void commitTurn(Const::playerstate result);
 
       void claimGreen();
       void claimRed();
+      void claimTake();
       void resetPositionAtLevel(uint64_t idlvl);
 
       void rmAccount();

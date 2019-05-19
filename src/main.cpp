@@ -194,6 +194,16 @@ namespace Woffler {
       Level::PlayerLevel plevel(get_self(), account);
       plevel.unjailPlayer();
     }
+
+    //split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update)
+    //player wait untill the end of `tkintrvl` set with level result upon `takelvl`
+    //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level
+    ACTION takelvl(name account) {
+      require_auth(account);
+      //dont forget to set retries count = 0 to force a player to call `splitbet` before split branch unlock trial
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.takeReward();
+    }
         
     #pragma endregion
 
@@ -237,6 +247,14 @@ namespace Woffler {
 
       Player::Player player(get_self(), account);
       player.claimRed();
+    }
+
+    //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
+    ACTION claimtake(name account) {
+      require_auth(account);
+
+      Player::Player player(get_self(), account);
+      player.claimTake();
     }
     
     #pragma endregion

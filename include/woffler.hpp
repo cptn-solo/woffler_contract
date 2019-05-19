@@ -12,17 +12,6 @@ namespace woffler {
       woffler(name receiver, name code, datastream<const char*> ds): 
         contract(receiver, code, ds) {}
             
-      #pragma region ** Player (wflPlayer): **
-    
-      //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
-      ACTION claimtake(name player);
-
-      #pragma endregion
-
-      #pragma region ** Sales channels (wflChannel): **
-
-      #pragma endregion            
-
       #pragma region ** Branches (wflBranch): **
 
       //link quest created earlier to the specified branch (see qstsetmeta)
@@ -42,11 +31,6 @@ namespace woffler {
 
       #pragma region ** Levels (wflLevel): **
       
-      //split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update)
-      //player wait untill the end of `tkintrvl` set with level result upon `takelvl`
-      //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level
-      ACTION takelvl(name player);
-
       //make subbranch with locked root level
       //split level's pot according to level's branch metadata (`spltrate`, `potmin`)
       //make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)

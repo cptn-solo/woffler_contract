@@ -281,3 +281,29 @@ INTENT. The intent of the `{{ claimbranch }}` action is to claim branch stake ho
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">takelvl</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player decided take his reward).
+
+### Intent
+INTENT. The intent of the `{{ takelvl }}` action is to split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update). Player wait untill the end of `tkintrvl` set with level result upon `takelvl` action is called. Player calls `claimtake` action to move further after `tkintrvl` expires. After `takelvl` player positioned in current level, zero cell, and can repeat his trial of the level.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">claimtake</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player claiming expired TAKE state to be reset).
+
+### Intent
+INTENT. The intent of the `{{ claimtake }}` action is to reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

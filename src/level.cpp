@@ -195,6 +195,34 @@ namespace Woffler {
       }
     }
 
+    void PlayerLevel::takeReward() {
+      player.checkState(Const::playerstate::GREEN);
+      
+      auto _player = player.getPlayer();
+      auto _curl = getLevel();
+      
+      BranchMeta::BranchMeta meta(_self, _curl.idmeta);
+      auto _meta = meta.getMeta();
+
+      auto reward = (_curl.potbalance * _meta.tkrate) / 100;
+
+      //solved * (100-TAKE_RATE)% > POT_MIN ? 
+      check(reward.amount > 0, "Reward amount must be > 0");
+      check(
+        (_curl.potbalance - reward) >= _meta.potmin,
+        string("Level pot is insufficient for reward, must be at least ")+_meta.potmin.to_string().c_str()+string(" after reward paid.\n")      
+      );
+
+      //Cut TAKE_RATE% of solved pot and append to winner's vesting balance
+      update(_player.account, [&](auto& l) {
+        l.potbalance -= reward;
+      });
+
+      //Set winner level result to TAKE and update result timestamp
+      player.commitTake(reward);//retries reset, reward added to vesting
+
+    }
+
     void PlayerLevel::unjailPlayer() {
       player.checkState(Const::playerstate::RED);
       
