@@ -206,6 +206,12 @@ namespace Woffler {
       );
 
       resetPositionAtLevel(_player.idlvl);
+      
+      //Move player's vested balance to active balance
+      update(_entKey, [&](auto& p) {
+        p.activebalance += p.vestingbalance;
+        p.vestingbalance = asset{0, Const::acceptedSymbol};
+      });
     }
 
     void Player::resetPositionAtLevel(uint64_t idlvl) {
