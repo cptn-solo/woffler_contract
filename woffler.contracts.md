@@ -320,3 +320,37 @@ INTENT. The intent of the `{{ untake }}` action is to return vested balance to l
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">splitlvl</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player initiating branch split from current level. State of the player must be GREEN).
+
+### Intent
+INTENT. The intent of the `{{ splitlvl }}` action is to:
+
+* make subbranch with locked root level
+* split level's pot according to level's branch metadata (`spltrate`, `potmin`)
+* make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
+* as new level is locked, splitter have 3 tries to unlock it, if no luck - state reset to SAFE in current level (zero cell)
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">splitbet</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player to be charged for retries count reset. State of the player must be GREEN, retries count must be 0).
+
+### Intent
+INTENT. The intent of the `{{ splitbet }}` action to reset retries count while trying to unlock new split branch:
+
+* if no free unlock retries left, player can bet for split from his active balance to reset retries count
+* bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

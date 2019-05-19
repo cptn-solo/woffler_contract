@@ -29,20 +29,6 @@ namespace woffler {
 
       #pragma endregion
 
-      #pragma region ** Levels (wflLevel): **
-      
-      //make subbranch with locked root level
-      //split level's pot according to level's branch metadata (`spltrate`, `potmin`)
-      //make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
-      //as new level is locked, splitter have 3 tries to unlock it, if no luck - zero-ed in current level
-      ACTION splitlvl(name player);
-
-      //if no free unlock retries left, player can bet for split from his active balance to reset retries count  
-      //bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
-      ACTION splitbet(name player);
-
-      #pragma endregion
-
       #pragma region ** Quests (wflQuest): **
           
       //create/update owned quest metadata

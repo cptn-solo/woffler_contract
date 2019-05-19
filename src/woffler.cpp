@@ -26,20 +26,6 @@ namespace woffler {
 
   #pragma endregion   
   
-  #pragma region wflLevel
-
-  void woffler::splitlvl(name player) {
-    require_auth(player);  
-  }
-
-  void woffler::splitbet(name player) {
-    require_auth(player);
-    //players in TAKE state 1st cut vested balance, then - active
-    //reset retries count if balance cut was successfull
-  }
-
-  #pragma endregion
-
   #pragma region wflChannel
   
   //*** Sales channel scope methods (wflChannel) ***//
