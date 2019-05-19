@@ -307,3 +307,16 @@ INTENT. The intent of the `{{ claimtake }}` action is to reset player's TAKE pos
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">untake</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player cancelling TAKE state and returning vested funds back to level's pot).
+
+### Intent
+INTENT. The intent of the `{{ untake }}` action is to return vested balance to level's pot and set player's state back to GREEN.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.

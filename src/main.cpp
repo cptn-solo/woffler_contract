@@ -200,11 +200,10 @@ namespace Woffler {
     //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level
     ACTION takelvl(name account) {
       require_auth(account);
-      //dont forget to set retries count = 0 to force a player to call `splitbet` before split branch unlock trial
       Level::PlayerLevel plevel(get_self(), account);
       plevel.takeReward();
     }
-        
+
     #pragma endregion
 
     #pragma region ** wflPlayer **
@@ -256,6 +255,15 @@ namespace Woffler {
       Player::Player player(get_self(), account);
       player.claimTake();
     }
+    
+    //return vested balance to level's pot and set state back to GREEN
+    ACTION untake(name account) {
+      require_auth(account);
+      
+      Player::Player player(get_self(), account);
+      player.cancelTake();
+    }
+
     
     #pragma endregion
     

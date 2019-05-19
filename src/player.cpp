@@ -152,9 +152,8 @@ namespace Woffler {
     }
 
     void Player::commitTurn(Const::playerstate result) {
-      auto player = getPlayer();
       update(_entKey, [&](auto& p) {
-        p.currentposition = player.tryposition;
+        p.currentposition = p.tryposition;
         p.levelresult = result;
         p.resulttimestamp = Utils::now();
         p.triesleft = Const::retriesCount;
@@ -162,13 +161,28 @@ namespace Woffler {
     }
 
     void Player::commitTake(asset amount) {
-      auto player = getPlayer();
       update(_entKey, [&](auto& p) {
         p.levelresult = Const::playerstate::TAKE;
         p.resulttimestamp = Utils::now();
         p.triesleft = Const::retriesCount;
         p.vestingbalance += amount;
       });
+    }
+
+    void Player::cancelTake() {
+      checkState(Const::playerstate::TAKE);
+      
+      auto _player = getPlayer();
+
+      Level::Level level(_self, _player.idlvl);      
+      level.addPot(_entKey, _player.vestingbalance);
+
+      update(_entKey, [&](auto& p) {
+        p.levelresult = Const::playerstate::GREEN;
+        p.resulttimestamp = Utils::now();
+        p.triesleft = Const::retriesCount;
+        p.vestingbalance = asset{0, Const::acceptedSymbol};
+      });      
     }
 
     void Player::claimGreen() {

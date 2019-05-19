@@ -65,6 +65,7 @@ namespace Woffler {
       void tryTurn();
       void commitTurn();
       void commitTake(asset amount);
+      void cancelTake();
       void useTry();
       void useTry(uint8_t position);
       void commitTurn(Const::playerstate result);
