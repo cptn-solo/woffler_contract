@@ -43,13 +43,20 @@ namespace Woffler {
     }
 
     void Level::unlockRootLevel(name owner) {
+      checkRootLevel();
       checkLockedLevel();
 
       auto _level = getEnt<wfllevel>();
       /* Restrictions check */
-      checkRootLevel();
+      if (_level.idparent > 0) {
+        //Retries count to unlock split branch levels is restricted. 
+        //Additional tries are bought by calling `splitbet` action.
+        Player::Player player(_self, owner);
+        player.checkLevelUnlockTrialAllowed(_level.idparent);
+        player.useTry();
+      }
 
-      //find stake to use as pot value for root level
+      //Root levels of both root and split branches can be unlocked only by stakeholders
       Stake::Stake stake(_self, 0);
       stake.checkIsStakeholder(owner, _level.idbranch);
 

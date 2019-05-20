@@ -331,14 +331,13 @@ namespace Woffler {
       );
       check(
         (
-          p.levelresult == Const::playerstate::GREEN ||
-          p.levelresult == Const::playerstate::TAKE
+          p.levelresult == Const::playerstate::GREEN
         ),
         "Player can unlock level only from GREEN position"
       );
       check(
         p.triesleft >= 1,
-        "No retries left"
+        "Retries count to unlock split branch levels is restricted. Additional tries are bought by calling `splitbet` action."
       );
     }
 

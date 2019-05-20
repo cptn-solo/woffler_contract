@@ -107,7 +107,10 @@ Input parameters:
 * `idlevel` (ID of the level to be unlocked)
 
 ### Intent
-INTENT. The intent of the `{{ unlocklvl }}` action is to generate cells for a given level and mark level unlocked if compatible green/red set was found by the pretender. If a level being unlocked is the Root level of the Root branch, pretender must own stake in the branch. If a level is general one, pretender must stand in the previous level and be Green.
+INTENT. The intent of the `{{ unlocklvl }}` action is to generate cells for a given level and mark level unlocked if compatible green/red set was found by the pretender. Rules:
+
+* if a level being unlocked is the Root level of Root branch, pretender must own stake in the branch
+* if a level being unlocked is the Root level of Split branch, pretender must stand in the previous level, be Green, and retries count must be > 0. Additional tries are bought by calling `splitbet` action.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
