@@ -95,6 +95,7 @@ namespace Woffler {
       void nextLevel();
       void takeReward();
       void unjailPlayer();
+      void splitLevel();
       
       private:
       Player::Player player;

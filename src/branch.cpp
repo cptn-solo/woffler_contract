@@ -1,23 +1,22 @@
 #include <branch.hpp>
-#include <branchmeta.hpp>
 #include <player.hpp>
 #include <stake.hpp>
 
 namespace Woffler {
-  namespace Branch {    
-    Branch::Branch(name self, uint64_t idbranch) : 
+  namespace Branch {
+    Branch::Branch(name self, uint64_t idbranch) :
       Entity<branches, DAO, uint64_t>(self, idbranch) {}
 
-    DAO::DAO(branches& _branches, uint64_t idbranch): 
+    DAO::DAO(branches& _branches, uint64_t idbranch):
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
 
-    DAO::DAO(branches& _branches, branches::const_iterator itr): 
+    DAO::DAO(branches& _branches, branches::const_iterator itr):
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, itr) {}
 
     wflbranch Branch::getBranch() {
       return getEnt<wflbranch>();
     }
-    
+
     uint64_t Branch::getRootLevel() {
       auto b = getEnt<wflbranch>();
       return b.idrootlvl;
@@ -25,7 +24,7 @@ namespace Woffler {
 
     //create root branch with root level after meta is created/selected from existing
     void Branch::createBranch(name owner, uint64_t idmeta, asset pot) {
-      BranchMeta::BranchMeta meta(_self, idmeta);    
+      BranchMeta::BranchMeta meta(_self, idmeta);
       BranchMeta::wflbrnchmeta _meta = meta.getMeta();
 
       auto minPot = (((_meta.stkmin * 100) / _meta.stkrate) * 100) / _meta.spltrate;
@@ -47,18 +46,18 @@ namespace Woffler {
 
         for stkmin = 1, stkrate = 10, spltrate = 50 we'll get minimum pot value as
         (((1*100)/10)*100)/50 = 20
-        
+
         */
-        minPot <= pot,    
+        minPot <= pot,
         string("Branch minimum pot is ")+minPot.to_string().c_str()
       );
-      
+
       //cut owner's active balance for pot value (will fail if not enough funds)
       Player::Player player(_self, owner);
-      player.subBalance(pot, owner);      
-      
+      player.subBalance(pot, owner);
+
       //create branch record
-      _entKey = nextPK();      
+      _entKey = nextPK();
       create(owner, [&](auto& b) {
         b.id = _entKey;
         b.idmeta = idmeta;
@@ -72,18 +71,32 @@ namespace Woffler {
       appendStake(_self,houseStake);
     }
 
+    uint64_t Branch::createChildBranch(name owner, BranchMeta::wflbrnchmeta meta, asset pot, uint64_t idparent) {
+      _entKey = nextPK();
+      auto parent = _idx.find(idparent);
+      check(parent != _idx.end(), "Parent branch not found");
+      create(owner, [&](auto& b) {
+        b.id = _entKey;
+        b.idmeta = meta.id;
+        b.idparent = idparent;
+        b.generation = (parent->generation + 1);
+      });
+      appendStake(owner, pot);
+      return _entKey;
+    }
+
     void Branch::addStake(name owner, asset amount) {
 
       //cut owner's active balance for pot value (will fail if not enough funds)
       Player::Player player(_self, owner);
       player.subBalance(amount, owner);
-      
+
       auto _branch = getBranch();
 
       if (_branch.generation > 1) {
         //non-root branches don't directly share profit with contract's account (house)
         appendStake(owner,amount);
-      } 
+      }
       else {
         //register players's and house stake
         auto houseStake = (amount * Const::houseShare) / 100;
@@ -97,7 +110,7 @@ namespace Woffler {
       if(_branch.idrootlvl > 0) {
         Level::Level level(_self, _branch.idrootlvl);
         level.addPot(owner, amount);
-      }            
+      }
     }
 
     void Branch::appendStake(name owner, asset amount) {
@@ -120,18 +133,18 @@ namespace Woffler {
       stake.branchStake(owner, _entKey, branchStake, ownerStake);
 
       check(
-        ownerStake > asset{0, Const::acceptedSymbol},
+        ownerStake.amount > 0,
         "Only root branch stakeholder allowed to create a root level for the branch"
       );
-      
+
       //add pot value from owner's active balance to the root level's pot
-      uint64_t idrootlvl = addRootLevel(owner, branchStake);      
+      uint64_t idrootlvl = addRootLevel(owner, branchStake);
       setRootLevel(owner, idrootlvl);
     }
-    
-    uint64_t Branch::addRootLevel(name owner, asset pot) {      
+
+    uint64_t Branch::addRootLevel(name owner, asset pot) {
       //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, getEnt<wflbranch>().idmeta);    
+      BranchMeta::BranchMeta meta(_self, getEnt<wflbranch>().idmeta);
       auto _meta = meta.getMeta();
 
       //emplacing new (root) level
@@ -142,16 +155,15 @@ namespace Woffler {
     }
 
     void Branch::setRootLevel(name payer, uint64_t idrootlvl) {
-      checkBranch();
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
-      });    
+      });
     }
 
     void Branch::setWinner(name player) {
       update(player, [&](auto& b) {
         b.winner = player;
-      });    
+      });
     }
 
     void Branch::deferRevenueShare(asset amount) {
@@ -165,7 +177,7 @@ namespace Woffler {
       Branch branch(_self, idbranch);
       branch.deferRevenueShare(amount);
     }
-    
+
     //this method always run in context of a deferred transaction and only for unprocessed branches
     void Branch::allocateRevshare() {
       auto _branch = getBranch();
@@ -175,15 +187,15 @@ namespace Woffler {
       /*
         Implementation notice.
         To avoid need to generate detailed "billing" record for each revenue event, generated by levels, current implementation
-        relies on incremental approach: each time branch is tipped by some revenue event (unjail, etc.), its total revenue field 
+        relies on incremental approach: each time branch is tipped by some revenue event (unjail, etc.), its total revenue field
         appended and tipprocessed flag set to false. This current allocateRevshare method does the processing of revenue event
         and resets the flag back to true upon processing is complete.
-        Allocation itself relies on values of already processed (allocated) revenue stored in the branch data. 
+        Allocation itself relies on values of already processed (allocated) revenue stored in the branch data.
         Claim process in its turn relies on values of already claimed revenue stored in the stakeholders ledger (see Stake namespace).
         Some minor drawbacks of the implementation:
-        - if revenue events will occur often, branch state will stay "unprocessed" most of the time. 
-        - to "process" the branch after revenue event, one should call `revshare` action to create deferred processing transaction for 
-        unprocessed branches. 
+        - if revenue events will occur often, branch state will stay "unprocessed" most of the time.
+        - to "process" the branch after revenue event, one should call `revshare` action to create deferred processing transaction for
+        unprocessed branches.
         Despite of these drawbacks, stakeholders can claim their revenue once per day/week/month, while `revshare` action can be called
         by any account even not registered in the game contract as a player.
       */
@@ -201,7 +213,7 @@ namespace Woffler {
         auto delta = parentrvnue - _branch.parentrvnue;
         deferRevenueShare(delta, _branch.idparent);//only delta revenue amount should be paid at a time
         print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{delta}, ".\n");
-      }      
+      }
       //cut branch winner amount
       if (_branch.winner) {
         BranchMeta::BranchMeta meta(_self, _branch.idmeta);
@@ -214,8 +226,8 @@ namespace Woffler {
         auto delta = winnerrvnue - _branch.winnerrvnue;
         player.addBalance(delta, _self);//only delta revenue amount should be paid at a time
         print("Branch winner <", name(_branch.winner), "> get: ", asset{delta}, ".\n");
-      }      
-      
+      }
+
       update(_self, [&](auto& b) {
         b.totalrvnue = totalrvnue;
         b.parentrvnue = parentrvnue;
@@ -223,7 +235,7 @@ namespace Woffler {
         b.tipprocessed = Utils::now();
       });
     }
-    
+
     void Branch::rmBranch() {
       remove();
     }
@@ -245,7 +257,7 @@ namespace Woffler {
         b.idrootlvl != 0,
         "Branch has no root level yet."
       );
-    }  
+    }
 
     void Branch::checkEmptyBranch() {
       auto b = getEnt<wflbranch>();
@@ -253,7 +265,7 @@ namespace Woffler {
         b.idrootlvl == 0,
         "Root level already exists"
       );
-    }  
+    }
 
     void Branch::checkBranchMetaNotUsed(uint64_t idmeta) {
       check(
@@ -261,11 +273,11 @@ namespace Woffler {
         "Branch metadata is already used in branches."
       );
     }
-    
+
     bool Branch::isIndexedByMeta(uint64_t idmeta) {
         auto idxbymeta = getIndex<"bymeta"_n>();
-        auto itrbymeta = idxbymeta.find(idmeta);  
+        auto itrbymeta = idxbymeta.find(idmeta);
         return itrbymeta != idxbymeta.end();
-    }    
+    }
   }
 }

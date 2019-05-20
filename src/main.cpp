@@ -200,6 +200,7 @@ namespace Woffler {
     //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level
     ACTION takelvl(name account) {
       require_auth(account);
+
       Level::PlayerLevel plevel(get_self(), account);
       plevel.takeReward();
     }
@@ -209,7 +210,10 @@ namespace Woffler {
     //make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
     //as new level is locked, splitter have 3 tries to unlock it, if no luck - zero-ed in current level
     ACTION splitlvl(name account) {
-
+      require_auth(account);
+      
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.splitLevel();
     }
 
     //if no free unlock retries left, player can bet for split from his active balance to reset retries count  

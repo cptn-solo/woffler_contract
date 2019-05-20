@@ -1,5 +1,6 @@
 #pragma once
 #include <entity.hpp>
+#include <branchmeta.hpp>
 
 namespace Woffler {
   using namespace eosio;
@@ -57,6 +58,7 @@ namespace Woffler {
       void checkBranchMetaNotUsed(uint64_t idmeta);
 
       void createBranch(name owner, uint64_t idmeta, asset pot);
+      uint64_t createChildBranch(name owner, BranchMeta::wflbrnchmeta meta, asset pot, uint64_t idparent);
       void createRootLevel(name owner);
       uint64_t addRootLevel(name owner, asset pot);
       void addStake(name owner, asset amount);

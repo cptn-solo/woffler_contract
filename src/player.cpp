@@ -171,7 +171,7 @@ namespace Woffler {
 
     void Player::cancelTake() {
       checkState(Const::playerstate::TAKE);
-      
+
       auto _player = getPlayer();
 
       Level::Level level(_self, _player.idlvl);      
@@ -235,6 +235,12 @@ namespace Woffler {
         p.currentposition = 0;
         p.levelresult = Const::playerstate::SAFE;
         p.resulttimestamp = 0;
+        p.triesleft = Const::retriesCount;
+      });
+    }
+
+    void Player::resetRetriesCount() {
+      update(_entKey, [&](auto& p) {
         p.triesleft = Const::retriesCount;
       });
     }

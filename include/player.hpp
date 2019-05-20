@@ -74,6 +74,7 @@ namespace Woffler {
       void claimRed();
       void claimTake();
       void resetPositionAtLevel(uint64_t idlvl);
+      void resetRetriesCount();
 
       void rmAccount();
       
