@@ -54,7 +54,8 @@ namespace Woffler {
       void checkState(Const::playerstate state);//player is in specified state
       void checkBalanceCovers(asset amount);//player's active balance is not less then specified
       void checkBalanceZero();//player's active balance is zero
-      void checkSwitchBranchAllowed();//player can change branch
+      void checkSwitchRootBranchAllowed();//player can change root branch
+      void checkSwitchBranchAllowed();//player can change split branch (move to side branch)
       void checkLevelUnlockTrialAllowed(uint64_t idlvl);//player can proceed with specified level unlocking trial
 
       void createPlayer(name payer, name referrer);

@@ -47,6 +47,7 @@ namespace Woffler {
   template<typename Idx, typename Ent, typename Itr, typename V>
   void Accessor<Idx, Ent, Itr, V>::fetchByKey(V entKey) {
     _itr = _idx.find(entKey);
+    check(_itr != _idx.end(), "Object for key was not found in index");
     _ent = *_itr;
   }
 

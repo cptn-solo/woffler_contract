@@ -72,16 +72,30 @@ namespace Woffler {
     }
 
     void Player::switchBranch(uint64_t idbranch) {
-      checkSwitchBranchAllowed();
+      auto _player = getPlayer();
 
       //find branch of the level
       Branch::Branch branch(_self, idbranch);
-      branch.checkStartBranch();
+      auto _branch = branch.getBranch();
+      uint64_t idrootlvl = _branch.idrootlvl;
+      
+      check(idrootlvl > 0, "Player can be positioned only in branches with root level available.");
 
-      uint64_t idrootlvl = branch.getRootLevel();
+      Level::Level level(_self, idrootlvl);
+      auto _level = level.getLevel();
+
+      //Player can change root branch only from safe positions (SAFE, INIT), while moving to 
+      //side branches is available only from the point of branch split.
+      if (_branch.idparent == 0) {
+        checkSwitchRootBranchAllowed();
+        branch.checkStartBranch();
+      } 
+      else {
+        checkSwitchBranchAllowed();
+        check(_player.idlvl == _level.idparent, "Player can move to side branch only from split level.");
+      }
 
       //check if branch is unlocked (its root level is not locked)
-      Level::Level level(_self, idrootlvl);
       level.checkUnlockedLevel();
 
       switchRootLevel(idrootlvl);
@@ -95,6 +109,7 @@ namespace Woffler {
         p.levelresult = Const::playerstate::SAFE;
         p.tryposition = 0;
         p.currentposition = 0;
+        p.resulttimestamp = 0;
       });
     }
 
@@ -314,12 +329,20 @@ namespace Woffler {
       );
     }
 
-    void Player::checkSwitchBranchAllowed() {
+    void Player::checkSwitchRootBranchAllowed() {
       auto p = getPlayer();
       check(
         p.levelresult == Const::playerstate::INIT ||
         p.levelresult == Const::playerstate::SAFE,
-        "Player can switch branch only from safe locations."
+        "Player can switch root branch only from safe locations."
+      );
+    }
+
+    void Player::checkSwitchBranchAllowed() {
+      auto p = getPlayer();
+      check(
+        p.levelresult == Const::playerstate::GREEN,
+        "Player can move to side branch only from GREEN locations."
       );
     }
 
