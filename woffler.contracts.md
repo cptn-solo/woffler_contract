@@ -337,7 +337,7 @@ INTENT. The intent of the `{{ splitlvl }}` action is to:
 * make subbranch with locked root level
 * split level's pot according to level's branch metadata (`spltrate`, `potmin`)
 * make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
-* as new level is locked, splitter have 3 tries to unlock it, if no luck - state reset to SAFE in current level (zero cell)
+* as new level is locked, splitter have 3 tries to unlock it using `unlocklvl` action. If no luck - additional tries can be bought by calling `splitbet` action.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

@@ -43,6 +43,9 @@ namespace Woffler {
     };
 
     class Level: public Entity<levels, DAO, uint64_t> {
+      private:
+      BranchMeta::BranchMeta meta;
+
       protected:
       void setIdLevel(uint64_t idlevel);
       
@@ -89,6 +92,10 @@ namespace Woffler {
     };
 
     class PlayerLevel: public Level {      
+      private:
+      Player::Player player;
+      void cutRevshare(asset& revenue, const uint8_t& rate, const uint64_t& idbranch, const name& channel);
+
       public:
       PlayerLevel(name self, name account);
 
@@ -96,10 +103,7 @@ namespace Woffler {
       void takeReward();
       void unjailPlayer();
       void splitLevel();
-      
-      private:
-      Player::Player player;
-
+      void splitBet();      
     };
   }
 }

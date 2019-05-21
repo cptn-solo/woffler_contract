@@ -48,6 +48,12 @@ namespace Woffler {
       BranchMeta(name self, uint64_t idmeta);
 
       wflbrnchmeta getMeta();
+
+      asset nextPot(const asset& pot);
+      asset splitPot(const asset& pot);
+      asset takeAmount(const asset& pot);
+      asset unjailPrice(const asset& pot);
+      asset splitBetPrice(const asset& pot);
       
       void checkIsMeta();
       void checkCells(wflbrnchmeta meta);
