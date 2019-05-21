@@ -71,13 +71,13 @@ namespace Woffler {
       appendStake(_self,houseStake);
     }
 
-    uint64_t Branch::createChildBranch(name owner, BranchMeta::wflbrnchmeta meta, asset pot, uint64_t idparent) {
+    uint64_t Branch::createChildBranch(name owner, asset pot, uint64_t idparent) {
       _entKey = nextPK();
       auto parent = _idx.find(idparent);
       check(parent != _idx.end(), "Parent branch not found");
       create(owner, [&](auto& b) {
         b.id = _entKey;
-        b.idmeta = meta.id;
+        b.idmeta = parent->idmeta;
         b.idparent = idparent;
         b.generation = (parent->generation + 1);
       });
@@ -143,13 +143,8 @@ namespace Woffler {
     }
 
     uint64_t Branch::addRootLevel(name owner, asset pot) {
-      //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, getEnt<wflbranch>().idmeta);
-      auto _meta = meta.getMeta();
-
-      //emplacing new (root) level
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, _meta);
+      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, getBranch().idmeta);
 
       return idlevel;
     }

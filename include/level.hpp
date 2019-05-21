@@ -43,10 +43,8 @@ namespace Woffler {
     };
 
     class Level: public Entity<levels, DAO, uint64_t> {
-      private:
-      BranchMeta::BranchMeta meta;
-
       protected:
+      BranchMeta::BranchMeta meta;
       void setIdLevel(uint64_t idlevel);
       
       public:
@@ -60,11 +58,10 @@ namespace Woffler {
       void checkRootLevel();
       void checkUnlockedLevel();
 
-      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt);
-      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, BranchMeta::wflbrnchmeta meta);
+      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta);
       void unlockRootLevel(name owner);
-      void generateRedCells(name payer, uint8_t redcnt);
-      void unlockTrial(name payer, uint8_t greencnt);
+      void generateRedCells(name payer);
+      void unlockTrial(name payer);
       void addPot(name payer, asset potbalance);
 
       Const::playerstate cellTypeAtPosition(uint8_t position);

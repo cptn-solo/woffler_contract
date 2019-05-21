@@ -43,7 +43,7 @@ namespace Woffler {
       }
     };
 
-    class BranchMeta: Entity<brnchmetas, DAO, uint64_t> {
+    class BranchMeta: public Entity<brnchmetas, DAO, uint64_t> {
       public:
       BranchMeta(name self, uint64_t idmeta);
 

@@ -6,7 +6,10 @@
 namespace Woffler {
   namespace Level {
     Level::Level(name self, uint64_t idlevel) :
-      Entity<levels, DAO, uint64_t>(self, idlevel), meta(self, getLevel().idmeta) {}
+      Entity<levels, DAO, uint64_t>(self, idlevel), meta(self, 0) {
+        if (idlevel > 0)
+          meta.fetchByKey(getLevel().idmeta);
+      }
 
     Level::Level(name self) : Level(self, 0) {}
 
@@ -21,11 +24,7 @@ namespace Woffler {
     DAO::DAO(levels& _levels, levels::const_iterator itr):
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
-    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, BranchMeta::wflbrnchmeta meta) {
-      return createLevel(payer, potbalance, idbranch, idparent, meta.id, meta.lvlreds);
-    }
-
-    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta, uint8_t redcnt) {
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta) {
       _entKey = nextPK();
       create(payer, [&](auto& l) {
         l.id = _entKey;
@@ -34,7 +33,8 @@ namespace Woffler {
         l.idmeta = idmeta;
         l.potbalance = potbalance;
       });
-      generateRedCells(payer, redcnt);
+      meta.fetchByKey(idmeta);
+      generateRedCells(payer);
       return _entKey;
     }
 
@@ -64,20 +64,20 @@ namespace Woffler {
       /* Generate cells */
 
       //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, _level.idmeta);
-      auto _meta = meta.getMeta();
-      unlockTrial(owner, _meta.lvlgreens);
+      unlockTrial(owner);
     }
 
-    void Level::generateRedCells(name payer, uint8_t redcnt) {
+    void Level::generateRedCells(name payer) {
       auto rnd = randomizer::getInstance(payer, _entKey);
+      auto redcnt = meta.getMeta().lvlreds;
       update(payer, [&](auto& l) {
         l.redcells = generateCells(rnd, redcnt);
       });
     }
 
-    void Level::unlockTrial(name payer, uint8_t greencnt) {
+    void Level::unlockTrial(name payer) {
       auto rnd = randomizer::getInstance(payer, _entKey);
+      auto greencnt = meta.getMeta().lvlgreens;
       update(payer, [&](auto& l) {
         l.greencells = generateCells(rnd, greencnt);
         l.locked = Utils::hasIntersection(l.greencells, l.redcells);
@@ -106,12 +106,8 @@ namespace Woffler {
 
     void Level::regenCells(name owner) {
       auto _level = getLevel();
-      //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, _level.idmeta);
-      auto _meta = meta.getMeta();
-
-      generateRedCells(owner, _meta.lvlreds);
-      unlockTrial(owner, _meta.lvlgreens);
+      generateRedCells(owner);
+      unlockTrial(owner);
     }
 
     void Level::rmLevel() {
@@ -161,9 +157,6 @@ namespace Woffler {
       auto nextlitr = nextidx.find(_curl.id);
 
       //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, _curl.idmeta);
-      auto _meta = meta.getMeta();
-
       if (nextlitr == nextidx.end()) { //create locked
         //setting new winner of current branch
         Branch::Branch branch(_self, _curl.idbranch);
@@ -174,7 +167,7 @@ namespace Woffler {
 
         //create new level with nex pot
         Level nextL(_self);
-        uint64_t nextId = nextL.createLevel(_player.account, nxtPot, _curl.idbranch, _curl.id, _meta);
+        uint64_t nextId = nextL.createLevel(_player.account, nxtPot, _curl.idbranch, _curl.id, _curl.idmeta);
 
         //cut current level's pot
         update(_player.account, [&](auto& l) {
@@ -186,7 +179,7 @@ namespace Woffler {
           player.useTry();//tries--
           auto rnd = randomizer::getInstance(_player.account, nextlitr->id);
           _idx.modify(*nextlitr, _player.account, [&](auto& l) {//updating lvl record fetched earlier
-            l.greencells = generateCells(rnd, _meta.lvlgreens);
+            l.greencells = generateCells(rnd, meta.getMeta().lvlgreens);
             l.locked = Utils::hasIntersection(l.greencells, l.redcells);
           });
           if (!nextlitr->locked) { //unlocked, reposition to next level
@@ -208,7 +201,6 @@ namespace Woffler {
       auto _player = player.getPlayer();
       auto _curl = getLevel();
 
-      BranchMeta::BranchMeta meta(_self, _curl.idmeta);
       auto reward = meta.takeAmount(_curl.potbalance);
 
       //Cut TAKE_RATE% of solved pot and append to winner's vesting balance
@@ -228,7 +220,6 @@ namespace Woffler {
       auto _curl = getLevel();
 
       //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, _curl.idmeta);
       auto _meta = meta.getMeta();
 
       //calculate unjail price
@@ -238,7 +229,7 @@ namespace Woffler {
       player.subBalance(unjailAmount, _player.account);//will fail if balance not cover amount being cut
 
       //cut revenue share
-      cutRevshare(unjailAmount, _meta.unjlrate, _curl.idbranch, _player.channel);      
+      cutRevshare(unjailAmount, meta.getMeta().unjlrate, _curl.idbranch, _player.channel);      
 
       //put remaining unjail payment into level's pot
       update(_player.account, [&](auto& l) {
@@ -262,8 +253,6 @@ namespace Woffler {
       check(_curl.idchbranch == 0, "Branch already split at the current level");      
 
       //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, _curl.idmeta);
-      auto _meta = meta.getMeta();
       auto splitAmount = meta.splitPot(_curl.potbalance);
 
       Branch::Branch branch(_self, 0);
@@ -271,10 +260,10 @@ namespace Woffler {
       //Add bet price to player's branch stake
       auto betPrice = meta.splitBetPrice(splitAmount);
 
-      uint64_t idchbranch = branch.createChildBranch(_player.account, _meta, betPrice, _curl.idbranch);
+      uint64_t idchbranch = branch.createChildBranch(_player.account, betPrice, _curl.idbranch);
       //Move SPLIT_RATE% of solved pot to locked pot
       Level nextL(_self);
-      uint64_t idlevel = nextL.createLevel(_player.account, splitAmount, idchbranch, _curl.id, _meta);
+      uint64_t idlevel = nextL.createLevel(_player.account, splitAmount, idchbranch, _curl.id, _curl.idmeta);
       branch.setRootLevel(_player.account, idlevel);
 
       update(_player.account, [&](auto& l) {
@@ -305,8 +294,6 @@ namespace Woffler {
       auto _chlevel = chlevel.getLevel();
 
       //Player's balance covers bet price? (br.meta: stkrate, stkmin)
-      BranchMeta::BranchMeta meta(_self, _curl.idmeta);
-      auto _meta = meta.getMeta();
       auto betPrice = meta.splitBetPrice(_chlevel.potbalance);
 
       player.checkBalanceCovers(betPrice);
@@ -318,7 +305,7 @@ namespace Woffler {
       chbranch.appendStake(_player.account, betPrice);
 
       //cut revenue share
-      cutRevshare(betPrice, _meta.stkrate, _curl.idbranch, _player.channel);
+      cutRevshare(betPrice, meta.getMeta().stkrate, _curl.idbranch, _player.channel);
 
       //Add (bet amount - rev.share) to the locked level's pot
       chlevel.addPot(_player.account, betPrice);

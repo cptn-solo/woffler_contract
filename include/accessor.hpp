@@ -7,11 +7,12 @@ namespace Woffler {
     Accessor(Idx& idx, Itr itr);
     ~Accessor();
 
+    void fetchByKey(V entKey);
+
     template<typename I, typename A, typename PK>
     friend class Entity;
 
     protected:
-    void fetchByKey(V entKey);
 
     template <typename Lambda>
     void update(name payer, Lambda&& updater);

@@ -14,9 +14,9 @@ namespace Woffler {
     Entity(name self, PK entKey);
     ~Entity();
 
-    protected:
     void fetchByKey(PK entKey);//fetch entity by key when instantiating without initially known key
 
+    protected:
     template <typename Lambda>
     void create(name payer, Lambda&& creator);
 
