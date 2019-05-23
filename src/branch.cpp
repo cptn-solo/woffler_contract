@@ -24,7 +24,7 @@ namespace Woffler {
     //create root branch with root level after meta is created/selected from existing
     void Branch::createBranch(name owner, uint64_t idmeta, asset pot) {
       BranchMeta::BranchMeta meta(_self, idmeta);
-      BranchMeta::wflbrnchmeta _meta = meta.getMeta();
+      auto _meta = meta.getMeta();
 
       auto minPot = (((_meta.stkmin * 100) / _meta.stkrate) * 100) / _meta.spltrate;
       check(
@@ -68,7 +68,7 @@ namespace Woffler {
 
       appendStake(owner, playerStake);
       appendStake(_self,houseStake);
-      
+
       Level::Level level(_self);
       uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, idmeta);
 
@@ -90,12 +90,20 @@ namespace Woffler {
     }
 
     void Branch::addStake(name owner, asset amount) {
+      auto _branch = getBranch();
+
+      BranchMeta::BranchMeta meta(_self, _branch.idmeta);
+      auto _meta = meta.getMeta();
+
+      //if root level is created already - append staked value to the root level's pot
+      Level::Level level(_self, _branch.idrootlvl);
+      auto threshold = meta.splitBetPrice((_branch.idrootlvl != 0 ? level.getLevel().potbalance : asset{0, Const::acceptedSymbol}));
+
+      check(amount >= threshold, string("Amount must be >= ")+threshold.to_string().c_str());
 
       //cut owner's active balance for pot value (will fail if not enough funds)
       Player::Player player(_self, owner);
       player.subBalance(amount, owner);
-
-      auto _branch = getBranch();
 
       if (_branch.generation > 1) {
         //non-root branches don't directly share profit with contract's account (house)
@@ -110,11 +118,8 @@ namespace Woffler {
         appendStake(_self, houseStake);
       }
 
-      //if root level is created already - append staked value to the root level's pot
-      if(_branch.idrootlvl > 0) {
-        Level::Level level(_self, _branch.idrootlvl);
+      if(_branch.idrootlvl != 0)
         level.addPot(owner, amount);
-      }
     }
 
     void Branch::appendStake(name owner, asset amount) {
@@ -124,7 +129,7 @@ namespace Woffler {
         b.totalstake += amount;
       });
     }
-   
+
     void Branch::setRootLevel(name payer, uint64_t idrootlvl) {
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
