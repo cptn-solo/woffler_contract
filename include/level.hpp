@@ -45,7 +45,6 @@ namespace Woffler {
     class Level: public Entity<levels, DAO, uint64_t> {
       protected:
       BranchMeta::BranchMeta meta;
-      void setIdLevel(uint64_t idlevel);
       
       public:
       Level(name self, uint64_t idlevel);
@@ -55,11 +54,10 @@ namespace Woffler {
 
       void checkLevel();
       void checkLockedLevel();
-      void checkRootLevel();
       void checkUnlockedLevel();
 
       uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta);
-      void unlockRootLevel(name owner);
+      void unlockLevel(name owner);
       void generateRedCells(name payer);
       void unlockTrial(name payer);
       void addPot(name payer, asset potbalance);
@@ -91,7 +89,7 @@ namespace Woffler {
     class PlayerLevel: public Level {      
       private:
       Player::Player player;
-      void cutRevshare(asset& revenue, const uint8_t& rate, const uint64_t& idbranch, const name& channel);
+      void cutRevenueShare(asset& revenue, const Const::revenuetype& revtype);
 
       public:
       PlayerLevel(name self, name account);

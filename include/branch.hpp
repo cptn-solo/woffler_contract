@@ -1,6 +1,7 @@
 #pragma once
 #include <entity.hpp>
 #include <branchmeta.hpp>
+#include <stake.hpp>
 
 namespace Woffler {
   using namespace eosio;
@@ -46,6 +47,9 @@ namespace Woffler {
     };
 
     class Branch: Entity<branches, DAO, uint64_t> {
+      private:
+      Stake::Stake stake;
+
       public:
       Branch(name self, uint64_t idbranch);
       
@@ -59,8 +63,6 @@ namespace Woffler {
 
       void createBranch(name owner, uint64_t idmeta, asset pot);
       uint64_t createChildBranch(name owner, asset pot, uint64_t idparent);
-      void createRootLevel(name owner);
-      uint64_t addRootLevel(name owner, asset pot);
       void addStake(name owner, asset amount);
       void appendStake(name owner, asset amount);
       void setRootLevel(name payer, uint64_t idrootlvl);

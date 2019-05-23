@@ -360,7 +360,7 @@ namespace Woffler {
       );
       check(
         p.triesleft >= 1,
-        "Retries count to unlock split branch levels is restricted. Additional tries are bought by calling `splitbet` action."
+        "Retries count to unlock level is restricted."
       );
     }
 

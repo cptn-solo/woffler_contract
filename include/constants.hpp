@@ -5,6 +5,9 @@ namespace Const {
   enum playerstate: uint8_t {
     INIT, SAFE, RED, GREEN, TAKE
   };
+  enum revenuetype: uint8_t {
+    UNJAIL, SPLITBET
+  };
   const eosio::symbol_code acceptedCurr("EOS");
   const eosio::symbol acceptedSymbol(acceptedCurr, 4);
   const uint8_t lvlLength(16);//number of cells per level (uint16_t binary representation used as "level map")

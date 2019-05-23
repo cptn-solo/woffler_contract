@@ -1,11 +1,10 @@
 #include <branch.hpp>
 #include <player.hpp>
-#include <stake.hpp>
 
 namespace Woffler {
   namespace Branch {
     Branch::Branch(name self, uint64_t idbranch) :
-      Entity<branches, DAO, uint64_t>(self, idbranch) {}
+      Entity<branches, DAO, uint64_t>(self, idbranch), stake(self, 0) {}
 
     DAO::DAO(branches& _branches, uint64_t idbranch):
         Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
@@ -69,6 +68,11 @@ namespace Woffler {
 
       appendStake(owner, playerStake);
       appendStake(_self,houseStake);
+      
+      Level::Level level(_self);
+      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, idmeta);
+
+      setRootLevel(owner, idlevel);
     }
 
     uint64_t Branch::createChildBranch(name owner, asset pot, uint64_t idparent) {
@@ -114,41 +118,13 @@ namespace Woffler {
     }
 
     void Branch::appendStake(name owner, asset amount) {
-      Stake::Stake stake(_self, 0);
       stake.registerStake(owner, _entKey, amount);
 
       update(_self, [&](auto& b) {
         b.totalstake += amount;
       });
     }
-
-    void Branch::createRootLevel(name owner) {
-      checkEmptyBranch();
-
-      //find stake to use as pot value for root level
-      asset branchStake = asset{0, Const::acceptedSymbol};
-      asset ownerStake = asset{0, Const::acceptedSymbol};
-
-      Stake::Stake stake(_self, 0);
-      stake.branchStake(owner, _entKey, branchStake, ownerStake);
-
-      check(
-        ownerStake.amount > 0,
-        "Only root branch stakeholder allowed to create a root level for the branch"
-      );
-
-      //add pot value from owner's active balance to the root level's pot
-      uint64_t idrootlvl = addRootLevel(owner, branchStake);
-      setRootLevel(owner, idrootlvl);
-    }
-
-    uint64_t Branch::addRootLevel(name owner, asset pot) {
-      Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, getBranch().idmeta);
-
-      return idlevel;
-    }
-
+   
     void Branch::setRootLevel(name payer, uint64_t idrootlvl) {
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;

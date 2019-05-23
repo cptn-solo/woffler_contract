@@ -142,15 +142,6 @@ namespace Woffler {
       branch.createBranch(owner, idmeta, pot);      
     }
     
-    //create root level with all branch stake (from all owners)
-    //generate cells for root level
-    ACTION rootlvl(name owner, uint64_t idbranch) {
-      require_auth(owner);
-      
-      Branch::Branch branch(get_self(), idbranch);
-      branch.createRootLevel(owner);
-    }
-    
     //revenue share, called as deferred action
     ACTION tipbranch(uint64_t idbranch) {
       auto self = get_self();
@@ -171,7 +162,7 @@ namespace Woffler {
       require_auth(owner);
 
       Level::Level level(get_self(), idlevel);
-      level.unlockRootLevel(owner);
+      level.unlockLevel(owner);
     }
 
     //position player to the next level

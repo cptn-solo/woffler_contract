@@ -25,6 +25,7 @@ namespace Woffler {
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
     uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta) {
+      meta.fetchByKey(idmeta);
       _entKey = nextPK();
       create(payer, [&](auto& l) {
         l.id = _entKey;
@@ -33,7 +34,6 @@ namespace Woffler {
         l.idmeta = idmeta;
         l.potbalance = potbalance;
       });
-      meta.fetchByKey(idmeta);
       generateRedCells(payer);
       return _entKey;
     }
@@ -42,15 +42,14 @@ namespace Woffler {
       return getEnt<wfllevel>();
     }
 
-    void Level::unlockRootLevel(name owner) {
-      checkRootLevel();
+    void Level::unlockLevel(name owner) {
       checkLockedLevel();
 
-      auto _level = getEnt<wfllevel>();
+      auto _level = getLevel();
       /* Restrictions check */
-      if (_level.idparent > 0) {
-        //Retries count to unlock split branch levels is restricted. 
-        //Additional tries are bought by calling `splitbet` action.
+      if (_level.idparent != 0) {
+        //Retries count to unlock split and next levels is restricted. 
+        //Additional tries are bought by calling `splitbet` action fpr split levels
         Player::Player player(_self, owner);
         player.checkLevelUnlockTrialAllowed(_level.idparent);
         player.useTry();
@@ -62,7 +61,6 @@ namespace Woffler {
       }
 
       /* Generate cells */
-
       //getting branch meta to decide on level presets
       unlockTrial(owner);
     }
@@ -121,14 +119,6 @@ namespace Woffler {
       );
     }
 
-    void Level::checkRootLevel() {
-      auto l = getLevel();
-      check(
-        l.root,
-        "Please use this action to unlock Root levels only. Root level can be unlocked only by its branch stakeholder, unlimited retries count."
-      );
-    }
-
     void Level::checkLockedLevel() {
       auto l = getLevel();
       check(
@@ -174,23 +164,8 @@ namespace Woffler {
           l.potbalance -= nxtPot;
         });
       }
-      else if (nextlitr->locked) { //check for unlock & reposition player if true
-        if (_player.triesleft > 0) { //unlock trial
-          player.useTry();//tries--
-          auto rnd = randomizer::getInstance(_player.account, nextlitr->id);
-          _idx.modify(*nextlitr, _player.account, [&](auto& l) {//updating lvl record fetched earlier
-            l.greencells = generateCells(rnd, meta.getMeta().lvlgreens);
-            l.locked = Utils::hasIntersection(l.greencells, l.redcells);
-          });
-          if (!nextlitr->locked) { //unlocked, reposition to next level
-            player.resetPositionAtLevel(nextlitr->id);
-          }
-        }
-        else { //no tries left, reset position in current level
-          player.resetPositionAtLevel(_curl.id);
-        }
-      }
       else {
+        check(!nextlitr->locked, "Next level locked. Please unlock it first using 'unlocklvl' action.");
         player.resetPositionAtLevel(nextlitr->id);
       }
     }
@@ -219,21 +194,18 @@ namespace Woffler {
       auto _player = player.getPlayer();
       auto _curl = getLevel();
 
-      //getting branch meta to decide on level presets
-      auto _meta = meta.getMeta();
-
       //calculate unjail price
-      auto unjailAmount = meta.unjailPrice(_curl.potbalance);
+      auto unjailPrice = meta.unjailPrice(_curl.potbalance);
 
       //cut player's active balance with unjail payment value
-      player.subBalance(unjailAmount, _player.account);//will fail if balance not cover amount being cut
+      player.subBalance(unjailPrice, _player.account);//will fail if balance not cover amount being cut
 
-      //cut revenue share
-      cutRevshare(unjailAmount, meta.getMeta().unjlrate, _curl.idbranch, _player.channel);      
+      //share revenue with branch, branch winner, branch hierarchy and referrer
+      cutRevenueShare(unjailPrice, Const::revenuetype::UNJAIL);      
 
       //put remaining unjail payment into level's pot
       update(_player.account, [&](auto& l) {
-        l.potbalance += unjailAmount;
+        l.potbalance += unjailPrice;
       });
 
       // print("Added to the pot: ", asset{unjailAmount}, "\n");
@@ -278,34 +250,31 @@ namespace Woffler {
     void PlayerLevel::splitBet() {
       //green, locked, 0 tries
       player.checkState(Const::playerstate::GREEN);
+      auto _curl = getLevel();
+
+      check(_curl.idchbranch != 0, "Current level has no child branch for split bets.");
 
       auto _player = player.getPlayer();
-      auto _curl = getLevel();
+      check(_player.triesleft == 0, "Retries count must be 0.");
 
       Branch::Branch chbranch(_self, _curl.idchbranch);
       auto _chbranch = chbranch.getBranch();
-      uint64_t idchlevel = _chbranch.idrootlvl;
-      check(idchlevel > 0, "Child branch has no levels yet");
 
-      Level chlevel(_self, idchlevel);
-      chlevel.checkRootLevel();
+      Level chlevel(_self, _chbranch.idrootlvl);
       chlevel.checkLockedLevel();
 
       auto _chlevel = chlevel.getLevel();
 
       //Player's balance covers bet price? (br.meta: stkrate, stkmin)
-      auto betPrice = meta.splitBetPrice(_chlevel.potbalance);
-
-      player.checkBalanceCovers(betPrice);
-
       //Cut player's balance with bet price 
+      auto betPrice = meta.splitBetPrice(_chlevel.potbalance);      
       player.subBalance(betPrice, _player.account);
 
       //Add bet price to player's stake in the split branch 
       chbranch.appendStake(_player.account, betPrice);
 
-      //cut revenue share
-      cutRevshare(betPrice, meta.getMeta().stkrate, _curl.idbranch, _player.channel);
+      //share revenue with branch, branch winner, branch hierarchy and referrer
+      cutRevenueShare(betPrice, Const::revenuetype::SPLITBET);      
 
       //Add (bet amount - rev.share) to the locked level's pot
       chlevel.addPot(_player.account, betPrice);
@@ -314,26 +283,28 @@ namespace Woffler {
       player.resetRetriesCount();
     }
 
-    void PlayerLevel::cutRevshare(asset& revenue, const uint8_t& rate, const uint64_t& idbranch, const name& idchannel) {
-      //calculate revenue share
-      auto revshareAmount = (revenue * rate) / 100;
+    void PlayerLevel::cutRevenueShare(asset& revenue, const Const::revenuetype& revtype) {
 
-      //cut unjail vaule with revenue share
-      revenue -= revshareAmount;
+      //shared amount proportinal to the payment itself - so same methods applied:
+      asset revenueShare = (revtype == Const::revenuetype::SPLITBET 
+        ? meta.splitBetPrice(revenue)
+        : meta.unjailPrice(revenue)
+      );
 
-      //put revenue share into branch stakeholders' revenue (!defer, recursion to parent branches)
-      Branch::Branch branch(_self, idbranch);//Note: CURRENT branch gets rev.share from splitbet action
-      branch.deferRevenueShare(revenue);//branch winner will get some here, all winners along branch hierarchy
+      Channel::Channel channel(_self, player.getChannel());
+      Branch::Branch branch(_self, getLevel().idbranch);//Note: CURRENT branch gets rev.share from splitbet action
 
-      //calculate sales channel fee for remaining unjail value
-      Channel::Channel channel(_self, idchannel);
-      auto channelAmount = (revenue * (channel.getRate() + rate)) / 100;
-
-      //cut unjail vaule with sales channel fee
-      revenue -= channelAmount;
+      //calculate sales channel share
+      auto channelShare = (revenueShare * (channel.getRate() + meta.getMeta().slsrate)) / 100;
+      auto branchShare = revenueShare - channelShare;
 
       //put sales channel fee into sales channel balance (!defer)
-      channel.addBalance(channelAmount, _self);
+      channel.addBalance(channelShare, _self);
+
+      //put revenue share into branch stakeholders' revenue (!defer, recursion to parent branches)
+      branch.deferRevenueShare(branchShare);//branch winner will get some here, all winners along branch hierarchy
+
+      revenue -= revenueShare;
     }
 
     #pragma endregion
