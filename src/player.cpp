@@ -79,34 +79,41 @@ namespace Woffler {
       auto _branch = branch.getBranch();
       uint64_t idrootlvl = _branch.idrootlvl;
       
-      check(idrootlvl > 0, "Player can be positioned only in branches with root level available.");
+      check(
+        idrootlvl != 0, 
+        "Player can be positioned only in branches with root level available."
+      );
 
       Level::Level level(_self, idrootlvl);
       auto _level = level.getLevel();
 
-      //Player can change root branch only from safe positions (SAFE, INIT), while moving to 
-      //side branches is available only from the point of branch split.
+      bool startJailed = false;
+
       if (_branch.idparent == 0) {
-        checkSwitchRootBranchAllowed();
+        //no reason to check player current state if he just want to give up his current position
         branch.checkStartBranch();
+        startJailed = level.meta.getMeta().startjailed;
       } 
       else {
-        checkSwitchBranchAllowed();
-        check(_player.idlvl == _level.idparent, "Player can move to side branch only from split level.");
+        check(
+          _player.idlvl == _level.idparent && 
+          _player.levelresult == Const::playerstate::GREEN, 
+          "Player can move to side branch only from GREEN in split level."
+        );
       }
 
       //check if branch is unlocked (its root level is not locked)
       level.checkUnlockedLevel();
 
-      switchRootLevel(idrootlvl);
+      switchRootLevel(idrootlvl, startJailed);
     }
 
-    void Player::switchRootLevel(uint64_t idlvl) {
+    void Player::switchRootLevel(uint64_t idlvl, bool startJailed) {
       //position player in root level of the branch
       update(_entKey, [&](auto& p) {
         p.idlvl = idlvl;
         p.triesleft = Const::retriesCount;
-        p.levelresult = Const::playerstate::SAFE;
+        p.levelresult = (startJailed ? Const::playerstate::RED : Const::playerstate::SAFE);
         p.tryposition = 0;
         p.currentposition = 0;
         p.resulttimestamp = 0;
@@ -148,7 +155,7 @@ namespace Woffler {
 
       Level::Level level(_self, _player.idlvl);
       auto levelresult = level.cellTypeAtPosition(_player.tryposition);
-      
+
       commitTurn(levelresult);
     }
 
@@ -212,7 +219,12 @@ namespace Woffler {
       
       Level::Level level(_self, _player.idlvl);      
       auto _level = level.getLevel();
-      uint64_t idlevel = (_level.idparent > 0 ? _level.idparent : _level.id);
+      auto _meta = level.meta.getMeta();
+      check(
+        _level.idparent != 0 || !_meta.startjailed,
+        "You can only call `unjail` or `switchbrnch` from your current state"
+      );
+      uint64_t idlevel = (_level.idparent != 0 ? _level.idparent : _level.id);
       resetPositionAtLevel(idlevel);
     }
 
@@ -223,9 +235,7 @@ namespace Woffler {
       
       Level::Level level(_self, _player.idlvl);
       auto _level = level.getLevel();
-
-      BranchMeta::BranchMeta meta(_self, _level.idmeta);
-      auto _meta = meta.getMeta();
+      auto _meta = level.meta.getMeta();
       auto expiredAfter = (_player.resulttimestamp + _meta.tkintrvl) - Utils::now();
       check(
         expiredAfter <= 0,
@@ -324,23 +334,6 @@ namespace Woffler {
       check(//warning! works only for records, emplaced in contract's host scope
         p.activebalance == asset{0, Const::acceptedSymbol},
         string("Please withdraw funds first. Current active balance: ") + p.activebalance.to_string().c_str()
-      );
-    }
-
-    void Player::checkSwitchRootBranchAllowed() {
-      auto p = getPlayer();
-      check(
-        p.levelresult == Const::playerstate::INIT ||
-        p.levelresult == Const::playerstate::SAFE,
-        "Player can switch root branch only from safe locations."
-      );
-    }
-
-    void Player::checkSwitchBranchAllowed() {
-      auto p = getPlayer();
-      check(
-        p.levelresult == Const::playerstate::GREEN,
-        "Player can move to side branch only from GREEN locations."
       );
     }
 

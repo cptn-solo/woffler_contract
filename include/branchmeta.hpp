@@ -15,17 +15,18 @@ namespace Woffler {
       uint16_t lvlgreens;//min 1
       uint16_t lvlreds;//min 1
       asset unjlmin = asset{0, Const::acceptedSymbol};
-      uint8_t unjlrate;
+      bool startjailed = 0;
+      uint8_t unjlrate = 0;
       uint64_t unjlintrvl;
-      uint8_t tkrate;
-      uint64_t tkintrvl;
-      uint8_t nxtrate;
-      uint8_t spltrate;
+      uint8_t tkrate = 0;
+      uint64_t tkintrvl = 0;
+      uint8_t nxtrate = 90;
+      uint8_t spltrate = 50;
       asset stkmin = asset{0, Const::acceptedSymbol};
-      uint8_t stkrate;
+      uint8_t stkrate = 0;
       asset potmin = asset{0, Const::acceptedSymbol};
-      uint8_t slsrate;
-      uint8_t winnerrate;
+      uint8_t slsrate = 0;
+      uint8_t winnerrate = 0;
       string url;
       string name;
 

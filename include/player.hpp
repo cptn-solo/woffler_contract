@@ -54,15 +54,13 @@ namespace Woffler {
       void checkState(Const::playerstate state);//player is in specified state
       void checkBalanceCovers(asset amount);//player's active balance is not less then specified
       void checkBalanceZero();//player's active balance is zero
-      void checkSwitchRootBranchAllowed();//player can change root branch
-      void checkSwitchBranchAllowed();//player can change split branch (move to side branch)
       void checkLevelUnlockTrialAllowed(uint64_t idlvl);//player can proceed with specified level unlocking trial
 
       void createPlayer(name payer, name referrer);
       void addBalance(asset amount, name payer);
       void subBalance(asset amount, name payer);
       void switchBranch(uint64_t idbranch);
-      void switchRootLevel(uint64_t idlvl);
+      void switchRootLevel(uint64_t idlvl, bool startJailed);
       void tryTurn();
       void commitTurn();
       void commitTake(asset amount);

@@ -43,14 +43,13 @@ namespace Woffler {
     };
 
     class Level: public Entity<levels, DAO, uint64_t> {
-      protected:
-      BranchMeta::BranchMeta meta;
-      
       public:
       Level(name self, uint64_t idlevel);
       Level(name self);
 
       wfllevel getLevel();
+
+      BranchMeta::BranchMeta meta;
 
       void checkLevel();
       void checkLockedLevel();
