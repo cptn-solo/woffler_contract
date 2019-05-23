@@ -15,7 +15,7 @@ namespace Woffler {
 
     wflbrnchmeta BranchMeta::getMeta() {
       return getEnt<wflbrnchmeta>();
-    } 
+    }
 
     asset BranchMeta::nextPot(const asset& pot) {
       auto _meta = getMeta();
@@ -68,10 +68,10 @@ namespace Woffler {
       auto betPrice = (pot * _meta.stkrate) / 100;
       if (betPrice < _meta.stkmin)
         betPrice = _meta.stkmin;
-      
+
       return betPrice;
     }
-    
+
     void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {
       checkCells(meta);
       if (_entKey >=1) {

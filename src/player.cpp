@@ -147,10 +147,8 @@ namespace Woffler {
       auto _player = getPlayer();
 
       Level::Level level(_self, _player.idlvl);
-      level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
-      auto _level = level.getLevel();
-
       auto levelresult = level.cellTypeAtPosition(_player.tryposition);
+      
       commitTurn(levelresult);
     }
 

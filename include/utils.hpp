@@ -25,8 +25,8 @@ namespace Utils {
     return (uint128_t{x} << 64) | y;
   }
   
-  inline uint128_t deferredTXId(const std::string& prefix) {
-    return (uint128_t{name(prefix).value}<<64)|now();
+  inline uint128_t deferredTXId(const uint64_t& prefix) {
+    return (uint128_t{prefix}<<64)|now();
   }
 
   bool hasIntersection(uint16_t& v1, uint16_t& v2) {    

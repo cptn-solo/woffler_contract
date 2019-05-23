@@ -80,6 +80,7 @@ namespace Woffler {
       player.rmAccount();      
     }
 
+    //can be called from other actions as "additional" task to minimize manual `revshare` calls
     void processPendingRevshare() {
       action(
         permission_level{get_self(),"active"_n},
@@ -101,7 +102,7 @@ namespace Woffler {
         transaction out{};
         out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(itr->id));
         out.delay_sec = 2;
-        out.send(Utils::deferredTXId("tipbranch"), _self);
+        out.send(Utils::deferredTXId(itr->id), _self);
 
         itr++;
       }

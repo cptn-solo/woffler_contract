@@ -25,7 +25,7 @@ namespace Woffler {
       asset winnerrvnue = asset{0, Const::acceptedSymbol};//total revenue paid to winner 
       asset parentrvnue = asset{0, Const::acceptedSymbol};//total revenue paid to parent branch 
       
-      uint64_t tipprocessed = 0;
+      uint64_t tipprocessed = 1;//initialize branch without need to be processed
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idmeta() const { return idmeta; }

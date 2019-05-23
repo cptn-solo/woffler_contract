@@ -63,6 +63,7 @@ namespace Woffler {
   template<typename Idx, typename A, typename PK>
   void Entity<Idx, A, PK>::fetchByKey(PK entKey) {
     check(_dao == NULL, "Can't refetch into existing accessor object");
+    _entKey = entKey;
     _dao = new A(_idx, A::keyValue(entKey));
   }
 

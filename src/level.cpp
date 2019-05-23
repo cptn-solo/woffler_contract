@@ -7,7 +7,7 @@ namespace Woffler {
   namespace Level {
     Level::Level(name self, uint64_t idlevel) :
       Entity<levels, DAO, uint64_t>(self, idlevel), meta(self, 0) {
-        if (idlevel > 0)
+        if (idlevel != 0)
           meta.fetchByKey(getLevel().idmeta);
       }
 
@@ -16,6 +16,8 @@ namespace Woffler {
     PlayerLevel::PlayerLevel(name self, name account) :
       Level(self), player(self, account) {
         fetchByKey(player.getPlayer().idlvl);
+        if (_entKey != 0)
+          meta.fetchByKey(getLevel().idmeta);
     }
 
     DAO::DAO(levels& _levels, uint64_t idlevel):
@@ -226,13 +228,14 @@ namespace Woffler {
 
       //getting branch meta to decide on level presets
       auto splitAmount = meta.splitPot(_curl.potbalance);
-
+//-
       Branch::Branch branch(_self, 0);
       //Create child branch and a locked level with "Red" cells, branch generation++
       //Add bet price to player's branch stake
       auto betPrice = meta.splitBetPrice(splitAmount);
-
+//-
       uint64_t idchbranch = branch.createChildBranch(_player.account, betPrice, _curl.idbranch);
+//-
       //Move SPLIT_RATE% of solved pot to locked pot
       Level nextL(_self);
       uint64_t idlevel = nextL.createLevel(_player.account, splitAmount, idchbranch, _curl.id, _curl.idmeta);
@@ -254,9 +257,6 @@ namespace Woffler {
 
       check(_curl.idchbranch != 0, "Current level has no child branch for split bets.");
 
-      auto _player = player.getPlayer();
-      check(_player.triesleft == 0, "Retries count must be 0.");
-
       Branch::Branch chbranch(_self, _curl.idchbranch);
       auto _chbranch = chbranch.getBranch();
 
@@ -264,6 +264,9 @@ namespace Woffler {
       chlevel.checkLockedLevel();
 
       auto _chlevel = chlevel.getLevel();
+
+      auto _player = player.getPlayer();
+      check(_player.triesleft == 0, "Retries count must be 0.");
 
       //Player's balance covers bet price? (br.meta: stkrate, stkmin)
       //Cut player's balance with bet price 
