@@ -63,6 +63,12 @@ namespace Woffler {
       return unjailAmount;
     }
 
+    asset BranchMeta::unjailRevShare(const asset& revenue) {
+      auto _meta = getMeta();
+      auto share = (revenue * _meta.unjlrate) / 100;
+      return share;
+    }
+
     asset BranchMeta::splitBetPrice(const asset& pot) {
       auto _meta = getMeta();
       auto betPrice = (pot * _meta.stkrate) / 100;
@@ -70,6 +76,12 @@ namespace Woffler {
         betPrice = _meta.stkmin;
 
       return betPrice;
+    }
+
+    asset BranchMeta::splitBetRevShare(const asset& revenue) {
+      auto _meta = getMeta();
+      auto share = (revenue * _meta.stkrate) / 100;
+      return share;
     }
 
     void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {

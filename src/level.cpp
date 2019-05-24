@@ -202,6 +202,8 @@ namespace Woffler {
       //cut player's active balance with unjail payment value
       player.subBalance(unjailPrice, _player.account);//will fail if balance not cover amount being cut
 
+      print("Unjail price paid: ", asset{unjailPrice}, "\n");
+
       //share revenue with branch, branch winner, branch hierarchy and referrer
       cutRevenueShare(unjailPrice, Const::revenuetype::UNJAIL);      
 
@@ -209,8 +211,7 @@ namespace Woffler {
       update(_player.account, [&](auto& l) {
         l.potbalance += unjailPrice;
       });
-
-      // print("Added to the pot: ", asset{unjailAmount}, "\n");
+      print("Added to the level's pot: ", asset{unjailPrice}, "\n");
 
       //reset player's state, retries and position in current level's zero cell
       player.resetPositionAtLevel(_curl.id);
@@ -228,14 +229,14 @@ namespace Woffler {
 
       //getting branch meta to decide on level presets
       auto splitAmount = meta.splitPot(_curl.potbalance);
-//-
+
       Branch::Branch branch(_self, 0);
       //Create child branch and a locked level with "Red" cells, branch generation++
       //Add bet price to player's branch stake
       auto betPrice = meta.splitBetPrice(splitAmount);
-//-
+
       uint64_t idchbranch = branch.createChildBranch(_player.account, betPrice, _curl.idbranch);
-//-
+
       //Move SPLIT_RATE% of solved pot to locked pot
       Level nextL(_self);
       uint64_t idlevel = nextL.createLevel(_player.account, splitAmount, idchbranch, _curl.id, _curl.idmeta);
@@ -287,13 +288,13 @@ namespace Woffler {
     }
 
     void PlayerLevel::cutRevenueShare(asset& revenue, const Const::revenuetype& revtype) {
-
+      auto _meta = meta.getMeta();
       //shared amount proportinal to the payment itself - so same methods applied:
       asset revenueShare = (revtype == Const::revenuetype::SPLITBET 
-        ? meta.splitBetPrice(revenue)
-        : meta.unjailPrice(revenue)
+        ? meta.splitBetRevShare(revenue)
+        : meta.unjailRevShare(revenue)
       );
-
+      
       Channel::Channel channel(_self, player.getChannel());
       Branch::Branch branch(_self, getLevel().idbranch);//Note: CURRENT branch gets rev.share from splitbet action
 
@@ -303,11 +304,18 @@ namespace Woffler {
 
       //put sales channel fee into sales channel balance (!defer)
       channel.addBalance(channelShare, _self);
-
+            
       //put revenue share into branch stakeholders' revenue (!defer, recursion to parent branches)
       branch.deferRevenueShare(branchShare);//branch winner will get some here, all winners along branch hierarchy
 
       revenue -= revenueShare;
+
+      print(
+        "Revenue share total: ", asset{revenueShare}, 
+        "\nChannel share:", asset{channelShare}, 
+        "\nBranch share: ", asset{branchShare}, 
+        "\nLevel's pot gets: ", asset{revenue}, 
+        "\n");
     }
 
     #pragma endregion

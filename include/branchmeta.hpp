@@ -53,9 +53,13 @@ namespace Woffler {
       asset nextPot(const asset& pot);
       asset splitPot(const asset& pot);
       asset takeAmount(const asset& pot);
+
       asset unjailPrice(const asset& pot);
+      asset unjailRevShare(const asset& revenue);
+
       asset splitBetPrice(const asset& pot);
-      
+      asset splitBetRevShare(const asset& revenue);
+
       void checkIsMeta();
       void checkCells(wflbrnchmeta meta);
       void checkOwner(name owner);

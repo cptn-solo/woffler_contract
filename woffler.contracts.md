@@ -177,11 +177,13 @@ Input parameters:
 * `amount` (amount to be moved from owner's active balance to branch stake)
 
 ### Intent
-INTENT. The intent of the `{{ stkaddval }}` action is to ncrease volume of root branch starting pot and to add owner's funds to the branch stake:
+INTENT. The intent of the `{{ stkaddval }}` action is to increase volume of branch starting pot and to add owner's funds to the branch stake:
 
 * cut amount from owner's active balance;
 * register amount as owner's stake in specified branch;
 * if branch already has a root lvl, add amount to its pot.
+
+Contract account will cut 3% of each amount put on root branch (contract account get 3% in each root branch).
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
