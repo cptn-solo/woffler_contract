@@ -107,10 +107,10 @@ TERM. This Contract expires at the conclusion of code execution.
 Input parameters:
 
 * `account` (player account to be moved to a selected root branch)
-* `idbranch` (ID of root branch to move a player to)
+* `idbranch` (ID of root branch to move a player to, or zer0 to exit current game)
 
 ### Intent
-INTENT. The intent of the `{{ switchbrnch }}` action is to select root branch to play on. If succeed, the root level of the selected root branch will become a current level of a player.
+INTENT. The intent of the `{{ switchbrnch }}` action is to select root branch to play on. If succeed, the root level of the selected root branch will become a current level of a player. If zero passed as idbranch, the player returns to initial state without current branch/level selected.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

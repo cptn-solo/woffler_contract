@@ -74,6 +74,10 @@ namespace Woffler {
     void Player::switchBranch(uint64_t idbranch) {
       auto _player = getPlayer();
 
+      if (idbranch == 0) {
+        switchRootLevel(0, Const::playerstate::INIT);
+        return;
+      }
       //find branch of the level
       Branch::Branch branch(_self, idbranch);
       auto _branch = branch.getBranch();
@@ -105,15 +109,15 @@ namespace Woffler {
       //check if branch is unlocked (its root level is not locked)
       level.checkUnlockedLevel();
 
-      switchRootLevel(idrootlvl, startJailed);
+      switchRootLevel(idrootlvl, (startJailed ? Const::playerstate::RED : Const::playerstate::SAFE));
     }
 
-    void Player::switchRootLevel(uint64_t idlvl, bool startJailed) {
+    void Player::switchRootLevel(uint64_t idlvl, Const::playerstate playerState) {
       //position player in root level of the branch
       update(_entKey, [&](auto& p) {
         p.idlvl = idlvl;
         p.triesleft = Const::retriesCount;
-        p.levelresult = (startJailed ? Const::playerstate::RED : Const::playerstate::SAFE);
+        p.levelresult = playerState;
         p.tryposition = 0;
         p.currentposition = 0;
         p.resulttimestamp = 0;

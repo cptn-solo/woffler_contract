@@ -60,7 +60,7 @@ namespace Woffler {
       void addBalance(asset amount, name payer);
       void subBalance(asset amount, name payer);
       void switchBranch(uint64_t idbranch);
-      void switchRootLevel(uint64_t idlvl, bool startJailed);
+      void switchRootLevel(uint64_t idlvl, Const::playerstate playerState);
       void tryTurn();
       void commitTurn();
       void commitTake(asset amount);
