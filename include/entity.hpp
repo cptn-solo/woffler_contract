@@ -14,6 +14,8 @@ namespace Woffler {
     Entity(name self, PK entKey);
     ~Entity();
 
+    void fetchByKey(PK entKey);//fetch entity by key when instantiating without initially known key
+
     protected:
     template <typename Lambda>
     void create(name payer, Lambda&& creator);
@@ -33,7 +35,7 @@ namespace Woffler {
 
     template<name::raw IndexName>
     auto getIndex();
-
+    
     name _self;
     PK _entKey;
     Idx _idx;
@@ -44,56 +46,73 @@ namespace Woffler {
 
   template<typename Idx, typename A, typename PK>
   Entity<Idx, A, PK>::Entity(name self, PK entKey): _idx(self, self.value) {
-    this->_self = self;
-    this->_entKey = entKey;
-    this->_dao = new A(_idx, A::keyValue(entKey));
+    _self = self;
+    _entKey = entKey;
+    if (A::keyValue(entKey) > 0)
+      _dao = new A(_idx, A::keyValue(entKey));
   }
 
   template<typename Idx, typename A, typename PK>
   Entity<Idx, A, PK>::~Entity() {
-    delete this->_dao;
-    this->_dao = NULL;
-    print("Entity destroyed \n");
+    if (_dao) {
+      delete _dao;
+      _dao = NULL;
+    }
+  }
+
+  template<typename Idx, typename A, typename PK>
+  void Entity<Idx, A, PK>::fetchByKey(PK entKey) {
+    check(_dao == NULL, "Can't refetch into existing accessor object");
+    _entKey = entKey;
+    _dao = new A(_idx, A::keyValue(entKey));
   }
 
   template<typename Idx, typename A, typename PK>
   template <typename Lambda>
   void Entity<Idx, A, PK>::create(name payer, Lambda&& creator) {
-    _dao->create(payer, creator);
+    auto _itr = _idx.emplace(payer, std::forward<Lambda&&>(creator));
+    _dao = new A(_idx, _itr);
   }
 
   template<typename Idx, typename A, typename PK>
   template <typename Lambda>
   void Entity<Idx, A, PK>::update(name payer, Lambda&& updater) {
+    check(isEnt(), "Object not found.");
     _dao->update(payer, updater);
   }
 
   template<typename Idx, typename A, typename PK>
   void Entity<Idx, A, PK>::remove() {
+    check(isEnt(), "Object not found.");
     _dao->remove();
   }
 
   template<typename Idx, typename A, typename PK>
   bool Entity<Idx, A, PK>::isEnt() {
-    return _dao->isEnt();
+    if (!_dao) return false;
+    
+    return _dao->isEnt();    
   }
 
   template<typename Idx, typename A, typename PK>
   bool Entity<Idx, A, PK>::isEnt(PK val) {
+    if (!_dao) return false;
+    
     return _dao->isEnt(A::keyValue(val));
   }
 
   template<typename Idx, typename A, typename PK>
   template<typename Ent>
   const Ent& Entity<Idx, A, PK>::getEnt() {
+    check(isEnt(), "Object not found.");
     return _dao->getEnt();
   }
 
   template<typename Idx, typename A, typename PK>
   PK Entity<Idx, A, PK>::nextPK() {
-    return Utils::nextPrimariKey(_dao->_idx.available_primary_key());
+    return Utils::nextPrimariKey(_idx.available_primary_key());
   }
-
+  
   template<typename Idx, typename A, typename PK>
   template<name::raw IndexName>
   auto Entity<Idx, A, PK>::getIndex() {

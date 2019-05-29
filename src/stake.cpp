@@ -1,4 +1,5 @@
 #include <stake.hpp>
+#include <branch.hpp>
 
 namespace Woffler {
   namespace Stake {    
@@ -8,37 +9,9 @@ namespace Woffler {
     DAO::DAO(stakes& _stakes, uint64_t idstake): 
       Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, idstake) {}
     
-    void Stake::addStake(name owner, uint64_t idbranch, asset amount) {
-      Branch::Branch branch(_self, idbranch);
-      branch.checkBranch();
-
-      //cut owner's active balance for pot value (will fail if not enough funds)
-      Player::Player player(_self, owner);
-      player.subBalance(amount, owner);
-      
-      auto _branch = branch.getBranch();
-
-      if (_branch.generation > 1) {
-        //non-root branches don't directly share profit with contract's account (house)
-        registerStake(owner, idbranch, amount);
-      } 
-      else {
-        //register players's and house stake
-        auto houseStake = (amount * Const::houseShare) / 100;
-        auto playerStake = (amount - houseStake);
-
-        registerStake(owner, idbranch, playerStake);
-        registerStake(_self, idbranch, houseStake);
-      }
-
-      //if root level is created already - append staked value to the root level's pot
-      if(_branch.idrootlvl > 0) {
-        Level::Level level(_self, _branch.idrootlvl);
-        level.checkLevel();
-        level.addPot(owner, amount);
-      }      
-    }
-
+    DAO::DAO(stakes& _stakes, stakes::const_iterator itr): 
+      Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
+    
     void Stake::registerStake(name owner, uint64_t idbranch, asset amount) {
       //find stake and add amount, or emplace if not found
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
@@ -74,6 +47,34 @@ namespace Woffler {
 
         stkitr++;
       }
+    }
+
+    void Stake::claimRevenue(name owner, uint64_t idbranch) {
+      auto stkidx = getIndex<"byownedbrnch"_n>();
+      auto stkitr = stkidx.find(Utils::combineIds(owner.value, idbranch));
+      check(stkitr != stkidx.end(), "No stake in branch for this owner");
+
+      Branch::Branch branch(_self, idbranch);
+      auto _branch = branch.getBranch();
+      check(_branch.tipprocessed != 0, "Branch revenue is not yet available for claiming after last tip. Please run <revshare> action first");
+
+      auto share = (_branch.totalrvnue * stkitr->stake.amount) / _branch.totalstake.amount;
+      auto addition = share - stkitr->revenue;
+      if (addition.amount > 0) {
+        _idx.modify(*stkitr, owner, [&](auto& s) {
+          s.revenue += addition;
+        });
+        Player::Player player(_self, owner);
+        player.addBalance(addition, owner);
+        print("Claimed new revenue: ", asset{addition}, " , current claimed revenue: ", asset{stkitr->revenue}, " \n");
+      } 
+      else {
+        print("No new revenue, current share: ", asset{share}, " , current claimed revenue: ", asset{stkitr->revenue}, " \n");
+      }
+    }
+
+    void Stake::rmStake() {
+      remove();
     }
 
     void Stake::checkIsStakeholder(name owner, uint64_t idbranch) {

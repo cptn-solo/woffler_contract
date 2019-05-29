@@ -32,6 +32,7 @@ namespace Woffler {
     class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
       public:
       DAO(players& _players, uint64_t _playerV);
+      DAO(players& _players, players::const_iterator itr);
       static uint64_t keyValue(name account) {
         return account.value;
       }
@@ -41,6 +42,7 @@ namespace Woffler {
       public:
       Player(name self, name account);
 
+      wflplayer getPlayer();
       name getChannel();
 
       bool isPlayer();//true if player exists in registry
@@ -52,25 +54,31 @@ namespace Woffler {
       void checkState(Const::playerstate state);//player is in specified state
       void checkBalanceCovers(asset amount);//player's active balance is not less then specified
       void checkBalanceZero();//player's active balance is zero
-      void checkSwitchBranchAllowed();//player can change branch
       void checkLevelUnlockTrialAllowed(uint64_t idlvl);//player can proceed with specified level unlocking trial
 
       void createPlayer(name payer, name referrer);
       void addBalance(asset amount, name payer);
       void subBalance(asset amount, name payer);
       void switchBranch(uint64_t idbranch);
-      void switchRootLevel(uint64_t idlvl);
+      void switchRootLevel(uint64_t idlvl, Const::playerstate playerState);
       void tryTurn();
       void commitTurn();
+      void commitTake(asset amount);
+      void cancelTake();
       void useTry();
       void useTry(uint8_t position);
       void commitTurn(Const::playerstate result);
 
       void claimGreen();
       void claimRed();
+      void claimTake();
       void resetPositionAtLevel(uint64_t idlvl);
+      void resetRetriesCount();
 
       void rmAccount();
+      
+      //DEBUG:
+      void reposition(uint64_t idlevel, uint8_t position);
     };
   }
 }

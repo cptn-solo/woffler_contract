@@ -7,5 +7,9 @@ namespace Woffler {
 
     DAO::DAO(brquests& _brquests, uint64_t idbrquest): 
       Accessor<brquests, wflbrquest, brquests::const_iterator, uint64_t>::Accessor(_brquests, idbrquest) {}
+
+    DAO::DAO(brquests& _brquests, brquests::const_iterator itr): 
+      Accessor<brquests, wflbrquest, brquests::const_iterator, uint64_t>::Accessor(_brquests, itr) {}
+
   }
 }

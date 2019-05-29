@@ -84,20 +84,6 @@ INTENT. The intent of the `{{ branch }}` action is to create new root branch tak
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">rootlvl</h1>
-
-### Parameters
-Input parameters:
-
-* `owner` (account creating a root level. Must have stake in the root branch of the created level)
-* `idbranch` (ID of branch where the root level is created)
-
-### Intent
-INTENT. The intent of the `{{ rootlvl }}` action is to create new root level for a given root branch. All stake of the branch is put into the pot of the created level.
-
-### Term
-TERM. This Contract expires at the conclusion of code execution.
-
 <h1 class="contract">unlocklvl</h1>
 
 ### Parameters
@@ -107,7 +93,10 @@ Input parameters:
 * `idlevel` (ID of the level to be unlocked)
 
 ### Intent
-INTENT. The intent of the `{{ unlocklvl }}` action is to generate cells for a given level and mark level unlocked if compatible green/red set was found by the pretender. If a level being unlocked is the Root level of the Root branch, pretender must own stake in the branch. If a level is general one, pretender must stand in the previous level and be Green.
+INTENT. The intent of the `{{ unlocklvl }}` action is to generate cells for a given level and mark level unlocked if compatible green/red set was found by the pretender. Rules:
+
+* if a level being unlocked is the Root level of Root branch, pretender must own stake in the branch
+* if a level being unlocked is the Root level of Split branch, pretender must stand in the previous level, be Green, and retries count must be > 0. Additional tries are bought by calling `splitbet` action.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
@@ -118,10 +107,10 @@ TERM. This Contract expires at the conclusion of code execution.
 Input parameters:
 
 * `account` (player account to be moved to a selected root branch)
-* `idbranch` (ID of root branch to move a player to)
+* `idbranch` (ID of root branch to move a player to, or zer0 to exit current game)
 
 ### Intent
-INTENT. The intent of the `{{ switchbrnch }}` action is to select root branch to play on. If succeed, the root level of the selected root branch will become a current level of a player.
+INTENT. The intent of the `{{ switchbrnch }}` action is to select root branch to play on. If succeed, the root level of the selected root branch will become a current level of a player. If zero passed as idbranch, the player returns to initial state without current branch/level selected.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
@@ -188,16 +177,18 @@ Input parameters:
 * `amount` (amount to be moved from owner's active balance to branch stake)
 
 ### Intent
-INTENT. The intent of the `{{ stkaddval }}` action is to ncrease volume of root branch starting pot and to add owner's funds to the branch stake:
+INTENT. The intent of the `{{ stkaddval }}` action is to increase volume of branch starting pot and to add owner's funds to the branch stake:
 
 * cut amount from owner's active balance;
 * register amount as owner's stake in specified branch;
 * if branch already has a root lvl, add amount to its pot.
 
+Contract account will cut 3% of each amount put on root branch (contract account get 3% in each root branch).
+
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">chnmergebal</h1>
+<h1 class="contract">claimchnl</h1>
 
 ### Parameters
 Input parameters:
@@ -205,7 +196,152 @@ Input parameters:
 * `owner` (account of the sales channel's owner)
 
 ### Intent
-INTENT. The intent of the `{{ chnmergebal }}` action is to merge sales channel balance (net income from referrals) into channel owner's active balance.
+INTENT. The intent of the `{{ claimchnl }}` action is to merge sales channel balance (net income from referrals) into channel owner's active balance.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">nextlvl</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to extend current branch with new level)
+
+### Intent
+INTENT. The intent of the `{{ nextlvl }}` action is to position player to the next level. If nex level does not yet exists - new level will be initialised in current branch:
+
+* split pot according to level's branch metadata(`nxtrate`);
+* make the player a branch winner;
+* as new level is locked when created, the winner has 3 tries to unlock it, if no luck - positioned to current level's zero cell.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">unjail</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player going to make payment for un-jail)
+
+### Intent
+INTENT. The intent of the `{{ unjail }}` action is to reset player's position and retries count in current level's zero cell for a certain payment:
+
+* payment rules are defined in the branch metadata of current level (see table [brnchmeta] of the game contract);
+* payment is calculated as ([current level's pot]*[unjlrate]/100);
+* payment can't be less then ([unjlmin]).
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">revshare</h1>
+
+### Parameters
+Input parameters: no input parameters.
+
+### Intent
+INTENT. The intent of the `{{ revshare }}` action is to initiate revenue share allocation processing for all unprocessed branchches. One pass of the action will process one hierarchy level of branch trees at a time. Action can be called by any account or script. Contract pays all RAM in course of the action execution (actually, only deferred actions are recreated during this action).
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">tipbranch</h1>
+
+### Parameters
+Input parameters:
+
+* `idbranch` (ID of the branch to be processed).
+
+### Intent
+INTENT. The intent of the `{{ tipbranch }}` action is to process revenue share on branch, called as deferred action.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">claimbranch</h1>
+
+### Parameters
+Input parameters:
+
+* `owner` (account of the branch stakeholder).
+* `idbranch` (ID of the branch to claim revenue from).
+
+### Intent
+INTENT. The intent of the `{{ claimbranch }}` action is to claim branch stake holder's share of branch revenue.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">takelvl</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player decided take his reward).
+
+### Intent
+INTENT. The intent of the `{{ takelvl }}` action is to split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update). Player wait untill the end of `tkintrvl` set with level result upon `takelvl` action is called. Player calls `claimtake` action to move further after `tkintrvl` expires. After `takelvl` player positioned in current level, zero cell, and can repeat his trial of the level.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">claimtake</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player claiming expired TAKE state to be reset).
+
+### Intent
+INTENT. The intent of the `{{ claimtake }}` action is to reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">untake</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player cancelling TAKE state and returning vested funds back to level's pot).
+
+### Intent
+INTENT. The intent of the `{{ untake }}` action is to return vested balance to level's pot and set player's state back to GREEN.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">splitlvl</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player initiating branch split from current level. State of the player must be GREEN).
+
+### Intent
+INTENT. The intent of the `{{ splitlvl }}` action is to:
+
+* make subbranch with locked root level
+* split level's pot according to level's branch metadata (`spltrate`, `potmin`)
+* make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
+* as new level is locked, splitter have 3 tries to unlock it using `unlocklvl` action. If no luck - additional tries can be bought by calling `splitbet` action.
+
+### Term
+TERM. This Contract expires at the conclusion of code execution.
+
+<h1 class="contract">splitbet</h1>
+
+### Parameters
+Input parameters:
+
+* `account` (account of the player to be charged for retries count reset. State of the player must be GREEN, retries count must be 0).
+
+### Intent
+INTENT. The intent of the `{{ splitbet }}` action to reset retries count while trying to unlock new split branch:
+
+* if no free unlock retries left, player can bet for split from his active balance to reset retries count
+* bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

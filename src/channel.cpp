@@ -1,5 +1,6 @@
 #include <channel.hpp>
 #include <player.hpp>
+#include <math.h>
 
 namespace Woffler {
   namespace Channel {
@@ -9,6 +10,21 @@ namespace Woffler {
     DAO::DAO(channels& _channels, uint64_t _ownerV): 
       Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {}
     
+    DAO::DAO(channels& _channels, channels::const_iterator itr): 
+      Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, itr) {}
+    
+    wflchannel Channel::getChannel() {
+      return getEnt<wflchannel>();
+    }
+
+    uint8_t Channel::getRate() {
+      uint8_t h = getChannel().height;
+      if (h < 10) return 0;
+      uint8_t retval = floor(log10(h));
+      if (retval > Const::maxChannelRate) return Const::maxChannelRate;
+      return retval;
+    }
+
     void Channel::upsertChannel(name payer) {
       if (isEnt()) {
         update(payer, [&](auto& c) {
@@ -30,6 +46,13 @@ namespace Woffler {
             c.height--;     
         });
       }
+    }
+    
+    void Channel::addBalance(asset amount, name payer) {
+      update(payer, [&](auto& c) {
+        c.balance += amount;     
+      });
+      print("Channel <", name{_entKey}, "> got ", asset{amount}, ".\n Channel's owner can claim balance ", asset{getChannel().balance}, " using <claimchnl> action. \n");
     }
 
     void Channel::mergeBalance() {

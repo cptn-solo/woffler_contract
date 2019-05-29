@@ -46,15 +46,6 @@ namespace Woffler {
     #pragma endregion
 
     #pragma region ** Contract (on-off boarding and deposit/withdraw): **
-
-    void checkAdmin(name account) {
-      require_auth(account);
-      auto self = get_self();
-      check(
-        account == self,
-        string("Debug mode available only to contract owner: ") + self.to_string()
-      );      
-    }
     
     //signup new player with custom sales channel (via referral link)
     ACTION signup(name account, name referrer) {
@@ -81,9 +72,40 @@ namespace Woffler {
     //forget player (without balance check yet, TBD!)
     ACTION forget(name account) {
       require_auth(account);
+      //TODO: add withdraw if balance >0
+      //TODO: add rmStake (+recalc branch total stake)
+      //TODO: add rm channel (+move referrals to contract, now just forbidden if account being forgotten has referrals)
 
       Player::Player player(get_self(), account);
-      player.rmAccount();
+      player.rmAccount();      
+    }
+
+    //can be called from other actions as "additional" task to minimize manual `revshare` calls
+    void processPendingRevshare() {
+      action(
+        permission_level{get_self(),"active"_n},
+        get_self(),
+        "revshare"_n,
+        std::make_tuple()
+      ).send();
+    }
+
+    //initiate processing of unprocessed branchches for 1 hierarchy level at a time. can be called by any account or script
+    ACTION revshare() {
+      auto _self = get_self();
+
+      Branch::branches _branches(_self, _self.value);
+      auto idx = _branches.get_index<"byprocessed"_n>();
+      auto itr = idx.lower_bound(0);//only unprocessed
+
+      while(itr != idx.end()) {
+        transaction out{};
+        out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(itr->id));
+        out.delay_sec = 2;
+        out.send(Utils::deferredTXId(itr->id), _self);
+
+        itr++;
+      }
     }
     
     #pragma endregion
@@ -121,21 +143,15 @@ namespace Woffler {
       branch.createBranch(owner, idmeta, pot);      
     }
     
-    //create root level with all branch stake (from all owners)
-    //generate cells for root level
-    ACTION rootlvl(name owner, uint64_t idbranch) {
-      require_auth(owner);
+    //revenue share, called as deferred action
+    ACTION tipbranch(uint64_t idbranch) {
+      auto self = get_self();
+      require_auth(self);
       
-      Branch::Branch branch(get_self(), idbranch);
-      branch.createRootLevel(owner);
-    }
+      print("Tipping branch: <", std::to_string(idbranch), "> \n");
 
-    //DEBUG actions for branch generation debug 
-    ACTION setrootlvl(name owner, uint64_t idbranch, uint64_t idrootlvl) {
-      checkAdmin(owner);
-
-      Branch::Branch branch(get_self(), idbranch);
-      branch.setRootLevel(owner, idrootlvl);
+      Branch::Branch branch(self, idbranch);
+      branch.allocateRevshare();
     }
 
     #pragma endregion
@@ -150,29 +166,57 @@ namespace Woffler {
       level.unlockLevel(owner);
     }
 
-    //DEBUG: testing cells generation for a given level and meta
-    ACTION regencells(name owner, uint64_t idlevel) {
-      checkAdmin(owner);
+    //position player to the next level
+    //if not yet exists - initialize new locked level in current branch 
+    //split pot according to level's branch metadata(`nxtrate`), 
+    //make the player a branch winner
+    //as new level is locked, winner have 3 tries to unlock it, if no luck - zero-ed in current level
+    ACTION nextlvl(name account) {
+      require_auth(account);
 
-      Level::Level level(get_self(), idlevel);
-      level.regenCells(owner);
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.nextLevel();
     }
 
-    //DEBUG: testing cell randomizer
-    ACTION gencells(name account, uint8_t size, uint8_t maxval) {
-      checkAdmin(account);
+    //reset player's position and retries count in current level's zero cell for a certain payment, 
+    //defined by branch rules in its metadata (unjlrate, unjlmin)
+    ACTION unjail(name account) {
+      require_auth(account);
 
-      Level::Level::debugGenerateCells(account, 1, size, maxval);
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.unjailPlayer();
     }
 
-    //DEBUG: testing level delete
-    ACTION rmlevel(name account, uint64_t idlevel) {
-      checkAdmin(account);
+    //split level's pot according to level's branch metadata (`tkrate`) and reward player (vesting balance update)
+    //player wait untill the end of `tkintrvl` set with level result upon `takelvl`
+    //player calls `claimtake` to move further after `tkintrvl` expires - then zero-ed in current level
+    ACTION takelvl(name account) {
+      require_auth(account);
 
-      Level::Level level(get_self(), idlevel);
-      level.rmLevel();
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.takeReward();
     }
-    
+
+    //make subbranch with locked root level
+    //split level's pot according to level's branch metadata (`spltrate`, `potmin`)
+    //make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
+    //as new level is locked, splitter have 3 tries to unlock it, if no luck - zero-ed in current level
+    ACTION splitlvl(name account) {
+      require_auth(account);
+      
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.splitLevel();
+    }
+
+    //if no free unlock retries left, player can bet for split from his active balance to reset retries count  
+    //bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
+    ACTION splitbet(name account) {
+      require_auth(account);
+      
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.splitBet();
+    }
+
     #pragma endregion
 
     #pragma region ** wflPlayer **
@@ -216,6 +260,23 @@ namespace Woffler {
       Player::Player player(get_self(), account);
       player.claimRed();
     }
+
+    //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
+    ACTION claimtake(name account) {
+      require_auth(account);
+
+      Player::Player player(get_self(), account);
+      player.claimTake();
+    }
+    
+    //return vested balance to level's pot and set state back to GREEN
+    ACTION untake(name account) {
+      require_auth(account);
+      
+      Player::Player player(get_self(), account);
+      player.cancelTake();
+    }
+
     
     #pragma endregion
     
@@ -224,22 +285,89 @@ namespace Woffler {
     ACTION stkaddval(name owner, uint64_t idbranch, asset amount) {
       require_auth(owner);
       
-      Stake::Stake stake(get_self(), 0);
-      stake.addStake(owner, idbranch, amount);
+      Branch::Branch branch(get_self(), idbranch);
+      branch.addStake(owner, amount);
     }  
+
+    //claim branch stake holder's share of branch revenue
+    ACTION claimbranch(name owner, uint64_t idbranch) {
+      require_auth(owner);      
+
+      Stake::Stake stake(get_self(), 0);
+      stake.claimRevenue(owner, idbranch);
+    }
 
     #pragma endregion
 
     #pragma region ** wflChannel **
     
-    ACTION chnmergebal(name owner) {
+    //merge channel balance into channel owner's active balance
+    ACTION claimchnl(name owner) {
       require_auth(owner);
       
       Channel::Channel channel(get_self(), owner);
       channel.mergeBalance();
     }
     
-    #pragma endregion
+    #pragma endregion    
 
+    #pragma region ** DEBUG **
+
+    //DEBUG: testing cells generation for a given level and meta
+    ACTION regencells(uint64_t idlevel) {
+      require_auth(get_self());
+
+      Level::Level level(get_self(), idlevel);
+      level.regenCells(get_self());
+    }
+
+    //DEBUG: testing cell randomizer
+    ACTION gencells(uint8_t size) {
+      require_auth(get_self());
+
+      Level::Level::debugGenerateCells(get_self(), 1, size);
+    }
+
+    //DEBUG: testing level delete
+    ACTION teleport(name account, uint64_t idlevel, uint8_t position) {
+      require_auth(get_self());
+
+      Player::Player player(get_self(), account);
+      player.reposition(idlevel, position);
+    }
+
+    //DEBUG actions for branch generation debug 
+    ACTION setrootlvl(uint64_t idbranch, uint64_t idrootlvl) {
+      require_auth(get_self());
+
+      Branch::Branch branch(get_self(), idbranch);
+      branch.setRootLevel(get_self(), idrootlvl);
+    }
+
+    //DEBUG: testing level delete
+    ACTION rmlevel(uint64_t idlevel) {
+      require_auth(get_self());
+
+      Level::Level level(get_self(), idlevel);
+      level.rmLevel();
+    }
+
+    //DEBUG: testing
+    ACTION rmbranch(uint64_t idbranch) {
+      require_auth(get_self());
+
+      Branch::Branch branch(get_self(), idbranch);
+      branch.rmBranch();
+    }
+
+    //DEBUG: testing
+    ACTION rmstake(uint64_t idstake) {
+      require_auth(get_self());
+      
+      Stake::Stake stake(get_self(), idstake);
+      stake.rmStake();
+    }
+    
+    #pragma endregion
   };
 }

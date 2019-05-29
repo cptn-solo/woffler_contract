@@ -22,6 +22,7 @@ namespace Woffler {
     class DAO: public Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
       public:
       DAO(channels& _channels, uint64_t _ownerV);
+      DAO(channels& _channels, channels::const_iterator itr);
       static uint64_t keyValue(name owner) {
         return owner.value;
       }
@@ -30,8 +31,13 @@ namespace Woffler {
     class Channel: Entity<channels, DAO, name> {
       public:
       Channel(name self, name owner);
+
+      wflchannel getChannel();
+      uint8_t getRate();
+      
       void upsertChannel(name payer);
       void subChannel(name payer);
+      void addBalance(asset amount, name payer);
       void mergeBalance();
     };
   }
