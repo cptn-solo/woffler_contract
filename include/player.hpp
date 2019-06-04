@@ -63,7 +63,7 @@ namespace Woffler {
       void switchRootLevel(uint64_t idlvl, Const::playerstate playerState);
       void tryTurn();
       void commitTurn();
-      void commitTake(asset amount);
+      void commitTake(asset amount, uint32_t timestamp);
       void cancelTake();
       void useTry();
       void useTry(uint8_t position);

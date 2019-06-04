@@ -75,6 +75,10 @@ namespace Woffler {
       auto _player = getPlayer();
 
       if (idbranch == 0) {
+        check(
+          _player.levelresult != Const::playerstate::TAKE,
+          "Player can leave the game while it TAKE state. Please get vested funds or return (Un-take) reward first."
+        );
         switchRootLevel(0, Const::playerstate::INIT);
         return;
       }
@@ -184,10 +188,10 @@ namespace Woffler {
       });
     }
 
-    void Player::commitTake(asset amount) {
+    void Player::commitTake(asset amount, uint32_t timestamp) {
       update(_entKey, [&](auto& p) {
         p.levelresult = Const::playerstate::TAKE;
-        p.resulttimestamp = Utils::now();
+        p.resulttimestamp = timestamp;
         p.triesleft = Const::retriesCount;
         p.vestingbalance += amount;
       });
@@ -236,15 +240,13 @@ namespace Woffler {
       checkState(Const::playerstate::TAKE);
       
       auto _player = getPlayer();
-      
-      Level::Level level(_self, _player.idlvl);
-      auto _level = level.getLevel();
-      auto _meta = level.meta.getMeta();
-      auto expiredAfter = (_player.resulttimestamp + _meta.tkintrvl) - Utils::now();
-      check(
-        expiredAfter <= 0,
-        string("TAKE state did not expired yet. Seconds left until expiration: ") + std::to_string(expiredAfter)
-      );
+      if (_player.resulttimestamp > Utils::now()) {
+        auto expiredAfter = _player.resulttimestamp - Utils::now();
+        check(
+          expiredAfter <= 0,
+          string("TAKE state did not expired yet. Seconds left until expiration: ") + std::to_string(expiredAfter)
+        );        
+      }    
 
       resetPositionAtLevel(_player.idlvl);
       

@@ -186,8 +186,7 @@ namespace Woffler {
       });
 
       //Set winner level result to TAKE and update result timestamp
-      player.commitTake(reward);//retries reset, reward added to vesting
-
+      player.commitTake(reward, Utils::now() + meta.getMeta().tkintrvl);//retries reset, reward added to vesting
     }
 
     void PlayerLevel::unjailPlayer() {
@@ -202,8 +201,6 @@ namespace Woffler {
       //cut player's active balance with unjail payment value
       player.subBalance(unjailPrice, _player.account);//will fail if balance not cover amount being cut
 
-      print("Unjail price paid: ", asset{unjailPrice}, "\n");
-
       //share revenue with branch, branch winner, branch hierarchy and referrer
       cutRevenueShare(unjailPrice, Const::revenuetype::UNJAIL);      
 
@@ -211,7 +208,6 @@ namespace Woffler {
       update(_player.account, [&](auto& l) {
         l.potbalance += unjailPrice;
       });
-      print("Added to the level's pot: ", asset{unjailPrice}, "\n");
 
       //reset player's state, retries and position in current level's zero cell
       player.resetPositionAtLevel(_curl.id);
