@@ -74,11 +74,11 @@ namespace Woffler {
     void Player::switchBranch(uint64_t idbranch) {
       auto _player = getPlayer();
 
+      check(
+        _player.levelresult != Const::playerstate::TAKE,
+        "Player can not leave the game while in TAKE state. Please wait for vested funds or return (Un-take) reward first."
+      );
       if (idbranch == 0) {
-        check(
-          _player.levelresult != Const::playerstate::TAKE,
-          "Player can leave the game while it TAKE state. Please get vested funds or return (Un-take) reward first."
-        );
         switchRootLevel(0, Const::playerstate::INIT);
         return;
       }

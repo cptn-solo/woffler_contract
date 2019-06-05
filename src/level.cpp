@@ -26,13 +26,14 @@ namespace Woffler {
     DAO::DAO(levels& _levels, levels::const_iterator itr):
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
-    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta) {
+    uint64_t Level::createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t generation, uint64_t idmeta) {
       meta.fetchByKey(idmeta);
       _entKey = nextPK();
       create(payer, [&](auto& l) {
         l.id = _entKey;
         l.idbranch = idbranch;
         l.idparent = idparent;
+        l.generation = generation;
         l.idmeta = idmeta;
         l.potbalance = potbalance;
       });
@@ -150,16 +151,16 @@ namespace Woffler {
 
       //getting branch meta to decide on level presets
       if (nextlitr == nextidx.end()) { //create locked
-        //setting new winner of current branch
-        Branch::Branch branch(_self, _curl.idbranch);
-        branch.setWinner(_player.account);
-
         //decide on new level's pot
         asset nxtPot = meta.nextPot(_curl.potbalance);
 
         //create new level with nex pot
         Level nextL(_self);
-        uint64_t nextId = nextL.createLevel(_player.account, nxtPot, _curl.idbranch, _curl.id, _curl.idmeta);
+        auto generation = _curl.generation + 1;
+        uint64_t nextId = nextL.createLevel(_player.account, nxtPot, _curl.idbranch, _curl.id, generation, _curl.idmeta);
+        //setting new winner of current branch
+        Branch::Branch branch(_self, _curl.idbranch);
+        branch.setWinner(_player.account, nextId, generation);
 
         //cut current level's pot
         update(_player.account, [&](auto& l) {
@@ -235,7 +236,7 @@ namespace Woffler {
 
       //Move SPLIT_RATE% of solved pot to locked pot
       Level nextL(_self);
-      uint64_t idlevel = nextL.createLevel(_player.account, splitAmount, idchbranch, _curl.id, _curl.idmeta);
+      uint64_t idlevel = nextL.createLevel(_player.account, splitAmount, idchbranch, _curl.id, _curl.generation+1, _curl.idmeta);
       branch.setRootLevel(_player.account, idlevel);
 
       update(_player.account, [&](auto& l) {

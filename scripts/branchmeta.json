@@ -12,7 +12,7 @@
   "stkrate": 10, 
   "tkintrvl": 1200, 
   "tkrate": 3, 
-  "startjailed": true,
+  "startjailed": false,
   "unjlintrvl": 600, 
   "unjlmin": "1.0000 EOS", 
   "unjlrate": 1, 

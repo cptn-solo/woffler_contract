@@ -16,8 +16,10 @@ namespace Woffler {
       uint64_t idrootlvl = 0;
       uint64_t idparent = 0;
       uint64_t idmeta;
-      name winner;
       uint64_t generation = 1;
+      name winner;
+      uint64_t winlevel = 0;
+      uint64_t winlevgen = 0;
 
       //revenue share fields:
       asset totalstake = asset{0, Const::acceptedSymbol};//appended each time stake added to avoid recalculation in runtime
@@ -66,7 +68,7 @@ namespace Woffler {
       void addStake(name owner, asset amount);
       void appendStake(name owner, asset amount);
       void setRootLevel(name payer, uint64_t idrootlvl);
-      void setWinner(name player);      
+      void setWinner(name player, uint64_t idlevel, uint64_t generation);      
       void deferRevenueShare(asset amount);
       void deferRevenueShare(asset amount, uint64_t idbranch);
       void allocateRevshare();

@@ -70,7 +70,7 @@ namespace Woffler {
       appendStake(_self,houseStake);
 
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, idmeta);
+      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, 1, idmeta);
 
       setRootLevel(owner, idlevel);
     }
@@ -136,9 +136,11 @@ namespace Woffler {
       });
     }
 
-    void Branch::setWinner(name player) {
+    void Branch::setWinner(name player, uint64_t idlevel, uint64_t generation) {
       update(player, [&](auto& b) {
         b.winner = player;
+        b.winlevel = idlevel;
+        b.winlevgen = generation;
       });
     }
 

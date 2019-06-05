@@ -22,6 +22,7 @@ namespace Woffler {
       uint16_t greencells;
       bool locked = true;
       bool root = true;
+      uint64_t generation = 1;//level sequential generation to simplify player's progress in gui
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idparent() const { return idparent; }
@@ -55,7 +56,7 @@ namespace Woffler {
       void checkLockedLevel();
       void checkUnlockedLevel();
 
-      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t idmeta);
+      uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t generation, uint64_t idmeta);
       void unlockLevel(name owner);
       void generateRedCells(name payer);
       void unlockTrial(name payer);
