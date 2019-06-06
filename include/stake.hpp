@@ -18,11 +18,13 @@ namespace Woffler {
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idbranch() const { return idbranch; }
+      uint64_t get_owner() const { return owner.value; }
       uint128_t get_ownedbrnch() const { return Utils::combineIds(owner.value, idbranch); }
     } wflstake;
 
     typedef multi_index<"stakes"_n, wflstake,
       indexed_by<"bybranch"_n, const_mem_fun<wflstake, uint64_t, &wflstake::get_idbranch>>,
+      indexed_by<"bybowner"_n, const_mem_fun<wflstake, uint64_t, &wflstake::get_owner>>,
       indexed_by<"byownedbrnch"_n, const_mem_fun<wflstake, uint128_t, &wflstake::get_ownedbrnch>>
     > stakes;
   

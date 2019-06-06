@@ -148,6 +148,9 @@ namespace Woffler {
 
       auto nextidx = getIndex<"byparent"_n>();
       auto nextlitr = nextidx.find(_curl.id);
+      
+      while (nextlitr != nextidx.end() && nextlitr->idbranch != _curl.idbranch)
+        nextlitr++;
 
       //getting branch meta to decide on level presets
       if (nextlitr == nextidx.end()) { //create locked
