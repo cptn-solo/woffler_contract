@@ -66,5 +66,10 @@ namespace Woffler {
       Player::Player player(_self, _entKey);
       player.addBalance(amount, _entKey);      
     }
+    
+    //DEBUG:
+    void Channel::rmChannel() {
+      remove();
+    }
   }
 } // namespace Woffler 

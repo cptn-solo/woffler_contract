@@ -367,6 +367,22 @@ namespace Woffler {
       Stake::Stake stake(get_self(), idstake);
       stake.rmStake();
     }
+
+    //DEBUG: testing
+    ACTION rmplayer(name account) {
+      require_auth(get_self());
+      
+      Player::Player player(get_self(), account);
+      player.rmPlayer();
+    }
+
+    //DEBUG: testing
+    ACTION rmpchannel(name account) {
+      require_auth(get_self());
+      
+      Channel::Channel channel(get_self(), account);
+      channel.rmChannel();
+    }
     
     #pragma endregion
   };

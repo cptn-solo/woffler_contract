@@ -104,9 +104,10 @@ namespace Woffler {
     }
 
     void BranchMeta::removeBranchMeta(name owner) {
-      checkOwner(owner);
-      checkNotUsedInBranches();
-
+      if (owner != _self) {
+        checkOwner(owner);
+        checkNotUsedInBranches();
+      }
       remove();
     }
 

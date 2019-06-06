@@ -369,5 +369,9 @@ namespace Woffler {
         p.triesleft = Const::retriesCount;
       });
     }
+    
+    void Player::rmPlayer() {
+      remove();
+    }
   }
 } // namespace Woffler

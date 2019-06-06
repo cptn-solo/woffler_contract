@@ -79,6 +79,7 @@ namespace Woffler {
       
       //DEBUG:
       void reposition(uint64_t idlevel, uint8_t position);
+      void rmPlayer();
     };
   }
 }
