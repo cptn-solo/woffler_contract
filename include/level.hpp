@@ -98,7 +98,7 @@ namespace Woffler {
       void takeReward();
       void unjailPlayer();
       void splitLevel();
-      void splitBet();      
+      void buyRetries();
     };
   }
 }

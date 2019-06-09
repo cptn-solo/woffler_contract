@@ -52,7 +52,7 @@ namespace Woffler {
       /* Restrictions check */
       if (_level.idparent != 0) {
         //Retries count to unlock split and next levels is restricted. 
-        //Additional tries are bought by calling `splitbet` action fpr split levels
+        //Additional tries are bought by calling `buyretries` action
         Player::Player player(_self, owner);
         player.checkLevelUnlockTrialAllowed(_level.idparent);
         player.useTry();
@@ -251,37 +251,22 @@ namespace Woffler {
       player.resetRetriesCount();
     }
     
-    void PlayerLevel::splitBet() {
-      //green, locked, 0 tries
-      player.checkState(Const::playerstate::GREEN);
-      auto _curl = getLevel();
-
-      check(_curl.idchbranch != 0, "Current level has no child branch for split bets.");
-
-      Branch::Branch chbranch(_self, _curl.idchbranch);
-      auto _chbranch = chbranch.getBranch();
-
-      Level chlevel(_self, _chbranch.idrootlvl);
-      chlevel.checkLockedLevel();
-
-      auto _chlevel = chlevel.getLevel();
-
+    void PlayerLevel::buyRetries() {
       auto _player = player.getPlayer();
       check(_player.triesleft == 0, "Retries count must be 0.");
 
-      //Player's balance covers bet price? (br.meta: stkrate, stkmin)
+      auto _curl = getLevel();
+      
+      //Player's balance covers price? 
       //Cut player's balance with bet price 
-      auto betPrice = meta.splitBetPrice(_chlevel.potbalance);      
-      player.subBalance(betPrice, _player.account);
-
-      //Add bet price to player's stake in the split branch 
-      chbranch.appendStake(_player.account, betPrice);
+      auto price = meta.unjailPrice(_curl.potbalance);
+      player.subBalance(price, _player.account);
 
       //share revenue with branch, branch winner, branch hierarchy and referrer
-      cutRevenueShare(betPrice, Const::revenuetype::SPLITBET);      
+      cutRevenueShare(price, Const::revenuetype::UNJAIL);      
 
-      //Add (bet amount - rev.share) to the locked level's pot
-      chlevel.addPot(_player.account, betPrice);
+      //Add (price - rev.share) to current level's pot
+      addPot(_player.account, price);
 
       //Reset retries count (3 left)
       player.resetRetriesCount();

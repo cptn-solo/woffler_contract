@@ -192,8 +192,8 @@ namespace Woffler {
       update(_entKey, [&](auto& p) {
         p.levelresult = Const::playerstate::TAKE;
         p.resulttimestamp = timestamp;
-        p.triesleft = Const::retriesCount;
         p.vestingbalance += amount;
+        //triesleft must remain as before action to prevent "free" bets upon un-take
       });
     }
 
@@ -208,8 +208,8 @@ namespace Woffler {
       update(_entKey, [&](auto& p) {
         p.levelresult = Const::playerstate::GREEN;
         p.resulttimestamp = Utils::now();
-        p.triesleft = Const::retriesCount;
         p.vestingbalance = asset{0, Const::acceptedSymbol};
+        //triesleft must remain as before take to prevent "free bets"
       });      
     }
 

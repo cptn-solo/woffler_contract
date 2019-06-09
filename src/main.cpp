@@ -208,13 +208,13 @@ namespace Woffler {
       plevel.splitLevel();
     }
 
-    //if no free unlock retries left, player can bet for split from his active balance to reset retries count  
-    //bet amount is calculated according to level's branch metadata (`stkrate`, `stkmin`)
-    ACTION splitbet(name account) {
+    //if no free unlock retries left, player can buy retries from his active balance to reset retries count  
+    //price is calculated according to level's branch metadata `unjail` price
+    ACTION buyretries(name account) {
       require_auth(account);
       
       Level::PlayerLevel plevel(get_self(), account);
-      plevel.splitBet();
+      plevel.buyRetries();
     }
 
     #pragma endregion
