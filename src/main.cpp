@@ -210,7 +210,7 @@ namespace Woffler {
 
     //if no free unlock retries left, player can buy retries from his active balance to reset retries count  
     //price is calculated according to level's branch metadata `unjail` price
-    ACTION buyretries(name account) {
+    ACTION buytries(name account) {
       require_auth(account);
       
       Level::PlayerLevel plevel(get_self(), account);

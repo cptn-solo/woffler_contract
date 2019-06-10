@@ -52,7 +52,7 @@ namespace Woffler {
       /* Restrictions check */
       if (_level.idparent != 0) {
         //Retries count to unlock split and next levels is restricted. 
-        //Additional tries are bought by calling `buyretries` action
+        //Additional tries are bought by calling `buytries` action
         Player::Player player(_self, owner);
         player.checkLevelUnlockTrialAllowed(_level.idparent);
         player.useTry();

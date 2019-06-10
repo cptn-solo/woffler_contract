@@ -96,7 +96,8 @@ Input parameters:
 INTENT. The intent of the `{{ unlocklvl }}` action is to generate cells for a given level and mark level unlocked if compatible green/red set was found by the pretender. Rules:
 
 * if a level being unlocked is the Root level of Root branch, pretender must own stake in the branch
-* if a level being unlocked is Next level or Root level of Split branch, pretender must stand in the previous level, be Green, and retries count must be > 0. Additional tries are bought by calling `buyretries` action.
+* if a level being unlocked is Next level or Root level of Split branch, pretender must stand in the previous level, be in NEXT or SPLIT state, and retries count must be > 0. Additional tries are bought by calling `buytries` action.
+* upon successful level unlock, NEXT player becomes current branch winner, while SPLIIT player becomes a stakeholder of split branch with stake equal to unlocked level's pot.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
@@ -324,25 +325,24 @@ Input parameters:
 INTENT. The intent of the `{{ splitlvl }}` action is to:
 
 * make subbranch with locked root level
-* split level's pot according to level's branch metadata (`spltrate`, `potmin`)
-* make the player a stakeholder of new subbranch, share is defined by level's branch metadata (`stkrate`, `stkmin`)
-* as new level is locked, splitter have 3 tries to unlock it using `unlocklvl` action. If no luck - additional tries can be bought by calling `buyretries` action.
+* split level's pot according to level's branch metadata (`spltrate`, `stakemin`)
+* as new level is locked, splitter have 3 tries to unlock it using `unlocklvl` action and become split branch stakeholder. If no luck - additional tries can be bought by calling `buytries` action.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">buyretries</h1>
+<h1 class="contract">buytries</h1>
 
 ### Parameters
 Input parameters:
 
-* `account` (account of the player to be charged for retries count reset. State of the player must be GREEN, retries count must be 0).
+* `account` (account of the player to be charged for retries count reset. State of the player must be NEXT or SPLIT, retries count must be 0).
 
 ### Intent
-INTENT. The intent of the `{{ buyretries }}` action to reset retries count while trying to unlock new or split branch:
+INTENT. The intent of the `{{ buytries }}` action to reset retries count while trying to unlock new or split branch:
 
 * if no free unlock retries left, player can buy another set of retries from his active balance and reset retries count
-* price is calculated according to level's branch metadata (`unjlrate`, `unjlmin`)
+* price is calculated according to level's branch metadata (`triesrate`, `triesmin`)
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
