@@ -104,7 +104,7 @@ namespace Woffler {
       } 
       else {
         check(
-          _player.idlvl == _level.idparent && 
+          _player.idlevel == _level.idparent && 
           _player.levelresult == Const::playerstate::GREEN, 
           "Player can move to side branch only from GREEN in split level."
         );
@@ -116,10 +116,10 @@ namespace Woffler {
       switchRootLevel(idrootlvl, (startJailed ? Const::playerstate::RED : Const::playerstate::SAFE));
     }
 
-    void Player::switchRootLevel(uint64_t idlvl, Const::playerstate playerState) {
+    void Player::switchRootLevel(uint64_t idlevel, Const::playerstate playerState) {
       //position player in root level of the branch
       update(_entKey, [&](auto& p) {
-        p.idlvl = idlvl;
+        p.idlevel = idlevel;
         p.triesleft = Const::retriesCount;
         p.levelresult = playerState;
         p.tryposition = 0;
@@ -135,7 +135,7 @@ namespace Woffler {
       
       /* Turn logic */
       //find player's current level 
-      Level::Level level(_self, _player.idlvl);
+      Level::Level level(_self, _player.idlevel);
       level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
       auto _level = level.getLevel();
 
@@ -145,7 +145,7 @@ namespace Woffler {
 
       if (_player.triesleft >= 1) {
         //get current position and produce tryposition by generating random offset
-        auto rnd = randomizer::getInstance(_entKey, _player.idlvl);
+        auto rnd = randomizer::getInstance(_entKey, _player.idlevel);
         auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
         useTry(tryposition);    
       }
@@ -161,7 +161,7 @@ namespace Woffler {
 
       auto _player = getPlayer();
 
-      Level::Level level(_self, _player.idlvl);
+      Level::Level level(_self, _player.idlevel);
       auto levelresult = level.cellTypeAtPosition(_player.tryposition);
 
       commitTurn(levelresult);
@@ -202,7 +202,7 @@ namespace Woffler {
 
       auto _player = getPlayer();
 
-      Level::Level level(_self, _player.idlvl);      
+      Level::Level level(_self, _player.idlevel);      
       level.addPot(_entKey, _player.vestingbalance);
 
       update(_entKey, [&](auto& p) {
@@ -217,7 +217,7 @@ namespace Woffler {
       checkState(Const::playerstate::GREEN);
 
       auto _player = getPlayer();
-      resetPositionAtLevel(_player.idlvl);
+      resetPositionAtLevel(_player.idlevel);
     }
 
     void Player::claimRed() {
@@ -225,7 +225,7 @@ namespace Woffler {
 
       auto _player = getPlayer();
       
-      Level::Level level(_self, _player.idlvl);      
+      Level::Level level(_self, _player.idlevel);      
       auto _level = level.getLevel();
       auto _meta = level.meta.getMeta();
       check(
@@ -248,7 +248,7 @@ namespace Woffler {
         );        
       }    
 
-      resetPositionAtLevel(_player.idlvl);
+      resetPositionAtLevel(_player.idlevel);
       
       //Move player's vested balance to active balance
       update(_entKey, [&](auto& p) {
@@ -257,9 +257,9 @@ namespace Woffler {
       });
     }
 
-    void Player::resetPositionAtLevel(uint64_t idlvl) {
+    void Player::resetPositionAtLevel(uint64_t idlevel) {
       update(_entKey, [&](auto& p) {
-        p.idlvl = idlvl;
+        p.idlevel = idlevel;
         p.tryposition = 0;
         p.currentposition = 0;
         p.levelresult = Const::playerstate::SAFE;
@@ -313,7 +313,7 @@ namespace Woffler {
     void Player::checkActivePlayer() {
       auto p = getPlayer();
       check(
-        p.idlvl != 0,
+        p.idlevel != 0,
         "First select branch to play on with action switchbrnch."
       );
     }
@@ -343,10 +343,10 @@ namespace Woffler {
       );
     }
 
-    void Player::checkLevelUnlockTrialAllowed(uint64_t idlvl) {
+    void Player::checkLevelUnlockTrialAllowed(uint64_t idlevel) {
       auto p = getPlayer();
       check(
-        p.idlvl == idlvl,
+        p.idlevel == idlevel,
         "Player must be at previous level to unlock next one."
       );
       check(
@@ -364,7 +364,7 @@ namespace Woffler {
     //DEBUG only, payer == contract
     void Player::reposition(uint64_t idlevel, uint8_t position) {
       update(_self, [&](auto& p) {
-        p.idlvl = idlevel;
+        p.idlevel = idlevel;
         p.tryposition = position;
         p.triesleft = Const::retriesCount;
       });

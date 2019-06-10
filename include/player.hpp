@@ -12,7 +12,7 @@ namespace Woffler {
     wflplayer {
       name account;
       name channel;
-      uint64_t idlvl = 0;
+      uint64_t idlevel = 0;
       asset activebalance = asset{0, Const::acceptedSymbol};
       asset vestingbalance = asset{0, Const::acceptedSymbol};
       uint8_t tryposition = 0;
@@ -23,10 +23,12 @@ namespace Woffler {
 
       uint64_t primary_key() const { return account.value; }
       uint64_t get_channel() const { return channel.value; }
+      uint64_t get_idlevel() const { return idlevel; }
     } wflplayer;
 
     typedef multi_index<"players"_n, wflplayer,
-      indexed_by<"bychannel"_n, const_mem_fun<wflplayer, uint64_t, &wflplayer::get_channel>>
+      indexed_by<"bychannel"_n, const_mem_fun<wflplayer, uint64_t, &wflplayer::get_channel>>,
+      indexed_by<"byidlevel"_n, const_mem_fun<wflplayer, uint64_t, &wflplayer::get_idlevel>>
     > players;
 
     class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
@@ -54,13 +56,13 @@ namespace Woffler {
       void checkState(Const::playerstate state);//player is in specified state
       void checkBalanceCovers(asset amount);//player's active balance is not less then specified
       void checkBalanceZero();//player's active balance is zero
-      void checkLevelUnlockTrialAllowed(uint64_t idlvl);//player can proceed with specified level unlocking trial
+      void checkLevelUnlockTrialAllowed(uint64_t idlevel);//player can proceed with specified level unlocking trial
 
       void createPlayer(name payer, name referrer);
       void addBalance(asset amount, name payer);
       void subBalance(asset amount, name payer);
       void switchBranch(uint64_t idbranch);
-      void switchRootLevel(uint64_t idlvl, Const::playerstate playerState);
+      void switchRootLevel(uint64_t idlevel, Const::playerstate playerState);
       void tryTurn();
       void commitTurn();
       void commitTake(asset amount, uint32_t timestamp);
@@ -72,7 +74,7 @@ namespace Woffler {
       void claimGreen();
       void claimRed();
       void claimTake();
-      void resetPositionAtLevel(uint64_t idlvl);
+      void resetPositionAtLevel(uint64_t idlevel);
       void resetRetriesCount();
 
       void rmAccount();

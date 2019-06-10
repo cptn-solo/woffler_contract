@@ -15,7 +15,7 @@ namespace Woffler {
 
     PlayerLevel::PlayerLevel(name self, name account) :
       Level(self), player(self, account) {
-        fetchByKey(player.getPlayer().idlvl);
+        fetchByKey(player.getPlayer().idlevel);
         if (_entKey != 0)
           meta.fetchByKey(getLevel().idmeta);
     }
