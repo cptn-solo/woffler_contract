@@ -14,10 +14,11 @@ namespace Woffler {
       name owner;
       uint16_t lvlgreens;//min 1
       uint16_t lvlreds;//min 1
+      bool startjailed = false;
       asset unjlmin = asset{0, Const::acceptedSymbol};
-      bool startjailed = 0;
       uint8_t unjlrate = 0;
-      uint64_t unjlintrvl;
+      asset buytrymin = asset{0, Const::acceptedSymbol};
+      uint8_t buytryrate = 0;
       uint8_t tkrate = 0;
       uint64_t tkintrvl = 0;
       uint8_t nxtrate = 90;
@@ -53,12 +54,14 @@ namespace Woffler {
       asset nextPot(const asset& pot);
       asset splitPot(const asset& pot);
       asset takeAmount(const asset& pot);
-
+      
+      asset stakeThreshold(const asset& pot);
+      
       asset unjailPrice(const asset& pot);
       asset unjailRevShare(const asset& revenue);
 
-      asset splitBetPrice(const asset& pot);
-      asset splitBetRevShare(const asset& revenue);
+      asset buytryPrice(const asset& pot);
+      asset buytryRevShare(const asset& revenue);
 
       void checkIsMeta();
       void checkCells(wflbrnchmeta meta);

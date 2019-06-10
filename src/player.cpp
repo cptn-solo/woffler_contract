@@ -75,7 +75,7 @@ namespace Woffler {
       auto _player = getPlayer();
 
       check(
-        _player.levelresult != Const::playerstate::TAKE,
+        _player.status != Const::playerstate::TAKE,
         "Player can not leave the game while in TAKE state. Please wait for vested funds or return (Un-take) reward first."
       );
       if (idbranch == 0) {
@@ -105,7 +105,7 @@ namespace Woffler {
       else {
         check(
           _player.idlevel == _level.idparent && 
-          _player.levelresult == Const::playerstate::GREEN, 
+          _player.status == Const::playerstate::GREEN, 
           "Player can move to side branch only from GREEN in split level."
         );
       }
@@ -121,7 +121,7 @@ namespace Woffler {
       update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
         p.triesleft = Const::retriesCount;
-        p.levelresult = playerState;
+        p.status = playerState;
         p.tryposition = 0;
         p.currentposition = 0;
         p.resulttimestamp = 0;
@@ -151,8 +151,8 @@ namespace Woffler {
       }
 
       if (_player.triesleft == 0) {
-        auto levelresult = level.cellTypeAtPosition(_player.tryposition);
-        commitTurn(levelresult);
+        auto status = level.cellTypeAtPosition(_player.tryposition);
+        commitTurn(status);
       }
     }
 
@@ -162,9 +162,9 @@ namespace Woffler {
       auto _player = getPlayer();
 
       Level::Level level(_self, _player.idlevel);
-      auto levelresult = level.cellTypeAtPosition(_player.tryposition);
+      auto status = level.cellTypeAtPosition(_player.tryposition);
 
-      commitTurn(levelresult);
+      commitTurn(status);
     }
 
     void Player::useTry() {
@@ -179,10 +179,10 @@ namespace Woffler {
       });
     }
 
-    void Player::commitTurn(Const::playerstate result) {
+    void Player::commitTurn(Const::playerstate status) {
       update(_entKey, [&](auto& p) {
         p.currentposition = p.tryposition;
-        p.levelresult = result;
+        p.status = status;
         p.resulttimestamp = Utils::now();
         p.triesleft = Const::retriesCount;
       });
@@ -190,7 +190,7 @@ namespace Woffler {
 
     void Player::commitTake(asset amount, uint32_t timestamp) {
       update(_entKey, [&](auto& p) {
-        p.levelresult = Const::playerstate::TAKE;
+        p.status = Const::playerstate::TAKE;
         p.resulttimestamp = timestamp;
         p.vestingbalance += amount;
         //triesleft must remain as before action to prevent "free" bets upon un-take
@@ -206,17 +206,22 @@ namespace Woffler {
       level.addPot(_entKey, _player.vestingbalance);
 
       update(_entKey, [&](auto& p) {
-        p.levelresult = Const::playerstate::GREEN;
+        p.status = Const::playerstate::GREEN;
         p.resulttimestamp = Utils::now();
         p.vestingbalance = asset{0, Const::acceptedSymbol};
         //triesleft must remain as before take to prevent "free bets"
       });      
     }
 
-    void Player::claimGreen() {
-      checkState(Const::playerstate::GREEN);
-
+    void Player::claimSafe() {
       auto _player = getPlayer();
+      check(
+        _player.status == Const::playerstate::GREEN ||
+        _player.status == Const::playerstate::NEXT ||
+        _player.status == Const::playerstate::SPLIT,
+        "Only player in GREEN/NEXT/SPLIT state can apply for repositon to 0 cell (safe)."
+      );
+
       resetPositionAtLevel(_player.idlevel);
     }
 
@@ -262,7 +267,7 @@ namespace Woffler {
         p.idlevel = idlevel;
         p.tryposition = 0;
         p.currentposition = 0;
-        p.levelresult = Const::playerstate::SAFE;
+        p.status = Const::playerstate::SAFE;
         p.resulttimestamp = 0;
         p.triesleft = Const::retriesCount;
       });
@@ -322,7 +327,7 @@ namespace Woffler {
       auto p = getPlayer();
       checkActivePlayer();
       check(
-        p.levelresult == state,
+        p.status == state,
         string("Player current level resutl must be '") + std::to_string(state) + string("'.")
       );
     }
@@ -350,14 +355,13 @@ namespace Woffler {
         "Player must be at previous level to unlock next one."
       );
       check(
-        (
-          p.levelresult == Const::playerstate::GREEN
-        ),
-        "Player can unlock level only from GREEN position"
+        p.status == Const::playerstate::NEXT ||
+        p.status == Const::playerstate::SPLIT,
+        "Player can unlock level only from NEXT/SPLIT states"
       );
       check(
         p.triesleft >= 1,
-        "Retries count to unlock level is restricted."
+        "Retries count to unlock level is restricted. Buy next set of retries with 'buytries' action"
       );
     }
 

@@ -18,7 +18,7 @@ namespace Woffler {
       uint8_t tryposition = 0;
       uint8_t currentposition = 0;
       uint8_t triesleft = 0;
-      uint8_t levelresult = Const::playerstate::INIT;
+      uint8_t status = Const::playerstate::INIT;
       uint32_t resulttimestamp;
 
       uint64_t primary_key() const { return account.value; }
@@ -69,16 +69,16 @@ namespace Woffler {
       void cancelTake();
       void useTry();
       void useTry(uint8_t position);
-      void commitTurn(Const::playerstate result);
+      void commitTurn(Const::playerstate status);
 
-      void claimGreen();
+      void claimSafe();
       void claimRed();
       void claimTake();
       void resetPositionAtLevel(uint64_t idlevel);
       void resetRetriesCount();
 
       void rmAccount();
-      
+
       //DEBUG:
       void reposition(uint64_t idlevel, uint8_t position);
       void rmPlayer();

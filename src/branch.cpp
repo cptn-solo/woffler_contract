@@ -72,10 +72,10 @@ namespace Woffler {
       Level::Level level(_self);
       uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, 1, idmeta);
 
-      setRootLevel(owner, idlevel);
+      setRootLevel(owner, idlevel, 1);
     }
 
-    uint64_t Branch::createChildBranch(name owner, asset pot, uint64_t idparent) {
+    uint64_t Branch::createChildBranch(name owner, uint64_t idparent) {
       _entKey = nextPK();
       auto parent = _idx.find(idparent);
       check(parent != _idx.end(), "Parent branch not found");
@@ -85,7 +85,6 @@ namespace Woffler {
         b.idparent = idparent;
         b.generation = (parent->generation + 1);
       });
-      appendStake(owner, pot);
       return _entKey;
     }
 
@@ -97,7 +96,7 @@ namespace Woffler {
 
       //if root level is created already - append staked value to the root level's pot
       Level::Level level(_self, _branch.idrootlvl);
-      auto threshold = meta.splitBetPrice((_branch.idrootlvl != 0 ? level.getLevel().potbalance : asset{0, Const::acceptedSymbol}));
+      auto threshold = meta.stakeThreshold((_branch.idrootlvl != 0 ? level.getLevel().potbalance : asset{0, Const::acceptedSymbol}));
 
       check(amount >= threshold, string("Amount must be >= ")+threshold.to_string().c_str());
 
@@ -130,17 +129,24 @@ namespace Woffler {
       });
     }
 
-    void Branch::setRootLevel(name payer, uint64_t idrootlvl) {
+    void Branch::setRootLevel(name payer, uint64_t idrootlvl, uint64_t generation) {
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
+        b.winlevel = idrootlvl;
+        b.winlevgen = generation;
       });
     }
 
-    void Branch::setWinner(name player, uint64_t idlevel, uint64_t generation) {
-      update(player, [&](auto& b) {
-        b.winner = player;
+    void Branch::updateTreeDept(name payer, uint64_t idlevel, uint64_t generation) {
+      update(payer, [&](auto& b) {
         b.winlevel = idlevel;
         b.winlevgen = generation;
+      });
+    }
+
+    void Branch::setWinner(name player) {
+      update(player, [&](auto& b) {
+        b.winner = player;
       });
     }
 

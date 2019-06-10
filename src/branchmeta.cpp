@@ -28,12 +28,13 @@ namespace Woffler {
 
     asset BranchMeta::splitPot(const asset& pot) {
       auto _meta = getMeta();
-      //solved * SPLIT_RATE% * STAKE_RATE% > STAKE_MIN?
-      auto minSplitAmount = (_meta.stkmin * 100) / _meta.stkrate;
-      auto mitSplittablePotAmount = (minSplitAmount * 100) / _meta.spltrate;
+      //solved * SPLIT_RATE% >= STAKE_MIN?
+      
+      bool covers = ( pot * (_meta.spltrate / 100) >= _meta.stkmin );
+      auto minPot = _meta.stkmin / (_meta.spltrate / 100);
       check(
-        pot >= mitSplittablePotAmount,
-        string("Reward pot of the current level is too small, should be at least ") + mitSplittablePotAmount.to_string().c_str()
+        pot >= minPot,
+        string("Reward pot of the current level is too small, should be at least ") + minPot.to_string().c_str()
       );
 
       auto splitAmount = (pot * _meta.spltrate) / 100;
@@ -54,13 +55,22 @@ namespace Woffler {
       return reward;
     }
 
+    asset BranchMeta::stakeThreshold(const asset& pot) {
+      auto _meta = getMeta();
+      auto price = (pot * _meta.stkrate) / 100;
+      if (price < _meta.stkmin)
+        price = _meta.stkmin;
+
+      return price;
+    }
+
     asset BranchMeta::unjailPrice(const asset& pot) {
       auto _meta = getMeta();
-      auto unjailAmount = (pot * _meta.unjlrate) / 100;
-      if (unjailAmount < _meta.unjlmin)
-        unjailAmount = _meta.unjlmin;
+      auto price = (pot * _meta.unjlrate) / 100;
+      if (price < _meta.unjlmin)
+        price = _meta.unjlmin;
 
-      return unjailAmount;
+      return price;
     }
 
     asset BranchMeta::unjailRevShare(const asset& revenue) {
@@ -69,18 +79,18 @@ namespace Woffler {
       return share;
     }
 
-    asset BranchMeta::splitBetPrice(const asset& pot) {
+    asset BranchMeta::buytryPrice(const asset& pot) {
       auto _meta = getMeta();
-      auto betPrice = (pot * _meta.stkrate) / 100;
-      if (betPrice < _meta.stkmin)
-        betPrice = _meta.stkmin;
+      auto price = (pot * _meta.buytryrate) / 100;
+      if (price < _meta.buytrymin)
+        price = _meta.buytrymin;
 
-      return betPrice;
+      return price;
     }
 
-    asset BranchMeta::splitBetRevShare(const asset& revenue) {
+    asset BranchMeta::buytryRevShare(const asset& revenue) {
       auto _meta = getMeta();
-      auto share = (revenue * _meta.stkrate) / 100;
+      auto share = (revenue * _meta.buytryrate) / 100;
       return share;
     }
 

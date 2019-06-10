@@ -64,11 +64,12 @@ namespace Woffler {
       void checkBranchMetaNotUsed(uint64_t idmeta);
 
       void createBranch(name owner, uint64_t idmeta, asset pot);
-      uint64_t createChildBranch(name owner, asset pot, uint64_t idparent);
+      uint64_t createChildBranch(name owner, uint64_t idparent);
       void addStake(name owner, asset amount);
       void appendStake(name owner, asset amount);
-      void setRootLevel(name payer, uint64_t idrootlvl);
-      void setWinner(name player, uint64_t idlevel, uint64_t generation);      
+      void setRootLevel(name payer, uint64_t idrootlvl, uint64_t generation);
+      void updateTreeDept(name payer, uint64_t idlevel, uint64_t generation);
+      void setWinner(name player);      
       void deferRevenueShare(asset amount);
       void deferRevenueShare(asset amount, uint64_t idbranch);
       void allocateRevshare();

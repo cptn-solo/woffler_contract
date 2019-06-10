@@ -3,10 +3,10 @@
 
 namespace Const {
   enum playerstate: uint8_t {
-    INIT, SAFE, RED, GREEN, TAKE
+    INIT, SAFE, RED, GREEN, TAKE, NEXT, SPLIT
   };
   enum revenuetype: uint8_t {
-    UNJAIL, SPLITBET
+    UNJAIL, BUYTRIES
   };
   const eosio::symbol_code acceptedCurr("EOS");
   const eosio::symbol acceptedSymbol(acceptedCurr, 4);

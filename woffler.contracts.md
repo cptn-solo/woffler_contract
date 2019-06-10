@@ -89,7 +89,7 @@ TERM. This Contract expires at the conclusion of code execution.
 ### Parameters
 Input parameters:
 
-* `owner` (account to unlock the level with - a pretender)
+* `account` (account to unlock the level with - a pretender)
 * `idlevel` (ID of the level to be unlocked)
 
 ### Intent
@@ -142,15 +142,15 @@ INTENT. The intent of the `{{ committurn }}` action is to commit position change
 ### Term
 TERM. This Contract expires at the conclusion of code execution.
 
-<h1 class="contract">claimgreen</h1>
+<h1 class="contract">claimgsafe</h1>
 
 ### Parameters
 Input parameters:
 
-* `account` (account of the player going to claim his current result)
+* `account` (account of the player going to claim reposition to safe place)
 
 ### Intent
-INTENT. The intent of the `{{ claimgreen }}` action is to reset player's GREEN position to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it.
+INTENT. The intent of the `{{ claimgsafe }}` action is to reset player's GREEN/NEXT/SPLIT state to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it.
 
 ### Term
 TERM. This Contract expires at the conclusion of code execution.

@@ -159,11 +159,11 @@ namespace Woffler {
     #pragma region ** wflLevel **
 
     //generate cells for a given level and mark level unlocked if compatible green/red set found
-    ACTION unlocklvl(name owner, uint64_t idlevel) {
-      require_auth(owner);
+    ACTION unlocklvl(name account, uint64_t idlevel) {
+      require_auth(account);
 
       Level::Level level(get_self(), idlevel);
-      level.unlockLevel(owner);
+      level.unlockLevel(account);
     }
 
     //position player to the next level
@@ -245,12 +245,12 @@ namespace Woffler {
       player.commitTurn();
     }
 
-    //reset player's GREEN position to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
-    ACTION claimgreen(name account) {
+    //reset player's GREEN/NEXT/SPLIT state to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
+    ACTION claimsafe(name account) {
       require_auth(account);          
 
       Player::Player player(get_self(), account);
-      player.claimGreen();
+      player.claimSafe();
     }
 
     //commit player's position after turn result "red cell" (position player to prev. level's zero)
@@ -334,14 +334,6 @@ namespace Woffler {
 
       Player::Player player(get_self(), account);
       player.reposition(idlevel, position);
-    }
-
-    //DEBUG actions for branch generation debug 
-    ACTION setrootlvl(uint64_t idbranch, uint64_t idrootlvl) {
-      require_auth(get_self());
-
-      Branch::Branch branch(get_self(), idbranch);
-      branch.setRootLevel(get_self(), idrootlvl);
     }
 
     //DEBUG: testing level delete
