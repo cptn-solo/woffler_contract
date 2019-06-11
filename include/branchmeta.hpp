@@ -65,6 +65,7 @@ namespace Woffler {
 
       void checkIsMeta();
       void checkCells(wflbrnchmeta meta);
+      void checkRatios(wflbrnchmeta meta);
       void checkOwner(name owner);
       void checkNotUsedInBranches();
 

@@ -26,27 +26,8 @@ namespace Woffler {
       BranchMeta::BranchMeta meta(_self, idmeta);
       auto _meta = meta.getMeta();
 
-      auto minPot = (((_meta.stkmin * 100) / _meta.stkrate) * 100) / _meta.spltrate;
+      auto minPot = _meta.stkmin / (_meta.spltrate / 100);
       check(
-        /*
-        pot - value to be placed to the root level upon creation; must be covered by creator's active balance;
-        spltrate - % of level's current pot moved to new branch upon split action from winner;
-        stkrate - % of level's current pot need to be staked by each pretender to be a stakeholder of the branch upon split;
-        stkmin - minimum value accepted as "stake" for the branch;
-
-        pot * spltrate% * stkrate% > stkmin
-        (((pot * spltrate)/100) * stkrate)/100 > stkmin
-        (((pot * spltrate)/100) * stkrate) > stkmin * 100
-        ((pot * spltrate)/100) > (stkmin * 100) / stkrate
-        pot > (((stkmin * 100) / stkrate) * 100) / spltrate
-
-        for stkmin = 10, stkrate = 3, spltrate = 50 we'll get minimum pot value as
-        (((10*100)/3)*100)/50 = 666
-
-        for stkmin = 1, stkrate = 10, spltrate = 50 we'll get minimum pot value as
-        (((1*100)/10)*100)/50 = 20
-
-        */
         minPot <= pot,
         string("Branch minimum pot is ")+minPot.to_string().c_str()
       );

@@ -28,9 +28,7 @@ namespace Woffler {
 
     asset BranchMeta::splitPot(const asset& pot) {
       auto _meta = getMeta();
-      //solved * SPLIT_RATE% >= STAKE_MIN?
-      
-      bool covers = ( pot * (_meta.spltrate / 100) >= _meta.stkmin );
+      //solved * SPLIT_RATE% >= STAKE_MIN?      
       auto minPot = _meta.stkmin / (_meta.spltrate / 100);
       check(
         pot >= minPot,
@@ -96,10 +94,12 @@ namespace Woffler {
 
     void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {
       checkCells(meta);
+      checkRatios(meta);
+      meta.owner = owner;
       if (_entKey >=1) {
         checkOwner(owner);
         checkNotUsedInBranches();
-
+        meta.id = _entKey;
         update(owner, [&](auto& m) {
           m = meta;
         });
@@ -129,9 +129,9 @@ namespace Woffler {
     }
 
     void BranchMeta::checkOwner(name owner) {
-        auto m = getEnt<wflbrnchmeta>();
+        auto _meta = getMeta();
         check(
-          owner == m.owner,
+          owner == _meta.owner,
           "Branch metadata can be modified only by its owner"
         );
     }
@@ -145,7 +145,15 @@ namespace Woffler {
     void BranchMeta::checkCells(wflbrnchmeta meta) {
       check(
         meta.lvlreds >= 1  && meta.lvlgreens >= 1 && Const::lvlLength >= (meta.lvlreds + meta.lvlgreens + 1),
-        string("Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND 16 >= (lvlreds + lvlgreens + 1)")
+        "Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND 16 >= (lvlreds + lvlgreens + 1)"
+      );
+    }
+
+    void BranchMeta::checkRatios(wflbrnchmeta meta) {
+      check(
+        meta.slsrate <= 100 && meta.spltrate <= 100 && meta.stkrate <= 100 && 
+        meta.tkrate <= 100 && meta.unjlrate <= 100 && meta.winnerrate <= 100,
+        "Percent value can't exceed 100, please check rate fields"
       );
     }
   }

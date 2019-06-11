@@ -115,10 +115,10 @@ namespace Woffler {
     //create meta for root branch(es) - active balance must cover at least.
     //owner pays for ram to avoid spamming via branch meta creation.
     //only owner can modify branch metadata.
-    ACTION brnchmeta(name owner, BranchMeta::wflbrnchmeta meta) {
+    ACTION brnchmeta(name owner, uint64_t idmeta, BranchMeta::wflbrnchmeta meta) {
         require_auth(owner);
 
-        BranchMeta::BranchMeta branchmeta(get_self(), meta.id);
+        BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
         branchmeta.upsertBranchMeta(owner, meta);
       }
 
