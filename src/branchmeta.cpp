@@ -29,7 +29,7 @@ namespace Woffler {
     asset BranchMeta::splitPot(const asset& pot) {
       auto _meta = getMeta();
       //solved * SPLIT_RATE% >= STAKE_MIN?      
-      auto minPot = _meta.stkmin / (_meta.spltrate / 100);
+      auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
       check(
         pot >= minPot,
         string("Reward pot of the current level is too small, should be at least ") + minPot.to_string().c_str()

@@ -26,7 +26,7 @@ namespace Woffler {
       BranchMeta::BranchMeta meta(_self, idmeta);
       auto _meta = meta.getMeta();
 
-      auto minPot = _meta.stkmin / (_meta.spltrate / 100);
+      auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
       check(
         minPot <= pot,
         string("Branch minimum pot is ")+minPot.to_string().c_str()
@@ -48,7 +48,7 @@ namespace Woffler {
       auto playerStake = (pot - houseStake);
 
       appendStake(owner, playerStake);
-      appendStake(_self,houseStake);
+      appendStake(_self, houseStake);
 
       Level::Level level(_self);
       uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, 1, idmeta);
