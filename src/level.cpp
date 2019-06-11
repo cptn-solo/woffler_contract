@@ -66,9 +66,7 @@ namespace Woffler {
 
       /* Generate cells */
       //getting branch meta to decide on level presets
-      unlockTrial(account);
-
-      if (!_level.locked) {
+      if (unlockTrial(account)) {
         switch (player.getPlayer().status)
         {
         case Const::playerstate::NEXT: {
@@ -80,7 +78,7 @@ namespace Woffler {
         }
         case Const::playerstate::SPLIT: {
           /* set stakeholder */
-          Branch::Branch branch(_self, _level.idchbranch);
+          Branch::Branch branch(_self, _level.idbranch);
           branch.appendStake(account, _level.potbalance);
           player.resetPositionAtLevel(_level.id);
           break;
@@ -99,13 +97,16 @@ namespace Woffler {
       });
     }
 
-    void Level::unlockTrial(name payer) {
+    bool Level::unlockTrial(name payer) {
       auto rnd = randomizer::getInstance(payer, _entKey);
       auto greencnt = meta.getMeta().lvlgreens;
+      auto locked = true;
       update(payer, [&](auto& l) {
         l.greencells = generateCells(rnd, greencnt);
         l.locked = Utils::hasIntersection(l.greencells, l.redcells);
+        locked = l.locked;
       });
+      return !locked;
     }
 
     void Level::addPot(name payer, asset pot) {
@@ -192,6 +193,7 @@ namespace Woffler {
         update(_player.account, [&](auto& l) {
           l.potbalance -= nxtPot;
         });
+        player.commitTurn(Const::playerstate::NEXT);
       }
       else if (nextlitr->locked) {
         player.commitTurn(Const::playerstate::NEXT);
@@ -276,6 +278,7 @@ namespace Woffler {
           l.potbalance -= splitPot;
           l.idchbranch = idchbranch;
         });
+        player.commitTurn(Const::playerstate::SPLIT);
       } 
       else if (splitlitr->locked) {
         player.commitTurn(Const::playerstate::SPLIT);

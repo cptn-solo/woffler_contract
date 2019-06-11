@@ -59,7 +59,7 @@ namespace Woffler {
       uint64_t createLevel(name payer, asset potbalance, uint64_t idbranch, uint64_t idparent, uint64_t generation, uint64_t idmeta);
       void unlockLevel(name owner);
       void generateRedCells(name payer);
-      void unlockTrial(name payer);
+      bool unlockTrial(name payer);
       void addPot(name payer, asset potbalance);
 
       Const::playerstate cellTypeAtPosition(uint8_t position);
