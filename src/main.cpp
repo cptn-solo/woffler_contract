@@ -96,14 +96,15 @@ namespace Woffler {
 
       Branch::branches _branches(_self, _self.value);
       auto idx = _branches.get_index<"byprocessed"_n>();
-      auto itr = idx.lower_bound(0);//only unprocessed
-
-      while(itr != idx.end()) {
-        transaction out{};
+      auto itr = idx.find(0);//only unprocessed
+      uint8_t treshold = 0; //limit processing by 10 items per run
+      transaction out{};
+      while(itr != idx.end() && treshold < 10) {
+        treshold++;
         out.actions.emplace_back(permission_level{_self, "active"_n}, _self, "tipbranch"_n, std::make_tuple(itr->id));
-        out.delay_sec = 2;
+        print("revshare branch: <", std::to_string(itr->id), "> \n");
+        out.delay_sec = treshold;
         out.send(Utils::deferredTXId(itr->id), _self);
-
         itr++;
       }
     }

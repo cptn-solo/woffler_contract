@@ -77,7 +77,7 @@ namespace Woffler {
 
       //if root level is created already - append staked value to the root level's pot
       Level::Level level(_self, _branch.idrootlvl);
-      auto threshold = meta.stakeThreshold((_branch.idrootlvl != 0 ? level.getLevel().potbalance : asset{0, Const::acceptedSymbol}));
+      auto threshold = meta.stakeThreshold(level.getLevel().potbalance);
 
       check(amount >= threshold, string("Amount must be >= ")+threshold.to_string().c_str());
 
@@ -98,8 +98,7 @@ namespace Woffler {
         appendStake(_self, houseStake);
       }
 
-      if(_branch.idrootlvl != 0)
-        level.addPot(owner, amount);
+      level.addPot(owner, amount);
     }
 
     void Branch::appendStake(name owner, asset amount) {
