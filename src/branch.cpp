@@ -41,6 +41,7 @@ namespace Woffler {
       create(owner, [&](auto& b) {
         b.id = _entKey;
         b.idmeta = idmeta;
+        b.potbalance = pot;
       });
 
       //register players's and house stake
@@ -51,21 +52,31 @@ namespace Woffler {
       appendStake(_self, houseStake);
 
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, 1, idmeta);
+      uint64_t idlevel = level.createLevel(owner, _entKey, 0, 1, idmeta, true);
 
       setRootLevel(owner, idlevel, 1);
     }
 
-    uint64_t Branch::createChildBranch(name owner, uint64_t idparent) {
+    uint64_t Branch::createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot) {
       _entKey = nextPK();
-      auto parent = _idx.find(idparent);
+      auto parent = _idx.find(pidbranch);
       check(parent != _idx.end(), "Parent branch not found");
       create(owner, [&](auto& b) {
         b.id = _entKey;
         b.idmeta = parent->idmeta;
-        b.idparent = idparent;
+        b.idparent = pidbranch;
         b.generation = (parent->generation + 1);
+        b.potbalance = pot;
       });
+      
+      //here is the change: child branch creator got stake. all next green can't unlock this branch until `stkaddval`
+      appendStake(owner, pot);
+
+      Level::Level level(_self);
+      uint64_t idlevel = level.createLevel(owner, _entKey, pidlevel, 1, parent->idmeta, true);
+
+      setRootLevel(owner, idlevel, 1);        
+
       return _entKey;
     }
 
@@ -75,9 +86,7 @@ namespace Woffler {
       BranchMeta::BranchMeta meta(_self, _branch.idmeta);
       auto _meta = meta.getMeta();
 
-      //if root level is created already - append staked value to the root level's pot
-      Level::Level level(_self, _branch.idrootlvl);
-      auto threshold = meta.stakeThreshold(level.getLevel().potbalance);
+      auto threshold = meta.stakeThreshold(_branch.potbalance);
 
       check(amount >= threshold, string("Amount must be >= ")+threshold.to_string().c_str());
 
@@ -98,7 +107,37 @@ namespace Woffler {
         appendStake(_self, houseStake);
       }
 
-      level.addPot(owner, amount);
+      addPot(owner, amount);
+    }
+
+    void Branch::addPot(name payer, asset pot) {
+      update(payer, [&](auto& b) {
+        b.potbalance += pot;
+      });
+    }
+    
+    void Branch::subPot(name payer, asset take) {
+      check(getBranch().potbalance >= take, "Branch pot balanse must cover reward amount");
+      update(payer, [&](auto& b) {
+        b.potbalance -= take;
+      });
+      
+      if (getBranch().potbalance.amount == 0)
+        closeBranch();      
+    }
+
+    void Branch::closeBranch() {
+      update(_self, [&](auto& b) {
+        b.closed = Utils::now();
+      });
+      
+      auto idparent = getBranch().idparent;
+      if (idparent > 0) {
+        Branch parent(_self, idparent);
+        parent.update(_self,[&](auto& b) {
+          b.openchildcnt--;
+        });
+      }
     }
 
     void Branch::appendStake(name owner, asset amount) {
@@ -121,6 +160,7 @@ namespace Woffler {
       update(payer, [&](auto& b) {
         b.winlevel = idlevel;
         b.winlevgen = generation;
+        b.openchildcnt++;
       });
     }
 

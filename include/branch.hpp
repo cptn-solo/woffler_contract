@@ -29,6 +29,10 @@ namespace Woffler {
       
       uint64_t tipprocessed = 1;//initialize branch without need to be processed
 
+      asset potbalance = asset{0, Const::acceptedSymbol};//potbalance shared across branch levels via `nextrate`
+      uint32_t openchildcnt = 0;//open child branches
+      uint32_t closed = 0;//timestamp of close event (pot emptied)
+
       uint64_t primary_key() const { return id; }
       uint64_t get_idmeta() const { return idmeta; }
       uint64_t get_tipprocessed() const { return tipprocessed; }
@@ -64,7 +68,9 @@ namespace Woffler {
       void checkBranchMetaNotUsed(uint64_t idmeta);
 
       void createBranch(name owner, uint64_t idmeta, asset pot);
-      uint64_t createChildBranch(name owner, uint64_t idparent);
+      uint64_t createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot);
+      void addPot(name payer, asset pot);
+      void subPot(name payer, asset take);
       void addStake(name owner, asset amount);
       void appendStake(name owner, asset amount);
       void setRootLevel(name payer, uint64_t idrootlvl, uint64_t generation);
@@ -73,6 +79,7 @@ namespace Woffler {
       void deferRevenueShare(asset amount);
       void deferRevenueShare(asset amount, uint64_t idbranch);
       void allocateRevshare();
+      void closeBranch();
       void rmBranch();
       
       bool isIndexedByMeta(uint64_t idmeta);

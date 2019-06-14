@@ -202,8 +202,9 @@ namespace Woffler {
 
       auto _player = getPlayer();
 
-      Level::Level level(_self, _player.idlevel);      
-      level.addPot(_entKey, _player.vestingbalance);
+      Level::Level level(_self, _player.idlevel);
+      Branch::Branch branch(_self, level.getLevel().idbranch);
+      branch.addPot(_entKey, _player.vestingbalance);
 
       update(_entKey, [&](auto& p) {
         p.status = Const::playerstate::GREEN;
@@ -348,12 +349,8 @@ namespace Woffler {
       );
     }
 
-    void Player::checkLevelUnlockTrialAllowed(uint64_t idlevel) {
+    void Player::checkLevelUnlockTrialAllowed() {
       auto p = getPlayer();
-      check(
-        p.idlevel == idlevel,
-        "Player must be at previous level to unlock next one."
-      );
       check(
         p.status == Const::playerstate::NEXT ||
         p.status == Const::playerstate::SPLIT,

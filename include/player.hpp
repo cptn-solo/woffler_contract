@@ -56,7 +56,7 @@ namespace Woffler {
       void checkState(Const::playerstate state);//player is in specified state
       void checkBalanceCovers(asset amount);//player's active balance is not less then specified
       void checkBalanceZero();//player's active balance is zero
-      void checkLevelUnlockTrialAllowed(uint64_t idlevel);//player can proceed with specified level unlocking trial
+      void checkLevelUnlockTrialAllowed();//player can proceed with specified level unlocking trial
 
       void createPlayer(name payer, name referrer);
       void addBalance(asset amount, name payer);

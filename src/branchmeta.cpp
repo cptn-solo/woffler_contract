@@ -16,44 +16,51 @@ namespace Woffler {
     wflbrnchmeta BranchMeta::getMeta() {
       return getEnt<wflbrnchmeta>();
     }
+    asset BranchMeta::currentPot(const asset& pot, const uint64_t& generation) {
+      return pot * pow((100 - getMeta().nxtrate)/100, generation);
+    }
 
-    asset BranchMeta::nextPot(const asset& pot) {
-      auto _meta = getMeta();
-      //decide on new level's pot
-      asset nxtPot = (pot * _meta.nxtrate) / 100;
-      if (nxtPot < _meta.potmin)
-        nxtPot = pot;
+    asset BranchMeta::nextPot(const asset& pot, const uint64_t& generation) {
+      asset nxtPot = pot * pow((100 - getMeta().nxtrate)/100, generation+1);
       return nxtPot;
     }
 
-    asset BranchMeta::splitPot(const asset& pot) {
+    asset BranchMeta::splitPot(const asset& pot, const uint64_t& generation) {
       auto _meta = getMeta();
       //solved * SPLIT_RATE% >= STAKE_MIN?      
+      asset _currentPot = currentPot(pot, generation);
       auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
       check(
-        pot >= minPot,
+        _currentPot >= minPot,
         string("Reward pot of the current level is too small, should be at least ") + minPot.to_string().c_str()
       );
 
-      auto splitAmount = (pot * _meta.spltrate) / 100;
+      auto splitAmount = (_currentPot * _meta.spltrate) / 100;
       return splitAmount;
     }
 
-    asset BranchMeta::takeAmount(const asset& pot) {
+    asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation) {
       auto _meta = getMeta();
-      auto reward = (pot * _meta.tkrate) / 100;
 
-      //solved * (100-TAKE_RATE)% > POT_MIN ?
+      if (_meta.maxlvlgen > 0 && _meta.maxlvlgen == generation)//last level winner gets all remaining pot
+        return pot;
+
+      asset _currentPot = currentPot(pot, generation);
+      auto reward = (_currentPot * _meta.tkrate) / 100;
+
       check(reward.amount > 0, "Reward amount must be > 0");
-      check(
-        (pot - reward) >= _meta.potmin,
-        string("Level pot is insufficient for reward, must be at least ")+_meta.potmin.to_string().c_str()+string(" after reward paid.\n")
-      );
+
+      if (_meta.takemult > 0) 
+        reward *= (_meta.takemult * generation); 
+
+      if (reward > _currentPot)
+        return _currentPot;
 
       return reward;
     }
 
     asset BranchMeta::stakeThreshold(const asset& pot) {
+      //stake amounts derived from total branch pot, not current level's amount
       auto _meta = getMeta();
       auto price = (pot * _meta.stkrate) / 100;
       if (price < _meta.stkmin)
@@ -62,9 +69,14 @@ namespace Woffler {
       return price;
     }
 
-    asset BranchMeta::unjailPrice(const asset& pot) {
+    asset BranchMeta::unjailPrice(const asset& pot, const uint64_t& generation) {
       auto _meta = getMeta();
-      auto price = (pot * _meta.unjlrate) / 100;
+      asset _currentPot = currentPot(pot, generation);
+      auto price = (_currentPot * _meta.unjlrate) / 100;
+
+      if (_meta.unljailmult > 0)
+        price *= (_meta.unljailmult * generation);
+
       if (price < _meta.unjlmin)
         price = _meta.unjlmin;
 
@@ -72,14 +84,17 @@ namespace Woffler {
     }
 
     asset BranchMeta::unjailRevShare(const asset& revenue) {
-      auto _meta = getMeta();
-      auto share = (revenue * _meta.unjlrate) / 100;
-      return share;
+      return (revenue * getMeta().unjlrate) / 100;
     }
 
-    asset BranchMeta::buytryPrice(const asset& pot) {
+    asset BranchMeta::buytryPrice(const asset& pot, const uint64_t& generation) {
       auto _meta = getMeta();
-      auto price = (pot * _meta.buytryrate) / 100;
+      asset _currentPot = currentPot(pot, generation);
+      auto price = (_currentPot * _meta.buytryrate) / 100;
+
+      if (_meta.buytrymult > 0) 
+        price *= (_meta.buytrymult * generation);
+
       if (price < _meta.buytrymin)
         price = _meta.buytrymin;
 
@@ -87,9 +102,7 @@ namespace Woffler {
     }
 
     asset BranchMeta::buytryRevShare(const asset& revenue) {
-      auto _meta = getMeta();
-      auto share = (revenue * _meta.buytryrate) / 100;
-      return share;
+      return (revenue * getMeta().buytryrate) / 100;
     }
 
     void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {

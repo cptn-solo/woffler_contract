@@ -30,6 +30,10 @@ namespace Woffler {
       uint8_t winnerrate = 0;
       string url;
       string name;
+      uint64_t maxlvlgen = 0; //maximum level generation (`nextlvl` limit)
+      uint8_t takemult = 0; //multiplies level.generation which in turn multiplies `tkrate` up to 100
+      uint8_t unljailmult = 0; //multiplies level.generation which in turn multiplies `unjlrate` up to 100
+      uint8_t buytrymult = 0; //multiplies level.generation which in turn multiplies `unjlrate` up to 100
 
       uint64_t primary_key() const { return id; }
     } wflbrnchmeta;
@@ -50,17 +54,18 @@ namespace Woffler {
       BranchMeta(name self, uint64_t idmeta);
 
       wflbrnchmeta getMeta();
-
-      asset nextPot(const asset& pot);
-      asset splitPot(const asset& pot);
-      asset takeAmount(const asset& pot);
+      
+      asset currentPot(const asset& pot, const uint64_t& generation);
+      asset nextPot(const asset& pot, const uint64_t& generation);
+      asset splitPot(const asset& pot, const uint64_t& generation);
+      asset takeAmount(const asset& pot, const uint64_t& generation);
       
       asset stakeThreshold(const asset& pot);
       
-      asset unjailPrice(const asset& pot);
+      asset unjailPrice(const asset& pot, const uint64_t& generation);
       asset unjailRevShare(const asset& revenue);
 
-      asset buytryPrice(const asset& pot);
+      asset buytryPrice(const asset& pot, const uint64_t& generation);
       asset buytryRevShare(const asset& revenue);
 
       void checkIsMeta();
