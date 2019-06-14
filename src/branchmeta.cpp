@@ -16,45 +16,43 @@ namespace Woffler {
     wflbrnchmeta BranchMeta::getMeta() {
       return getEnt<wflbrnchmeta>();
     }
-    asset BranchMeta::currentPot(const asset& pot, const uint64_t& generation) {
-      return pot * pow((100 - getMeta().nxtrate)/100, generation);
-    }
 
-    asset BranchMeta::nextPot(const asset& pot, const uint64_t& generation) {
-      asset nxtPot = pot * pow((100 - getMeta().nxtrate)/100, generation+1);
+    asset BranchMeta::nextPot(const asset& pot) {
+      auto _meta = getMeta();
+      asset nxtPot = (pot * _meta.nxtrate) / 100;
+      if (nxtPot < _meta.potmin)
+        nxtPot = pot;
       return nxtPot;
     }
 
-    asset BranchMeta::splitPot(const asset& pot, const uint64_t& generation) {
+    asset BranchMeta::splitPot(const asset& pot) {
       auto _meta = getMeta();
       //solved * SPLIT_RATE% >= STAKE_MIN?      
-      asset _currentPot = currentPot(pot, generation);
       auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
       check(
-        _currentPot >= minPot,
+        pot >= minPot,
         string("Reward pot of the current level is too small, should be at least ") + minPot.to_string().c_str()
       );
 
-      auto splitAmount = (_currentPot * _meta.spltrate) / 100;
+      auto splitAmount = (pot * _meta.spltrate) / 100;
       return splitAmount;
     }
 
-    asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation) {
+    asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen) {
       auto _meta = getMeta();
 
       if (_meta.maxlvlgen > 0 && _meta.maxlvlgen == generation)//last level winner gets all remaining pot
         return pot;
 
-      asset _currentPot = currentPot(pot, generation);
-      auto reward = (_currentPot * _meta.tkrate) / 100;
-
+      auto reward = (pot * _meta.tkrate) / 100;
+      
       check(reward.amount > 0, "Reward amount must be > 0");
 
       if (_meta.takemult > 0) 
         reward *= (_meta.takemult * generation); 
 
-      if (reward > _currentPot)
-        return _currentPot;
+      if (reward > pot)
+        return pot;
 
       return reward;
     }
@@ -71,8 +69,7 @@ namespace Woffler {
 
     asset BranchMeta::unjailPrice(const asset& pot, const uint64_t& generation) {
       auto _meta = getMeta();
-      asset _currentPot = currentPot(pot, generation);
-      auto price = (_currentPot * _meta.unjlrate) / 100;
+      auto price = (pot * _meta.unjlrate) / 100;
 
       if (_meta.unljailmult > 0)
         price *= (_meta.unljailmult * generation);
@@ -89,8 +86,7 @@ namespace Woffler {
 
     asset BranchMeta::buytryPrice(const asset& pot, const uint64_t& generation) {
       auto _meta = getMeta();
-      asset _currentPot = currentPot(pot, generation);
-      auto price = (_currentPot * _meta.buytryrate) / 100;
+      auto price = (pot * _meta.buytryrate) / 100;
 
       if (_meta.buytrymult > 0) 
         price *= (_meta.buytrymult * generation);

@@ -26,7 +26,11 @@ namespace Woffler {
     DAO::DAO(levels& _levels, levels::const_iterator itr):
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
 
-    uint64_t Level::createLevel(const name& payer, const uint64_t& idbranch, const uint64_t& idparent, const uint64_t& generation, const uint64_t& idmeta, const bool& root) {
+    wfllevel Level::getLevel() {
+      return getEnt<wfllevel>();
+    }
+
+    uint64_t Level::createLevel(const name& payer, const uint64_t& idbranch, const uint64_t& idparent, const uint64_t& generation, const uint64_t& idmeta, const bool& root, const asset& pot) {
       meta.fetchByKey(idmeta);
       _entKey = nextPK();
       create(payer, [&](auto& l) {
@@ -36,15 +40,18 @@ namespace Woffler {
         l.generation = generation;
         l.idmeta = idmeta;
         l.root = root;
+        l.potbalance = pot;
       });
       generateRedCells(payer);
       return _entKey;
     }
 
-    wfllevel Level::getLevel() {
-      return getEnt<wfllevel>();
+    void Level::addPot(name payer, asset pot) {
+      update(payer, [&](auto& l) {
+        l.potbalance += pot;
+      });
     }
-
+    
     void Level::unlockLevel(name account) {
       checkLockedLevel();
 
@@ -166,7 +173,13 @@ namespace Woffler {
 
     void PlayerLevel::nextLevel() {
       auto _curl = getLevel();
-      auto maxlvlgen = meta.getMeta().maxlvlgen;
+      auto _meta = meta.getMeta();
+      auto _player = player.getPlayer();
+      
+      Branch::Branch branch(_self, _curl.idbranch);
+      branch.checkNotClosed();
+      
+      auto maxlvlgen = _meta.maxlvlgen;
       if (maxlvlgen > 0) {
         check(
           maxlvlgen > _curl.generation,
@@ -176,20 +189,20 @@ namespace Woffler {
 
       player.checkState(Const::playerstate::GREEN);
       
-      auto _player = player.getPlayer();
-
       auto nextidx = getIndex<"byparent"_n>();
       auto nextlitr = nextidx.find(_curl.id);
       
       while (nextlitr != nextidx.end() && nextlitr->idbranch != _curl.idbranch)
         nextlitr++;
 
-      if (nextlitr == nextidx.end()) { //create locked        
+      if (nextlitr == nextidx.end()) { //create locked      
+
         Level nextL(_self);
+
+        const asset nextpot = meta.nextPot(_curl.potbalance);
         const uint64_t nextgen = _curl.generation + 1;
-        const uint64_t nextId = nextL.createLevel(_player.account, _curl.idbranch, _curl.id, nextgen, _curl.idmeta, false);
+        const uint64_t nextId = nextL.createLevel(_player.account, _curl.idbranch, _curl.id, nextgen, _curl.idmeta, false, nextpot);
         
-        Branch::Branch branch(_self, _curl.idbranch);
         branch.updateTreeDept(_player.account, nextId, nextgen);
 
         player.commitTurn(Const::playerstate::NEXT);
@@ -210,6 +223,9 @@ namespace Woffler {
       auto _player = player.getPlayer();
       auto _curl = getLevel();
 
+      Branch::Branch branch(_self, _curl.idbranch);
+      branch.checkNotClosed();
+
       auto splitidx = getIndex<"byparent"_n>();
       auto splitlitr = splitidx.find(_curl.id);
       
@@ -218,17 +234,19 @@ namespace Woffler {
 
       //Child branch exists for winner's current level?
       if (splitlitr == splitidx.end()) {
-        Branch::Branch currentBranch(_self, _curl.idbranch);
-        const asset splitPot = meta.splitPot(currentBranch.getBranch().potbalance, _curl.generation);
-        currentBranch.subPot(_player.account, splitPot);
+
+        const asset splitPot = meta.splitPot(_curl.potbalance);
+
+        branch.subPot(_player.account, splitPot);
 
         //Create child branch and a locked level with "Red" cells, branch generation++
         //Move SPLIT_RATE% of solved pot to locked pot
-        Branch::Branch childBranch(_self, 0);
-        const uint64_t idchbranch = childBranch.createChildBranch(_player.account, _curl.idbranch, _curl.id, splitPot);
+        Branch::Branch branch(_self, 0);
+        const uint64_t idchbranch = branch.createChildBranch(_player.account, _curl.idbranch, _curl.id, splitPot);
 
         update(_player.account, [&](auto& l) {
           l.idchbranch = idchbranch;
+          l.potbalance -= splitPot;
         });
         player.commitTurn(Const::playerstate::SPLIT);
       } 
@@ -243,13 +261,21 @@ namespace Woffler {
     
     void PlayerLevel::takeReward() {
       player.checkState(Const::playerstate::GREEN);
-
+      
       auto _player = player.getPlayer();
       auto _curl = getLevel();
+
+      Branch::Branch branch(_self, _curl.idbranch);
+      branch.checkNotClosed();
       
       //Cut TAKE_RATE% of solved pot and append to winner's vesting balance
-      Branch::Branch branch(_self, _curl.idbranch);
-      auto reward = meta.takeAmount(branch.getBranch().potbalance, _curl.generation);
+      auto _branch = branch.getBranch();
+      auto reward = meta.takeAmount(_curl.potbalance, _curl.generation, _branch.winlevgen);
+
+      update(_player.account, [&](auto& l) {
+        l.potbalance -= reward;
+      });
+
       branch.subPot(_player.account, reward);// will close current branch if reward pot is drained
 
       //Set winner level result to TAKE and update result timestamp
@@ -258,13 +284,16 @@ namespace Woffler {
 
     void PlayerLevel::unjailPlayer() {
       player.checkState(Const::playerstate::RED);
-
       auto _player = player.getPlayer();
       auto _curl = getLevel();
 
-      //calculate unjail price
       Branch::Branch branch(_self, _curl.idbranch);
-      auto price = meta.unjailPrice(branch.getBranch().potbalance, _curl.generation);
+      branch.checkNotClosed();//the only option is to end the game by switchbranch
+
+
+      //calculate unjail price
+      auto _branch = branch.getBranch();
+      auto price = meta.unjailPrice(_curl.potbalance, _curl.generation);
 
       //cut player's active balance with unjail payment value
       player.subBalance(price, _player.account);//will fail if balance not cover amount being cut
@@ -274,6 +303,10 @@ namespace Woffler {
 
       //put remaining unjail payment into reward pot of the branch
       branch.addPot(_player.account, price);
+
+      update(_player.account, [&](auto& l) {
+        l.potbalance += price;
+      });
 
       //reset player's state, retries and position in current level's zero cell
       player.resetPositionAtLevel(_curl.id);
@@ -293,7 +326,11 @@ namespace Woffler {
       //Player's balance covers price? 
       //Cut player's balance with price 
       Branch::Branch branch(_self, _curl.idbranch);
-      auto price = meta.buytryPrice(branch.getBranch().potbalance, _curl.generation);
+      if (_player.status == Const::playerstate::NEXT)
+        branch.checkNotClosed();//split can proceed, but next is not alowed to buy next tries
+
+      auto _branch = branch.getBranch();
+      auto price = meta.buytryPrice(_curl.potbalance, _curl.generation);
       player.subBalance(price, _player.account);
 
       //share revenue with branch, branch winner, branch hierarchy and referrer
@@ -301,6 +338,10 @@ namespace Woffler {
 
       //put remaining payment value into reward pot of the branch
       branch.addPot(_player.account, price);
+
+      update(_player.account, [&](auto& l) {
+        l.potbalance += price;
+      });
 
       //Reset retries count (3 left)
       player.resetRetriesCount();

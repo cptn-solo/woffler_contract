@@ -22,6 +22,7 @@ namespace Woffler {
       bool locked = true;
       bool root = true;
       uint64_t generation = 1;//level sequential generation to simplify player's progress in gui
+      asset potbalance = asset{0, Const::acceptedSymbol};//each operation must be reported to branch pot balance to enable clearance
 
       uint64_t primary_key() const { return id; }
       uint64_t get_idparent() const { return idparent; }
@@ -55,7 +56,8 @@ namespace Woffler {
       void checkLockedLevel();
       void checkUnlockedLevel();
 
-      uint64_t createLevel(const name& payer, const uint64_t& idbranch, const uint64_t& idparent, const uint64_t& generation, const uint64_t& idmeta, const bool& root);
+      uint64_t createLevel(const name& payer, const uint64_t& idbranch, const uint64_t& idparent, const uint64_t& generation, const uint64_t& idmeta, const bool& root, const asset& pot);
+      void addPot(name payer, asset pot);
       void unlockLevel(name owner);
       void generateRedCells(name payer);
       bool unlockTrial(name payer);

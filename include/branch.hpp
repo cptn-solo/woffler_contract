@@ -64,6 +64,7 @@ namespace Woffler {
       
       void checkBranch();
       void checkStartBranch();
+      void checkNotClosed();
       void checkEmptyBranch();
       void checkBranchMetaNotUsed(uint64_t idmeta);
 

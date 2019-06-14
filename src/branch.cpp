@@ -52,7 +52,7 @@ namespace Woffler {
       appendStake(_self, houseStake);
 
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, _entKey, 0, 1, idmeta, true);
+      uint64_t idlevel = level.createLevel(owner, _entKey, 0, 1, idmeta, true, pot);
 
       setRootLevel(owner, idlevel, 1);
     }
@@ -73,7 +73,7 @@ namespace Woffler {
       appendStake(owner, pot);
 
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, _entKey, pidlevel, 1, parent->idmeta, true);
+      uint64_t idlevel = level.createLevel(owner, _entKey, pidlevel, 1, parent->idmeta, true, pot);
 
       setRootLevel(owner, idlevel, 1);        
 
@@ -108,6 +108,9 @@ namespace Woffler {
       }
 
       addPot(owner, amount);
+
+      Level::Level rootlevel(_self, _branch.idrootlvl);
+      rootlevel.addPot(owner, amount);
     }
 
     void Branch::addPot(name payer, asset pot) {
@@ -252,7 +255,7 @@ namespace Woffler {
     }
 
     void Branch::checkStartBranch() {
-      auto b = getEnt<wflbranch>();
+      auto b = getBranch();
       check(
         b.generation == 1,
         "Player can start only from root branch"
@@ -263,8 +266,16 @@ namespace Woffler {
       );
     }
 
+    void Branch::checkNotClosed() {
+      auto b = getBranch();
+      check(
+        b.closed == 0,
+        "Branch is closed and cant be played any more"
+      );
+    }
+
     void Branch::checkEmptyBranch() {
-      auto b = getEnt<wflbranch>();
+      auto b = getBranch();
       check(
         b.idrootlvl == 0,
         "Root level already exists"

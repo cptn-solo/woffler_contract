@@ -55,10 +55,9 @@ namespace Woffler {
 
       wflbrnchmeta getMeta();
       
-      asset currentPot(const asset& pot, const uint64_t& generation);
-      asset nextPot(const asset& pot, const uint64_t& generation);
-      asset splitPot(const asset& pot, const uint64_t& generation);
-      asset takeAmount(const asset& pot, const uint64_t& generation);
+      asset nextPot(const asset& pot);
+      asset splitPot(const asset& pot);
+      asset takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen);
       
       asset stakeThreshold(const asset& pot);
       

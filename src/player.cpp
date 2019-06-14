@@ -84,14 +84,11 @@ namespace Woffler {
       }
       //find branch of the level
       Branch::Branch branch(_self, idbranch);
+      branch.checkNotClosed();
+
       auto _branch = branch.getBranch();
       uint64_t idrootlvl = _branch.idrootlvl;
       
-      check(
-        idrootlvl != 0, 
-        "Player can be positioned only in branches with root level available."
-      );
-
       Level::Level level(_self, idrootlvl);
       auto _level = level.getLevel();
 
@@ -139,6 +136,9 @@ namespace Woffler {
       level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
       auto _level = level.getLevel();
 
+      Branch::Branch branch(_self, _level.idbranch);
+      branch.checkNotClosed();
+
       //getting branch meta to decide on level presets
       BranchMeta::BranchMeta meta(_self, _level.idmeta);    
       auto _meta = meta.getMeta();
@@ -163,6 +163,9 @@ namespace Woffler {
 
       Level::Level level(_self, _player.idlevel);
       auto status = level.cellTypeAtPosition(_player.tryposition);
+
+      Branch::Branch branch(_self, level.getLevel().idbranch);
+      branch.checkNotClosed();
 
       commitTurn(status);
     }
@@ -204,7 +207,10 @@ namespace Woffler {
 
       Level::Level level(_self, _player.idlevel);
       Branch::Branch branch(_self, level.getLevel().idbranch);
+      branch.checkNotClosed();//must be safe to claim takes on closed branches
+
       branch.addPot(_entKey, _player.vestingbalance);
+      level.addPot(_entKey, _player.vestingbalance);
 
       update(_entKey, [&](auto& p) {
         p.status = Const::playerstate::GREEN;
@@ -216,6 +222,11 @@ namespace Woffler {
 
     void Player::claimSafe() {
       auto _player = getPlayer();
+      
+      Level::Level level(_self, _player.idlevel);
+      Branch::Branch branch(_self, level.getLevel().idbranch);      
+      branch.checkNotClosed();
+      
       check(
         _player.status == Const::playerstate::GREEN ||
         _player.status == Const::playerstate::NEXT ||
@@ -231,7 +242,7 @@ namespace Woffler {
 
       auto _player = getPlayer();
       
-      Level::Level level(_self, _player.idlevel);      
+      Level::Level level(_self, _player.idlevel);
       auto _level = level.getLevel();
       auto _meta = level.meta.getMeta();
       check(
@@ -244,18 +255,25 @@ namespace Woffler {
 
     void Player::claimTake() {      
       checkState(Const::playerstate::TAKE);
-      
-      auto _player = getPlayer();
-      if (_player.resulttimestamp > Utils::now()) {
-        auto expiredAfter = _player.resulttimestamp - Utils::now();
-        check(
-          expiredAfter <= 0,
-          string("TAKE state did not expired yet. Seconds left until expiration: ") + std::to_string(expiredAfter)
-        );        
-      }    
 
-      resetPositionAtLevel(_player.idlevel);
+      auto _player = getPlayer();
       
+      Level::Level level(_self, _player.idlevel);
+      Branch::Branch branch(_self, level.getLevel().idbranch);
+      
+      if (branch.getBranch().closed == 0) {//must be safe to claim takes on closed branches
+
+        if (_player.resulttimestamp > Utils::now()) {
+          auto expiredAfter = _player.resulttimestamp - Utils::now();
+          check(
+            expiredAfter <= 0,
+            string("TAKE state did not expired yet. Seconds left until expiration: ") + std::to_string(expiredAfter)
+          );        
+        }    
+        resetPositionAtLevel(_player.idlevel);
+      } else {
+        switchRootLevel(0, Const::playerstate::INIT);
+      }
       //Move player's vested balance to active balance
       update(_entKey, [&](auto& p) {
         p.activebalance += p.vestingbalance;
