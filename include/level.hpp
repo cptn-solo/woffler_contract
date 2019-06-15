@@ -50,20 +50,18 @@ namespace Woffler {
 
     class Level: public Entity<levels, DAO, uint64_t, wfllevel> {
       protected:
-      wfllevel _level;
+
       BranchMeta::wflbrnchmeta _meta;
       Branch::wflbranch _branch;
 
       void fetchContext() {
-        if (isEnt()) {
-          _level = getLevel();
-          
-          meta.fetchByKey(_level.idmeta);
-          _meta = meta.getMeta();
-          
-          branch.fetchByKey(_level.idbranch);
-          _branch = branch.getBranch();
-        }
+        if (!isEnt()) return;
+
+        meta.fetchByKey(_entity.idmeta);
+        _meta = meta.getMeta();
+        
+        branch.fetchByKey(_entity.idbranch);
+        _branch = branch.getBranch();
       }
 
       public:
@@ -89,7 +87,7 @@ namespace Woffler {
       void generateRedCells(const name& payer);
       bool unlockTrial(const name& payer);
 
-      Const::playerstate cellTypeAtPosition(const uint8_t& position);
+      Const::playerstate cellTypeAtPosition(uint8_t position);
 
       void regenCells(const name& owner);//debug mostly
 

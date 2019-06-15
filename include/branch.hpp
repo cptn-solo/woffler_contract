@@ -61,13 +61,10 @@ namespace Woffler {
       private:
 
       Stake::Stake stake;
-      wflbranch _branch;
 
       public:
 
       Branch(const name& self, const uint64_t& idbranch) : Entity<branches, DAO, uint64_t, wflbranch>(self, idbranch), stake(self, 0) {
-        if (isEnt())
-          _branch = getBranch();
       }
 
       wflbranch getBranch() {

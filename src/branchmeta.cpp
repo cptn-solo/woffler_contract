@@ -4,34 +4,34 @@
 namespace Woffler {
   namespace BranchMeta {
     asset BranchMeta::nextPot(const asset& pot) {
-      asset nxtPot = (pot * _meta.nxtrate) / 100;
-      if (nxtPot < _meta.potmin)
+      asset nxtPot = (pot * _entity.nxtrate) / 100;
+      if (nxtPot < _entity.potmin)
         nxtPot = pot;
       return nxtPot;
     }
 
     asset BranchMeta::splitPot(const asset& pot) {
       //solved * SPLIT_RATE% >= STAKE_MIN?      
-      auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
+      auto minPot = (_entity.stkmin * 100) / _entity.spltrate;
       check(
         pot >= minPot,
         string("Reward pot of the current level is too small, should be at least ") + minPot.to_string().c_str()
       );
 
-      auto splitAmount = (pot * _meta.spltrate) / 100;
+      auto splitAmount = (pot * _entity.spltrate) / 100;
       return splitAmount;
     }
 
     asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen) {
-      if (_meta.maxlvlgen > 0 && _meta.maxlvlgen == generation)//last level winner gets all remaining pot
+      if (_entity.maxlvlgen > 0 && _entity.maxlvlgen == generation)//last level winner gets all remaining pot
         return pot;
 
-      auto reward = (pot * _meta.tkrate) / 100;
+      auto reward = (pot * _entity.tkrate) / 100;
       
       check(reward.amount > 0, "Reward amount must be > 0");
 
-      if (_meta.takemult > 0) 
-        reward *= (_meta.takemult * generation); 
+      if (_entity.takemult > 0) 
+        reward *= (_entity.takemult * generation); 
 
       if (reward > pot)
         return pot;
@@ -41,41 +41,41 @@ namespace Woffler {
 
     asset BranchMeta::stakeThreshold(const asset& pot) {
       //stake amounts derived from total branch pot, not current level's amount
-      auto price = (pot * _meta.stkrate) / 100;
-      if (price < _meta.stkmin)
-        price = _meta.stkmin;
+      auto price = (pot * _entity.stkrate) / 100;
+      if (price < _entity.stkmin)
+        price = _entity.stkmin;
 
       return price;
     }
 
     asset BranchMeta::unjailPrice(const asset& pot, const uint64_t& generation) {
-      auto price = (pot * _meta.unjlrate) / 100;
-      if (_meta.unljailmult > 0)
-        price *= (_meta.unljailmult * generation);
+      auto price = (pot * _entity.unjlrate) / 100;
+      if (_entity.unljailmult > 0)
+        price *= (_entity.unljailmult * generation);
 
-      if (price < _meta.unjlmin)
-        price = _meta.unjlmin;
+      if (price < _entity.unjlmin)
+        price = _entity.unjlmin;
 
       return price;
     }
 
     asset BranchMeta::unjailRevShare(const asset& revenue) {
-      return (revenue * _meta.unjlrate) / 100;
+      return (revenue * _entity.unjlrate) / 100;
     }
 
     asset BranchMeta::buytryPrice(const asset& pot, const uint64_t& generation) {
-      auto price = (pot * _meta.buytryrate) / 100;
-      if (_meta.buytrymult > 0) 
-        price *= (_meta.buytrymult * generation);
+      auto price = (pot * _entity.buytryrate) / 100;
+      if (_entity.buytrymult > 0) 
+        price *= (_entity.buytrymult * generation);
 
-      if (price < _meta.buytrymin)
-        price = _meta.buytrymin;
+      if (price < _entity.buytrymin)
+        price = _entity.buytrymin;
 
       return price;
     }
 
     asset BranchMeta::buytryRevShare(const asset& revenue) {
-      return (revenue * _meta.buytryrate) / 100;
+      return (revenue * _entity.buytryrate) / 100;
     }
 
     void BranchMeta::upsertBranchMeta(const name& owner, wflbrnchmeta& meta) {
@@ -86,14 +86,14 @@ namespace Woffler {
         checkOwner(owner);
         checkNotUsedInBranches();
         meta.id = _entKey;
-        _meta = update(owner, [&](auto& m) {
+        update(owner, [&](auto& m) {
           m = meta;
         });
       }
       else {
         _entKey = nextPK();
         meta.id = _entKey;
-        _meta = create(owner, [&](auto& m) {
+        create(owner, [&](auto& m) {
           m = meta;
         });
       }
@@ -117,7 +117,7 @@ namespace Woffler {
 
     void BranchMeta::checkOwner(const name& owner) {
         check(
-          owner == _meta.owner,
+          owner == _entity.owner,
           "Branch metadata can be modified only by its owner"
         );
     }

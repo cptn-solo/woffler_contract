@@ -21,7 +21,7 @@ namespace Woffler {
       //account can't be registred twice
       checkNoPlayer();
 
-      _player = create(payer, [&](auto& p) {
+      create(payer, [&](auto& p) {
         p.account = _entKey;
         p.channel = referrer;
       });
@@ -32,27 +32,27 @@ namespace Woffler {
 
     void Player::addBalance(const asset& amount, const name& payer) {
       checkPlayer();
-      _player = update(payer, [&](auto& p) {
+      update(payer, [&](auto& p) {
         p.activebalance += amount;
       });
     }
 
     void Player::subBalance(const asset& amount, const name& payer) {
       checkBalanceCovers(amount);
-      _player = update(payer, [&](auto& p) {
+      update(payer, [&](auto& p) {
         p.activebalance -= amount;
       });
     }
 
     void Player::claimVesting() {
-      _player = update(_player.account, [&](auto& p) {
+      update(_entity.account, [&](auto& p) {
         p.activebalance += p.vestingbalance;
         p.vestingbalance = asset{0, Const::acceptedSymbol};
       });
     }
 
     void Player::clearVesting() {
-      _player = update(_player.account, [&](auto& p) {
+      update(_entity.account, [&](auto& p) {
         p.status = Const::playerstate::GREEN;
         p.resulttimestamp = Utils::now();
         p.vestingbalance = asset{0, Const::acceptedSymbol};
@@ -72,7 +72,7 @@ namespace Woffler {
 
     void Player::switchBranch(const uint64_t& idbranch) {
       check(
-        _player.status != Const::playerstate::TAKE,
+        _entity.status != Const::playerstate::TAKE,
         "Player can not leave the game while in TAKE state. Please wait for vested funds or return (Un-take) reward first."
       );
       if (idbranch == 0) {
@@ -98,8 +98,8 @@ namespace Woffler {
       } 
       else {
         check(
-          _player.idlevel == _level.idparent && 
-          _player.status == Const::playerstate::GREEN, 
+          _entity.idlevel == _level.idparent && 
+          _entity.status == Const::playerstate::GREEN, 
           "Player can move to side branch only from GREEN in split level."
         );
       }
@@ -112,7 +112,7 @@ namespace Woffler {
 
     void Player::switchRootLevel(const uint64_t& idlevel, const Const::playerstate& playerState) {
       //position player in root level of the branch
-      _player = update(_entKey, [&](auto& p) {
+      update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
         p.triesleft = Const::retriesCount;
         p.status = playerState;
@@ -122,19 +122,20 @@ namespace Woffler {
       });
     }
 
-    void Player::useTry() {
-      useTry(_player.tryposition);
+    uint8_t Player::useTry() {
+      return useTry(_entity.tryposition);
     }
 
-    void Player::useTry(const uint8_t& position) {
-      _player = update(_entKey, [&](auto& p) {
+    uint8_t Player::useTry(const uint8_t& position) {
+      update(_entKey, [&](auto& p) {
         p.tryposition = position;
         p.triesleft -= 1;
       });
+      return _entity.triesleft;
     }
 
     void Player::commitTurn(const Const::playerstate& status) {
-      _player = update(_entKey, [&](auto& p) {
+      update(_entKey, [&](auto& p) {
         p.currentposition = p.tryposition;
         p.status = status;
         p.resulttimestamp = Utils::now();
@@ -143,7 +144,7 @@ namespace Woffler {
     }
 
     void Player::commitTake(const asset& amount, const uint32_t& timestamp) {
-      _player = update(_entKey, [&](auto& p) {
+      update(_entKey, [&](auto& p) {
         p.status = Const::playerstate::TAKE;
         p.resulttimestamp = timestamp;
         p.vestingbalance += amount;
@@ -152,7 +153,7 @@ namespace Woffler {
     }    
 
     void Player::resetPositionAtLevel(const uint64_t& idlevel) {
-      _player = update(_entKey, [&](auto& p) {
+      update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
         p.tryposition = 0;
         p.currentposition = 0;
@@ -163,7 +164,7 @@ namespace Woffler {
     }
 
     void Player::resetRetriesCount() {
-      _player = update(_entKey, [&](auto& p) {
+      update(_entKey, [&](auto& p) {
         p.triesleft = Const::retriesCount;
       });
     }
@@ -205,7 +206,7 @@ namespace Woffler {
 
     void Player::checkActivePlayer() {
       check(
-        _player.idlevel != 0,
+        _entity.idlevel != 0,
         "First select branch to play on with action switchbrnch."
       );
     }
@@ -213,40 +214,40 @@ namespace Woffler {
     void Player::checkState(const Const::playerstate& state) {
       checkActivePlayer();
       check(
-        _player.status == state,
+        _entity.status == state,
         string("Player current level resutl must be '") + std::to_string(state) + string("'.")
       );
     }
 
     void Player::checkBalanceCovers(const asset& amount) {
       check(
-        _player.activebalance >= amount,
-        string("Not enough active balance in your account. Current active balance: ") + _player.activebalance.to_string().c_str()
+        _entity.activebalance >= amount,
+        string("Not enough active balance in your account. Current active balance: ") + _entity.activebalance.to_string().c_str()
       );
     }
 
     void Player::checkBalanceZero() {
       check(//warning! works only for records, emplaced in contract's host scope
-        _player.activebalance == asset{0, Const::acceptedSymbol},
-        string("Please withdraw funds first. Current active balance: ") + _player.activebalance.to_string().c_str()
+        _entity.activebalance == asset{0, Const::acceptedSymbol},
+        string("Please withdraw funds first. Current active balance: ") + _entity.activebalance.to_string().c_str()
       );
     }
 
     void Player::checkLevelUnlockTrialAllowed() {
       check(
-        _player.status == Const::playerstate::NEXT ||
-        _player.status == Const::playerstate::SPLIT,
+        _entity.status == Const::playerstate::NEXT ||
+        _entity.status == Const::playerstate::SPLIT,
         "Player can unlock level only from NEXT/SPLIT states"
       );
       check(
-        _player.triesleft >= 1,
+        _entity.triesleft >= 1,
         "Retries count to unlock level is restricted. Buy next set of retries with 'buytries' action"
       );
     }
 
     //DEBUG only, payer == contract
     void Player::reposition(const uint64_t& idlevel, const uint8_t& position) {
-      _player = update(_self, [&](auto& p) {
+      update(_self, [&](auto& p) {
         p.idlevel = idlevel;
         p.tryposition = position;
         p.triesleft = Const::retriesCount;

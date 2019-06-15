@@ -20,8 +20,10 @@ namespace Woffler {
     Entity(const name& self, const PK& entKey): _idx(self, self.value) {
       _self = self;
       _entKey = entKey;
-      if (A::keyValue(entKey) > 0)
+      if (A::keyValue(entKey) > 0) {
         _dao = new A(_idx, A::keyValue(entKey));
+        _entity = _dao->getEnt();
+      }
     }
     ~Entity() {
       if (_dao) {
@@ -34,26 +36,30 @@ namespace Woffler {
       check(_dao == NULL, "Can't refetch into existing accessor object");
       _entKey = entKey;
       _dao = new A(_idx, A::keyValue(entKey));
+      _entity = _dao->getEnt();
     }
 
     protected:
 
     name _self;
     PK _entKey;
+    Ent _entity;
     Idx _idx;
 
     template <typename Lambda>
     const Ent& create(const name& payer, Lambda&& creator) {
       auto _itr = _idx.emplace(payer, std::forward<Lambda&&>(creator));
       _dao = new A(_idx, _itr);
-      return *_itr;
+      _entity = _dao->getEnt();
+      return _entity;
     }
 
     template <typename Lambda>
     const Ent& update(const name& payer, Lambda&& updater) {
       check(isEnt(), "Object not found.");
       _dao->update(payer, updater);
-      return _dao->getEnt();
+      _entity = _dao->getEnt();
+      return _entity;
     }
 
     void remove() {

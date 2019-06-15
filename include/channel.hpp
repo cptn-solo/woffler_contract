@@ -35,15 +35,9 @@ namespace Woffler {
 
     class Channel: Entity<channels, DAO, name, wflchannel> {
     
-      private:
-
-      wflchannel _channel;
-
       public:
     
       Channel(const name& self, const name& owner) : Entity<channels, DAO, name, wflchannel>(self, owner) {
-        if (isEnt())
-          _channel = getChannel();
       }
       
       wflchannel getChannel() {

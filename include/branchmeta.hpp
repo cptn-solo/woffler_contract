@@ -57,15 +57,9 @@ namespace Woffler {
 
     class BranchMeta: public Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta> {
 
-      private:
-
-      wflbrnchmeta _meta;
-
       public:
 
       BranchMeta(const name& self, const uint64_t& idmeta) : Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta>(self, idmeta) {
-        if (isEnt())
-          _meta = getMeta();
       }
       
       wflbrnchmeta getMeta() {

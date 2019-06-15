@@ -45,13 +45,9 @@ namespace Woffler {
     };
 
     class Player: Entity<players, DAO, name, wflplayer> {
-      private:
-      wflplayer _player;
-
+      
       public:
       Player(const name& self, const name& account) : Entity<players, DAO, name, wflplayer>(self, account) {
-        if (isEnt())
-          _player = getPlayer();
       }
 
       wflplayer getPlayer() {
@@ -81,8 +77,8 @@ namespace Woffler {
       void switchBranch(const uint64_t& idbranch);
       void switchRootLevel(const uint64_t& idlevel, const Const::playerstate& playerState);
         
-      void useTry();
-      void useTry(const uint8_t& position);
+      uint8_t useTry();
+      uint8_t useTry(const uint8_t& position);
       void commitTake(const asset& amount, const uint32_t& timestamp);
       void commitTurn(const Const::playerstate& status);
 

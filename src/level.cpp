@@ -10,7 +10,7 @@ namespace Woffler {
       branch.fetchByKey(idbranch);
       
       _entKey = nextPK();
-      _level = create(payer, [&](auto& l) {
+      create(payer, [&](auto& l) {
         l.id = _entKey;
         l.idbranch = idbranch;
         l.idparent = idparent;
@@ -26,7 +26,7 @@ namespace Woffler {
     }
 
     void Level::addPot(const name& payer, const asset& pot) {
-      _level = update(payer, [&](auto& l) {
+      update(payer, [&](auto& l) {
         l.potbalance += pot;
       });
     }
@@ -38,22 +38,22 @@ namespace Woffler {
       auto _player = player.getPlayer();
 
       /* Restrictions check */
-      if (_level.idparent > 0) { //next/split levels
-        if (_player.idlevel == _level.idparent)  { //standing in front of the level
+      if (_entity.idparent > 0) { //next/split levels
+        if (_player.idlevel == _entity.idparent)  { //standing in front of the level
           //Retries count to unlock levels in front of the player is restricted. 
           //Additional tries are bought by calling `buytries` action
           player.checkLevelUnlockTrialAllowed();
           player.useTry();
-        } else if (_level.root) { //Unlock split branch from list - no retry checks implied
+        } else if (_entity.root) { //Unlock split branch from list - no retry checks implied
           Stake::Stake stake(_self);
-          stake.checkIsStakeholder(account, _level.idbranch);
+          stake.checkIsStakeholder(account, _entity.idbranch);
         } else {
           check(false, "You can not unlock this level at the moment");
         }
       } else {
         //Root levels of root branches can be unlocked only by stakeholders, no retries restriction
         Stake::Stake stake(_self);
-        stake.checkIsStakeholder(account, _level.idbranch);
+        stake.checkIsStakeholder(account, _entity.idbranch);
       }
 
       /* Generate cells */
@@ -63,12 +63,12 @@ namespace Woffler {
           case Const::playerstate::NEXT: {
             /* set winner */
             branch.setWinner(account);
-            player.resetPositionAtLevel(_level.id);
+            player.resetPositionAtLevel(_entity.id);
             break;
           }
           case Const::playerstate::SPLIT: {
             /* change: splits now unlocked only by stakeholders */
-            player.resetPositionAtLevel(_level.id);
+            player.resetPositionAtLevel(_entity.id);
             break;
           }
           default: {
@@ -81,7 +81,7 @@ namespace Woffler {
     void Level::generateRedCells(const name& payer) {
       auto rnd = randomizer::getInstance(payer, _entKey);
       auto redcnt = meta.getMeta().lvlreds;
-      _level = update(payer, [&](auto& l) {
+      update(payer, [&](auto& l) {
         l.redcells = generateCells(rnd, redcnt);
       });
     }
@@ -90,7 +90,7 @@ namespace Woffler {
       auto rnd = randomizer::getInstance(payer, _entKey);
       auto greencnt = meta.getMeta().lvlgreens;
       auto locked = true;
-      _level = update(payer, [&](auto& l) {
+      update(payer, [&](auto& l) {
         l.greencells = generateCells(rnd, greencnt);
         l.locked = Utils::hasIntersection(l.greencells, l.redcells);
         locked = l.locked;
@@ -98,14 +98,14 @@ namespace Woffler {
       return !locked;
     }
 
-    Const::playerstate Level::cellTypeAtPosition(const uint8_t& position) {
+    Const::playerstate Level::cellTypeAtPosition(uint8_t position) {
       check(position <= Const::lvlLength, "Position in the level can't exceed 16");
 
       auto status = Const::playerstate::SAFE;
       uint16_t pos16 = 1<<position;
-      if (Utils::hasIntersection(pos16, _level.redcells)) {
+      if (Utils::hasIntersection(pos16, _entity.redcells)) {
         status = Const::playerstate::RED;
-      } else if (Utils::hasIntersection(pos16, _level.greencells)) {
+      } else if (Utils::hasIntersection(pos16, _entity.greencells)) {
         status = Const::playerstate::GREEN;
       }
       return status;
@@ -122,14 +122,14 @@ namespace Woffler {
 
     void Level::checkLockedLevel() {
       check(
-        _level.locked,
+        _entity.locked,
         "Level is already unlocked."
       );
     }
 
     void Level::checkUnlockedLevel() {
       check(
-        !_level.locked,
+        !_entity.locked,
         "Level is locked."
       );
     }
@@ -143,16 +143,16 @@ namespace Woffler {
       //find player's current level 
       checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
       branch.checkNotClosed();
-
-      if (_player.triesleft > 0) {
-        print("_player.triesleft before: ", _player.triesleft);
+      auto triesleft = _player.triesleft;
+      print("triesleft before: ", triesleft);
+      if (triesleft > 0) {
         //get current position and produce tryposition by generating random offset
         auto rnd = randomizer::getInstance(_player.account, _entKey);
         auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
-        player.useTry(tryposition);    
-        print("_player.triesleft after: ", _player.triesleft);
+        triesleft = player.useTry(tryposition);    
       }
-      if (_player.triesleft == 0) {
+      print("triesleft after: ", triesleft);
+      if (triesleft == 0) {
         auto status = cellTypeAtPosition(_player.tryposition);
         player.commitTurn(status);
       }
@@ -192,10 +192,10 @@ namespace Woffler {
       branch.checkNotClosed();      
       player.checkState(Const::playerstate::RED);
       check(
-        _level.idparent != 0 || !_meta.startjailed,
+        _entity.idparent != 0 || !_meta.startjailed,
         "You can only call `unjail` or `switchbrnch` from your current state"
       );
-      uint64_t idlevel = (_level.idparent != 0 ? _level.idparent : _level.id);
+      uint64_t idlevel = (_entity.idparent != 0 ? _entity.idparent : _entity.id);
       player.resetPositionAtLevel(idlevel);
     }
 
@@ -223,7 +223,7 @@ namespace Woffler {
       auto maxlvlgen = _meta.maxlvlgen;
       if (maxlvlgen > 0) {
         check(
-          maxlvlgen > _level.generation,
+          maxlvlgen > _entity.generation,
           "Current branch can't be extended any more due to its presets."
         );      
       }
@@ -231,18 +231,18 @@ namespace Woffler {
       player.checkState(Const::playerstate::GREEN);
       
       auto nextidx = getIndex<"byparent"_n>();
-      auto nextlitr = nextidx.find(_level.id);
+      auto nextlitr = nextidx.find(_entity.id);
       
-      while (nextlitr != nextidx.end() && nextlitr->idbranch != _level.idbranch)
+      while (nextlitr != nextidx.end() && nextlitr->idbranch != _entity.idbranch)
         nextlitr++;
 
       if (nextlitr == nextidx.end()) { //create locked      
 
         Level nextL(_self);
 
-        const asset nextpot = meta.nextPot(_level.potbalance);
-        const uint64_t nextgen = _level.generation + 1;
-        const uint64_t nextId = nextL.createLevel(_player.account, _level.idbranch, _level.id, nextgen, _level.idmeta, false, nextpot);
+        const asset nextpot = meta.nextPot(_entity.potbalance);
+        const uint64_t nextgen = _entity.generation + 1;
+        const uint64_t nextId = nextL.createLevel(_player.account, _entity.idbranch, _entity.id, nextgen, _entity.idmeta, false, nextpot);
         
         branch.updateTreeDept(_player.account, nextId, nextgen);
 
@@ -262,24 +262,24 @@ namespace Woffler {
       branch.checkNotClosed();
 
       auto splitidx = getIndex<"byparent"_n>();
-      auto splitlitr = splitidx.find(_level.id);
+      auto splitlitr = splitidx.find(_entity.id);
       
-      while (splitlitr != splitidx.end() && splitlitr->idbranch == _level.idbranch)
+      while (splitlitr != splitidx.end() && splitlitr->idbranch == _entity.idbranch)
         splitlitr++;
 
       //Child branch exists for winner's current level?
       if (splitlitr == splitidx.end()) {
 
-        const asset splitPot = meta.splitPot(_level.potbalance);
+        const asset splitPot = meta.splitPot(_entity.potbalance);
 
         branch.subPot(_player.account, splitPot);
 
         //Create child branch and a locked level with "Red" cells, branch generation++
         //Move SPLIT_RATE% of solved pot to locked pot
         Branch::Branch chbranch(_self, 0);
-        const uint64_t idchbranch = chbranch.createChildBranch(_player.account, _level.idbranch, _level.id, splitPot);
+        const uint64_t idchbranch = chbranch.createChildBranch(_player.account, _entity.idbranch, _entity.id, splitPot);
 
-        _level = update(_player.account, [&](auto& l) {
+        update(_player.account, [&](auto& l) {
           l.idchbranch = idchbranch;
           l.potbalance -= splitPot;
         });
@@ -304,9 +304,9 @@ namespace Woffler {
       branch.checkNotClosed();
       
       //Cut TAKE_RATE% of solved pot and append to winner's vesting balance
-      const asset reward = meta.takeAmount(_level.potbalance, _level.generation, _branch.winlevgen);
+      const asset reward = meta.takeAmount(_entity.potbalance, _entity.generation, _branch.winlevgen);
 
-      _level = update(_player.account, [&](auto& l) {
+      update(_player.account, [&](auto& l) {
         l.potbalance -= reward;
       });
 
@@ -321,7 +321,7 @@ namespace Woffler {
       branch.checkNotClosed();//the only option is to end the game by switchbranch
 
       //calculate unjail price
-      auto price = meta.unjailPrice(_level.potbalance, _level.generation);
+      auto price = meta.unjailPrice(_entity.potbalance, _entity.generation);
 
       //cut player's active balance with unjail payment value
       player.subBalance(price, _player.account);//will fail if balance not cover amount being cut
@@ -332,12 +332,12 @@ namespace Woffler {
       //put remaining unjail payment into reward pot of the branch
       branch.addPot(_player.account, price);
 
-      _level = update(_player.account, [&](auto& l) {
+      update(_player.account, [&](auto& l) {
         l.potbalance += price;
       });
 
       //reset player's state, retries and position in current level's zero cell
-      player.resetPositionAtLevel(_level.id);
+      player.resetPositionAtLevel(_entity.id);
     }
 
     void PlayerLevel::buyRetries() {
@@ -352,13 +352,13 @@ namespace Woffler {
         branch.checkNotClosed();
       }
       else if (_player.status == Const::playerstate::NEXT) {
-        Branch::Branch splitbranch(_self, _level.idchbranch);
+        Branch::Branch splitbranch(_self, _entity.idchbranch);
         splitbranch.checkNotClosed();
       }
 
       //Player's balance covers price? 
       //Cut player's balance with price 
-      auto price = meta.buytryPrice(_level.potbalance, _level.generation);
+      auto price = meta.buytryPrice(_entity.potbalance, _entity.generation);
       player.subBalance(price, _player.account);
 
       //share revenue with branch, branch winner, branch hierarchy and referrer
@@ -367,7 +367,7 @@ namespace Woffler {
       //put remaining payment value into reward pot of the branch
       branch.addPot(_player.account, price);
 
-      _level = update(_player.account, [&](auto& l) {
+      update(_player.account, [&](auto& l) {
         l.potbalance += price;
       });
 
