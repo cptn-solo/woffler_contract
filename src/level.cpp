@@ -98,7 +98,7 @@ namespace Woffler {
       return !locked;
     }
 
-    Const::playerstate Level::cellTypeAtPosition(uint8_t position) {
+    Const::playerstate Level::cellTypeAtPosition(const uint8_t& position) {
       check(position <= Const::lvlLength, "Position in the level can't exceed 16");
 
       auto status = Const::playerstate::SAFE;
@@ -144,16 +144,15 @@ namespace Woffler {
       checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
       branch.checkNotClosed();
       auto triesleft = _player.triesleft;
-      print("triesleft before: ", triesleft);
+      auto tryposition = _player.tryposition;
       if (triesleft > 0) {
         //get current position and produce tryposition by generating random offset
         auto rnd = randomizer::getInstance(_player.account, _entKey);
-        auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
+        tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
         triesleft = player.useTry(tryposition);    
       }
-      print("triesleft after: ", triesleft);
       if (triesleft == 0) {
-        auto status = cellTypeAtPosition(_player.tryposition);
+        auto status = cellTypeAtPosition(tryposition);
         player.commitTurn(status);
       }
     }

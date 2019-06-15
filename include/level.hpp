@@ -87,7 +87,7 @@ namespace Woffler {
       void generateRedCells(const name& payer);
       bool unlockTrial(const name& payer);
 
-      Const::playerstate cellTypeAtPosition(uint8_t position);
+      Const::playerstate cellTypeAtPosition(const uint8_t& position);
 
       void regenCells(const name& owner);//debug mostly
 
