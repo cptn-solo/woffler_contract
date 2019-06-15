@@ -33,19 +33,34 @@ namespace Woffler {
 
     class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
       public:
-      DAO(players& _players, uint64_t _playerV);
-      DAO(players& _players, players::const_iterator itr);
+      DAO(players& _players, uint64_t _playerV):
+      Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {}
+
+      DAO(players& _players, players::const_iterator itr):
+      Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, itr) {}
+
       static uint64_t keyValue(name account) {
         return account.value;
       }
     };
 
-    class Player: Entity<players, DAO, name> {
-      public:
-      Player(name self, name account);
+    class Player: Entity<players, DAO, name, wflplayer> {
+      private:
+      wflplayer _player;
 
-      wflplayer getPlayer();
-      name getChannel();
+      public:
+      Player(name self, name account) : Entity<players, DAO, name, wflplayer>(self, account) {
+        if (isEnt())
+          _player = getPlayer();
+      }
+
+      wflplayer getPlayer() {
+        return getEnt();
+      }
+      
+      name getChannel() {
+        return getPlayer().channel;
+      }
 
       bool isPlayer();//true if player exists in registry
       void checkReferrer(name referrer);//referrer exists in registry
@@ -61,19 +76,16 @@ namespace Woffler {
       void createPlayer(name payer, name referrer);
       void addBalance(asset amount, name payer);
       void subBalance(asset amount, name payer);
+      void claimVesting();
+      void clearVesting();
       void switchBranch(uint64_t idbranch);
       void switchRootLevel(uint64_t idlevel, Const::playerstate playerState);
-      void tryTurn();
-      void commitTurn();
-      void commitTake(asset amount, uint32_t timestamp);
-      void cancelTake();
+        
       void useTry();
       void useTry(uint8_t position);
+      void commitTake(asset amount, uint32_t timestamp);
       void commitTurn(Const::playerstate status);
 
-      void claimSafe();
-      void claimRed();
-      void claimTake();
       void resetPositionAtLevel(uint64_t idlevel);
       void resetRetriesCount();
 

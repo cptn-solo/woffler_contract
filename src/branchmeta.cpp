@@ -3,22 +3,7 @@
 
 namespace Woffler {
   namespace BranchMeta {
-    BranchMeta::BranchMeta(name self, uint64_t idmeta) :
-      Entity<brnchmetas, DAO, uint64_t>(self, idmeta) {
-      }
-
-    DAO::DAO(brnchmetas& _brnchmetas, uint64_t idmeta):
-        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
-
-    DAO::DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr):
-        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, itr) {}
-
-    wflbrnchmeta BranchMeta::getMeta() {
-      return getEnt<wflbrnchmeta>();
-    }
-
     asset BranchMeta::nextPot(const asset& pot) {
-      auto _meta = getMeta();
       asset nxtPot = (pot * _meta.nxtrate) / 100;
       if (nxtPot < _meta.potmin)
         nxtPot = pot;
@@ -26,7 +11,6 @@ namespace Woffler {
     }
 
     asset BranchMeta::splitPot(const asset& pot) {
-      auto _meta = getMeta();
       //solved * SPLIT_RATE% >= STAKE_MIN?      
       auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
       check(
@@ -39,8 +23,6 @@ namespace Woffler {
     }
 
     asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen) {
-      auto _meta = getMeta();
-
       if (_meta.maxlvlgen > 0 && _meta.maxlvlgen == generation)//last level winner gets all remaining pot
         return pot;
 
@@ -59,7 +41,6 @@ namespace Woffler {
 
     asset BranchMeta::stakeThreshold(const asset& pot) {
       //stake amounts derived from total branch pot, not current level's amount
-      auto _meta = getMeta();
       auto price = (pot * _meta.stkrate) / 100;
       if (price < _meta.stkmin)
         price = _meta.stkmin;
@@ -68,9 +49,7 @@ namespace Woffler {
     }
 
     asset BranchMeta::unjailPrice(const asset& pot, const uint64_t& generation) {
-      auto _meta = getMeta();
       auto price = (pot * _meta.unjlrate) / 100;
-
       if (_meta.unljailmult > 0)
         price *= (_meta.unljailmult * generation);
 
@@ -81,13 +60,11 @@ namespace Woffler {
     }
 
     asset BranchMeta::unjailRevShare(const asset& revenue) {
-      return (revenue * getMeta().unjlrate) / 100;
+      return (revenue * _meta.unjlrate) / 100;
     }
 
     asset BranchMeta::buytryPrice(const asset& pot, const uint64_t& generation) {
-      auto _meta = getMeta();
       auto price = (pot * _meta.buytryrate) / 100;
-
       if (_meta.buytrymult > 0) 
         price *= (_meta.buytrymult * generation);
 
@@ -98,25 +75,25 @@ namespace Woffler {
     }
 
     asset BranchMeta::buytryRevShare(const asset& revenue) {
-      return (revenue * getMeta().buytryrate) / 100;
+      return (revenue * _meta.buytryrate) / 100;
     }
 
     void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {
       checkCells(meta);
       checkRatios(meta);
       meta.owner = owner;
-      if (_entKey >=1) {
+      if (_entKey > 0) {
         checkOwner(owner);
         checkNotUsedInBranches();
         meta.id = _entKey;
-        update(owner, [&](auto& m) {
+        _meta = update(owner, [&](auto& m) {
           m = meta;
         });
       }
       else {
         _entKey = nextPK();
         meta.id = _entKey;
-        create(owner, [&](auto& m) {
+        _meta = create(owner, [&](auto& m) {
           m = meta;
         });
       }
@@ -138,7 +115,6 @@ namespace Woffler {
     }
 
     void BranchMeta::checkOwner(name owner) {
-        auto _meta = getMeta();
         check(
           owner == _meta.owner,
           "Branch metadata can be modified only by its owner"

@@ -2,6 +2,7 @@
 #include <entity.hpp>
 #include <cell.hpp>
 #include <branchmeta.hpp>
+#include <branch.hpp>
 #include <player.hpp>
 
 namespace Woffler {
@@ -36,23 +37,49 @@ namespace Woffler {
 
     class DAO: public Accessor<levels, wfllevel, levels::const_iterator, uint64_t>  {
       public:
-      DAO(levels& _levels, uint64_t idlevel);
-      DAO(levels& _levels, levels::const_iterator itr);
+      DAO(levels& _levels, uint64_t idlevel):
+        Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, idlevel) {}
+
+      DAO(levels& _levels, levels::const_iterator itr):
+        Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
+    
       static uint64_t keyValue(uint64_t idlevel) {
         return idlevel;
       }
     };
 
-    class Level: public Entity<levels, DAO, uint64_t> {
-      public:
-      Level(name self, uint64_t idlevel);
-      Level(name self);
+    class Level: public Entity<levels, DAO, uint64_t, wfllevel> {
+      protected:
+      wfllevel _level;
+      BranchMeta::wflbrnchmeta _meta;
+      Branch::wflbranch _branch;
 
-      wfllevel getLevel();
+      void fetchContext() {
+        if (isEnt()) {
+          _level = getLevel();
+          
+          meta.fetchByKey(_level.idmeta);
+          _meta = meta.getMeta();
+          
+          branch.fetchByKey(_level.idbranch);
+          _branch = branch.getBranch();
+        }
+      }
+
+      public:
+      Level(name self, uint64_t idlevel) : Entity<levels, DAO, uint64_t, wfllevel>(self, idlevel), meta(self, 0), branch(self, 0) {
+        fetchContext();
+      }
+
+      Level(name self) : Level(self, 0) {}
+
+      wfllevel getLevel() {
+        return getEnt();
+      }
 
       BranchMeta::BranchMeta meta;
+      Branch::Branch branch;
 
-      void checkLevel();
       void checkLockedLevel();
       void checkUnlockedLevel();
 
@@ -89,11 +116,23 @@ namespace Woffler {
     class PlayerLevel: public Level {      
       private:
       Player::Player player;
+      Player::wflplayer _player;
+
       void cutRevenueShare(asset& revenue, const Const::revenuetype& revtype);
 
       public:
-      PlayerLevel(name self, name account);
-
+      PlayerLevel(name self, name account) : Level(self), player(self, account) {
+        _player = player.getPlayer();
+        fetchByKey(_player.idlevel);
+        fetchContext();
+      }
+      
+      void tryTurn();
+      void commitTurn();
+      void cancelTake();
+      void claimSafe();
+      void claimRed();
+      void claimTake();
       void nextLevel();
       void takeReward();
       void unjailPlayer();

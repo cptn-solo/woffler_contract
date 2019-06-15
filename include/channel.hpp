@@ -21,18 +21,35 @@ namespace Woffler {
 
     class DAO: public Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
       public:
-      DAO(channels& _channels, uint64_t _ownerV);
-      DAO(channels& _channels, channels::const_iterator itr);
+
+      DAO(channels& _channels, uint64_t _ownerV): 
+        Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {}
+      
+      DAO(channels& _channels, channels::const_iterator itr): 
+        Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, itr) {}
+          
       static uint64_t keyValue(name owner) {
         return owner.value;
       }
     };
 
-    class Channel: Entity<channels, DAO, name> {
-      public:
-      Channel(name self, name owner);
+    class Channel: Entity<channels, DAO, name, wflchannel> {
+    
+      private:
 
-      wflchannel getChannel();
+      wflchannel _channel;
+
+      public:
+    
+      Channel(name self, name owner) : Entity<channels, DAO, name, wflchannel>(self, owner) {
+        if (isEnt())
+          _channel = getChannel();
+      }
+      
+      wflchannel getChannel() {
+        return getEnt();
+      }
+
       uint8_t getRate();
       
       void upsertChannel(name payer);

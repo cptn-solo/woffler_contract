@@ -24,16 +24,22 @@ namespace Woffler {
 
     class DAO: public Accessor<quests, wflquest, quests::const_iterator, uint64_t>  {
       public:
-      DAO(quests& _quests, uint64_t idquest);
-      DAO(quests& _quests, quests::const_iterator itr);
+      DAO(quests& _quests, uint64_t idquest): 
+        Accessor<quests, wflquest, quests::const_iterator, uint64_t>::Accessor(_quests, idquest) {}
+
+      DAO(quests& _quests, quests::const_iterator itr): 
+        Accessor<quests, wflquest, quests::const_iterator, uint64_t>::Accessor(_quests, itr) {}
+      
       static uint64_t keyValue(uint64_t idquest) {
         return idquest;
       }
     };
 
-    class Quest: Entity<quests, DAO, uint64_t> {
+    class Quest: Entity<quests, DAO, uint64_t, wflquest> {
       public:
-      Quest(name self, uint64_t idquest);
+      Quest(name self, uint64_t idquest) : 
+        Entity<quests, DAO, uint64_t, wflquest>(self, idquest) {}
+
     };
   }
 }

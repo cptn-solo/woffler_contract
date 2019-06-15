@@ -45,22 +45,39 @@ namespace Woffler {
 
     class DAO: public Accessor<branches, wflbranch, branches::const_iterator, uint64_t>  {
       public:
-      DAO(branches& _branches, uint64_t idbranch);
-      DAO(branches& _branches, branches::const_iterator itr);
+      DAO(branches& _branches, uint64_t idbranch):
+        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
+
+      DAO(branches& _branches, branches::const_iterator itr):
+        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, itr) {}
+      
       static uint64_t keyValue(uint64_t idbranch) {
         return idbranch;
       }
     };
 
-    class Branch: Entity<branches, DAO, uint64_t> {
+    class Branch: public Entity<branches, DAO, uint64_t, wflbranch> {
+      
       private:
+
       Stake::Stake stake;
+      wflbranch _branch;
 
       public:
-      Branch(name self, uint64_t idbranch);
-      
-      wflbranch getBranch();
-      uint64_t getRootLevel();
+
+      Branch(name self, uint64_t idbranch) : Entity<branches, DAO, uint64_t, wflbranch>(self, idbranch), stake(self, 0) {
+        if (isEnt())
+          _branch = getBranch();
+      }
+
+      wflbranch getBranch() {
+        return getEnt();
+      }
+
+      uint64_t getRootLevel() {
+        auto b = getEnt();
+        return b.idrootlvl;
+      }
       
       void checkBranch();
       void checkStartBranch();

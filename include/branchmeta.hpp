@@ -41,19 +41,36 @@ namespace Woffler {
     typedef multi_index<"brnchmeta"_n, wflbrnchmeta> brnchmetas;
 
     class DAO: public Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>  {
+      
       public:
-      DAO(brnchmetas& _brnchmetas, uint64_t idmeta);
-      DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr);
+
+      DAO(brnchmetas& _brnchmetas, uint64_t idmeta):
+        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
+
+      DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr):
+        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, itr) {}
+
       static uint64_t keyValue(uint64_t idmeta) {
         return idmeta;
       }
     };
 
-    class BranchMeta: public Entity<brnchmetas, DAO, uint64_t> {
-      public:
-      BranchMeta(name self, uint64_t idmeta);
+    class BranchMeta: public Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta> {
 
-      wflbrnchmeta getMeta();
+      private:
+
+      wflbrnchmeta _meta;
+
+      public:
+
+      BranchMeta(name self, uint64_t idmeta) : Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta>(self, idmeta) {
+        if (isEnt())
+          _meta = getMeta();
+      }
+      
+      wflbrnchmeta getMeta() {
+        return getEnt();
+      }
       
       asset nextPot(const asset& pot);
       asset splitPot(const asset& pot);
