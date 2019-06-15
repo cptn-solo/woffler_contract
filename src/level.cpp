@@ -240,6 +240,10 @@ namespace Woffler {
         Level nextL(_self);
 
         const asset nextpot = meta.nextPot(_entity.potbalance);
+        update(_player.account, [&](auto& l) {
+          l.potbalance -= nextpot;
+        });
+
         const uint64_t nextgen = _entity.generation + 1;
         const uint64_t nextId = nextL.createLevel(_player.account, _entity.idbranch, _entity.id, nextgen, _entity.idmeta, false, nextpot);
         
