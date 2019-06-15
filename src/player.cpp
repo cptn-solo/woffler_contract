@@ -6,7 +6,7 @@
 
 namespace Woffler {
   namespace Player {
-    void Player::createPlayer(name payer, name referrer) {
+    void Player::createPlayer(const name& payer, const name& referrer) {
       auto _referrer = (referrer ? referrer : _self);
 
       check(
@@ -30,14 +30,14 @@ namespace Woffler {
       channel.upsertChannel(_self);//contract pays RAM for the sales channels' record
     }
 
-    void Player::addBalance(asset amount, name payer) {
+    void Player::addBalance(const asset& amount, const name& payer) {
       checkPlayer();
       _player = update(payer, [&](auto& p) {
         p.activebalance += amount;
       });
     }
 
-    void Player::subBalance(asset amount, name payer) {
+    void Player::subBalance(const asset& amount, const name& payer) {
       checkBalanceCovers(amount);
       _player = update(payer, [&](auto& p) {
         p.activebalance -= amount;
@@ -70,7 +70,7 @@ namespace Woffler {
       remove();
     }
 
-    void Player::switchBranch(uint64_t idbranch) {
+    void Player::switchBranch(const uint64_t& idbranch) {
       check(
         _player.status != Const::playerstate::TAKE,
         "Player can not leave the game while in TAKE state. Please wait for vested funds or return (Un-take) reward first."
@@ -110,7 +110,7 @@ namespace Woffler {
       switchRootLevel(idrootlvl, (startJailed ? Const::playerstate::RED : Const::playerstate::SAFE));
     }
 
-    void Player::switchRootLevel(uint64_t idlevel, Const::playerstate playerState) {
+    void Player::switchRootLevel(const uint64_t& idlevel, const Const::playerstate& playerState) {
       //position player in root level of the branch
       _player = update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
@@ -126,14 +126,14 @@ namespace Woffler {
       useTry(_player.tryposition);
     }
 
-    void Player::useTry(uint8_t position) {
+    void Player::useTry(const uint8_t& position) {
       _player = update(_entKey, [&](auto& p) {
         p.tryposition = position;
         p.triesleft -= 1;
       });
     }
 
-    void Player::commitTurn(Const::playerstate status) {
+    void Player::commitTurn(const Const::playerstate& status) {
       _player = update(_entKey, [&](auto& p) {
         p.currentposition = p.tryposition;
         p.status = status;
@@ -142,7 +142,7 @@ namespace Woffler {
       });
     }
 
-    void Player::commitTake(asset amount, uint32_t timestamp) {
+    void Player::commitTake(const asset& amount, const uint32_t& timestamp) {
       _player = update(_entKey, [&](auto& p) {
         p.status = Const::playerstate::TAKE;
         p.resulttimestamp = timestamp;
@@ -151,7 +151,7 @@ namespace Woffler {
       });
     }    
 
-    void Player::resetPositionAtLevel(uint64_t idlevel) {
+    void Player::resetPositionAtLevel(const uint64_t& idlevel) {
       _player = update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
         p.tryposition = 0;
@@ -172,7 +172,7 @@ namespace Woffler {
       return isEnt();
     }
 
-    void Player::checkReferrer(name referrer) {
+    void Player::checkReferrer(const name& referrer) {
       check(
         isEnt(referrer),
         string("Account ") + referrer.to_string() + string(" is not registred in game conract.")
@@ -210,7 +210,7 @@ namespace Woffler {
       );
     }
 
-    void Player::checkState(Const::playerstate state) {
+    void Player::checkState(const Const::playerstate& state) {
       checkActivePlayer();
       check(
         _player.status == state,
@@ -218,7 +218,7 @@ namespace Woffler {
       );
     }
 
-    void Player::checkBalanceCovers(asset amount) {
+    void Player::checkBalanceCovers(const asset& amount) {
       check(
         _player.activebalance >= amount,
         string("Not enough active balance in your account. Current active balance: ") + _player.activebalance.to_string().c_str()
@@ -245,7 +245,7 @@ namespace Woffler {
     }
 
     //DEBUG only, payer == contract
-    void Player::reposition(uint64_t idlevel, uint8_t position) {
+    void Player::reposition(const uint64_t& idlevel, const uint8_t& position) {
       _player = update(_self, [&](auto& p) {
         p.idlevel = idlevel;
         p.tryposition = position;

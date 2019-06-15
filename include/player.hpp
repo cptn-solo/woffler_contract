@@ -33,13 +33,13 @@ namespace Woffler {
 
     class DAO: public Accessor<players, wflplayer, players::const_iterator, uint64_t>  {
       public:
-      DAO(players& _players, uint64_t _playerV):
+      DAO(players& _players, const uint64_t& _playerV):
       Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {}
 
-      DAO(players& _players, players::const_iterator itr):
+      DAO(players& _players, const players::const_iterator& itr):
       Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, itr) {}
 
-      static uint64_t keyValue(name account) {
+      static uint64_t keyValue(const name& account) {
         return account.value;
       }
     };
@@ -49,7 +49,7 @@ namespace Woffler {
       wflplayer _player;
 
       public:
-      Player(name self, name account) : Entity<players, DAO, name, wflplayer>(self, account) {
+      Player(const name& self, const name& account) : Entity<players, DAO, name, wflplayer>(self, account) {
         if (isEnt())
           _player = getPlayer();
       }
@@ -63,36 +63,36 @@ namespace Woffler {
       }
 
       bool isPlayer();//true if player exists in registry
-      void checkReferrer(name referrer);//referrer exists in registry
+      void checkReferrer(const name& referrer);//referrer exists in registry
       void checkNotReferrer();//player is not a referrer
       void checkPlayer();//player registred
       void checkNoPlayer();//player NOT registred
       void checkActivePlayer();//player is positioned in branch (playing)
-      void checkState(Const::playerstate state);//player is in specified state
-      void checkBalanceCovers(asset amount);//player's active balance is not less then specified
+      void checkState(const Const::playerstate& state);//player is in specified state
+      void checkBalanceCovers(const asset& amount);//player's active balance is not less then specified
       void checkBalanceZero();//player's active balance is zero
       void checkLevelUnlockTrialAllowed();//player can proceed with specified level unlocking trial
 
-      void createPlayer(name payer, name referrer);
-      void addBalance(asset amount, name payer);
-      void subBalance(asset amount, name payer);
+      void createPlayer(const name& payer, const name& referrer);
+      void addBalance(const asset& amount, const name& payer);
+      void subBalance(const asset& amount, const name& payer);
       void claimVesting();
       void clearVesting();
-      void switchBranch(uint64_t idbranch);
-      void switchRootLevel(uint64_t idlevel, Const::playerstate playerState);
+      void switchBranch(const uint64_t& idbranch);
+      void switchRootLevel(const uint64_t& idlevel, const Const::playerstate& playerState);
         
       void useTry();
-      void useTry(uint8_t position);
-      void commitTake(asset amount, uint32_t timestamp);
-      void commitTurn(Const::playerstate status);
+      void useTry(const uint8_t& position);
+      void commitTake(const asset& amount, const uint32_t& timestamp);
+      void commitTurn(const Const::playerstate& status);
 
-      void resetPositionAtLevel(uint64_t idlevel);
+      void resetPositionAtLevel(const uint64_t& idlevel);
       void resetRetriesCount();
 
       void rmAccount();
 
       //DEBUG:
-      void reposition(uint64_t idlevel, uint8_t position);
+      void reposition(const uint64_t& idlevel, const uint8_t& position);
       void rmPlayer();
     };
   }

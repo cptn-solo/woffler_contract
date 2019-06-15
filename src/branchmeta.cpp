@@ -78,7 +78,7 @@ namespace Woffler {
       return (revenue * _meta.buytryrate) / 100;
     }
 
-    void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {
+    void BranchMeta::upsertBranchMeta(const name& owner, wflbrnchmeta& meta) {
       checkCells(meta);
       checkRatios(meta);
       meta.owner = owner;
@@ -98,13 +98,14 @@ namespace Woffler {
         });
       }
     }
-
-    void BranchMeta::removeBranchMeta(name owner) {
-      if (owner != _self) {
-        checkOwner(owner);
-        checkNotUsedInBranches();
-      }
+    void BranchMeta::removeBranchMeta() {
       remove();
+    }
+    
+    void BranchMeta::removeBranchMeta(const name& owner) {
+      checkOwner(owner);
+      checkNotUsedInBranches();
+      removeBranchMeta();
     }
 
     void BranchMeta::checkIsMeta() {
@@ -114,7 +115,7 @@ namespace Woffler {
       );
     }
 
-    void BranchMeta::checkOwner(name owner) {
+    void BranchMeta::checkOwner(const name& owner) {
         check(
           owner == _meta.owner,
           "Branch metadata can be modified only by its owner"
@@ -127,14 +128,14 @@ namespace Woffler {
         branch.checkBranchMetaNotUsed(_entKey);
     }
 
-    void BranchMeta::checkCells(wflbrnchmeta meta) {
+    void BranchMeta::checkCells(const wflbrnchmeta& meta) {
       check(
         meta.lvlreds >= 1  && meta.lvlgreens >= 1 && Const::lvlLength >= (meta.lvlreds + meta.lvlgreens + 1),
         "Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND 16 >= (lvlreds + lvlgreens + 1)"
       );
     }
 
-    void BranchMeta::checkRatios(wflbrnchmeta meta) {
+    void BranchMeta::checkRatios(const wflbrnchmeta& meta) {
       check(
         meta.slsrate <= 100 && meta.spltrate <= 100 && meta.stkrate <= 100 && 
         meta.tkrate <= 100 && meta.unjlrate <= 100 && meta.winnerrate <= 100,

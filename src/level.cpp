@@ -25,13 +25,13 @@ namespace Woffler {
       return _entKey;
     }
 
-    void Level::addPot(name payer, asset pot) {
+    void Level::addPot(const name& payer, const asset& pot) {
       _level = update(payer, [&](auto& l) {
         l.potbalance += pot;
       });
     }
     
-    void Level::unlockLevel(name account) {
+    void Level::unlockLevel(const name& account) {
       checkLockedLevel();
 
       Player::Player player(_self, account);
@@ -45,14 +45,14 @@ namespace Woffler {
           player.checkLevelUnlockTrialAllowed();
           player.useTry();
         } else if (_level.root) { //Unlock split branch from list - no retry checks implied
-          Stake::Stake stake(_self, 0);
+          Stake::Stake stake(_self);
           stake.checkIsStakeholder(account, _level.idbranch);
         } else {
           check(false, "You can not unlock this level at the moment");
         }
       } else {
         //Root levels of root branches can be unlocked only by stakeholders, no retries restriction
-        Stake::Stake stake(_self, 0);
+        Stake::Stake stake(_self);
         stake.checkIsStakeholder(account, _level.idbranch);
       }
 
@@ -78,7 +78,7 @@ namespace Woffler {
       }
     }
 
-    void Level::generateRedCells(name payer) {
+    void Level::generateRedCells(const name& payer) {
       auto rnd = randomizer::getInstance(payer, _entKey);
       auto redcnt = meta.getMeta().lvlreds;
       _level = update(payer, [&](auto& l) {
@@ -86,7 +86,7 @@ namespace Woffler {
       });
     }
 
-    bool Level::unlockTrial(name payer) {
+    bool Level::unlockTrial(const name& payer) {
       auto rnd = randomizer::getInstance(payer, _entKey);
       auto greencnt = meta.getMeta().lvlgreens;
       auto locked = true;
@@ -98,7 +98,7 @@ namespace Woffler {
       return !locked;
     }
 
-    Const::playerstate Level::cellTypeAtPosition(uint8_t position) {
+    Const::playerstate Level::cellTypeAtPosition(const uint8_t& position) {
       check(position <= Const::lvlLength, "Position in the level can't exceed 16");
 
       auto status = Const::playerstate::SAFE;
@@ -111,7 +111,7 @@ namespace Woffler {
       return status;
     }
 
-    void Level::regenCells(name owner) {
+    void Level::regenCells(const name& owner) {
       generateRedCells(owner);
       unlockTrial(owner);
     }
@@ -144,13 +144,14 @@ namespace Woffler {
       checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
       branch.checkNotClosed();
 
-      if (_player.triesleft >= 1) {
+      if (_player.triesleft > 0) {
+        print("_player.triesleft before: ", _player.triesleft);
         //get current position and produce tryposition by generating random offset
         auto rnd = randomizer::getInstance(_player.account, _entKey);
         auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
         player.useTry(tryposition);    
+        print("_player.triesleft after: ", _player.triesleft);
       }
-
       if (_player.triesleft == 0) {
         auto status = cellTypeAtPosition(_player.tryposition);
         player.commitTurn(status);
@@ -297,7 +298,7 @@ namespace Woffler {
       branch.checkNotClosed();
       
       //Cut TAKE_RATE% of solved pot and append to winner's vesting balance
-      auto reward = meta.takeAmount(_level.potbalance, _level.generation, _branch.winlevgen);
+      const asset reward = meta.takeAmount(_level.potbalance, _level.generation, _branch.winlevgen);
 
       _level = update(_player.account, [&](auto& l) {
         l.potbalance -= reward;

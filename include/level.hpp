@@ -37,13 +37,13 @@ namespace Woffler {
 
     class DAO: public Accessor<levels, wfllevel, levels::const_iterator, uint64_t>  {
       public:
-      DAO(levels& _levels, uint64_t idlevel):
+      DAO(levels& _levels, const uint64_t& idlevel):
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, idlevel) {}
 
-      DAO(levels& _levels, levels::const_iterator itr):
+      DAO(levels& _levels, const levels::const_iterator& itr):
         Accessor<levels, wfllevel, levels::const_iterator, uint64_t>::Accessor(_levels, itr) {}
     
-      static uint64_t keyValue(uint64_t idlevel) {
+      static uint64_t keyValue(const uint64_t& idlevel) {
         return idlevel;
       }
     };
@@ -67,7 +67,7 @@ namespace Woffler {
       }
 
       public:
-      Level(name self, uint64_t idlevel) : Entity<levels, DAO, uint64_t, wfllevel>(self, idlevel), meta(self, 0), branch(self, 0) {
+      Level(const name& self, const uint64_t& idlevel) : Entity<levels, DAO, uint64_t, wfllevel>(self, idlevel), meta(self, 0), branch(self, 0) {
         fetchContext();
       }
 
@@ -84,14 +84,14 @@ namespace Woffler {
       void checkUnlockedLevel();
 
       uint64_t createLevel(const name& payer, const uint64_t& idbranch, const uint64_t& idparent, const uint64_t& generation, const uint64_t& idmeta, const bool& root, const asset& pot);
-      void addPot(name payer, asset pot);
-      void unlockLevel(name owner);
-      void generateRedCells(name payer);
-      bool unlockTrial(name payer);
+      void addPot(const name& payer, const asset& pot);
+      void unlockLevel(const name& owner);
+      void generateRedCells(const name& payer);
+      bool unlockTrial(const name& payer);
 
-      Const::playerstate cellTypeAtPosition(uint8_t position);
+      Const::playerstate cellTypeAtPosition(const uint8_t& position);
 
-      void regenCells(name owner);//debug mostly
+      void regenCells(const name& owner);//debug mostly
 
       template<typename T>
       static uint16_t generateCells(randomizer& rnd, T size) {
@@ -103,7 +103,7 @@ namespace Woffler {
       }
 
       //DEBUG:
-      static void debugGenerateCells(name account, uint64_t num, uint8_t size) {
+      static void debugGenerateCells(const name& account, const uint64_t& num, const uint8_t& size) {
         auto rnd = randomizer::getInstance(account, num);
         auto data = generateCells<uint8_t>(rnd, size);
         print_f("cells data: % \n", std::to_string(data));

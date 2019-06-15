@@ -44,13 +44,13 @@ namespace Woffler {
       
       public:
 
-      DAO(brnchmetas& _brnchmetas, uint64_t idmeta):
+      DAO(brnchmetas& _brnchmetas, const uint64_t& idmeta):
         Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
 
-      DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr):
+      DAO(brnchmetas& _brnchmetas, const brnchmetas::const_iterator& itr):
         Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, itr) {}
 
-      static uint64_t keyValue(uint64_t idmeta) {
+      static uint64_t keyValue(const uint64_t& idmeta) {
         return idmeta;
       }
     };
@@ -63,7 +63,7 @@ namespace Woffler {
 
       public:
 
-      BranchMeta(name self, uint64_t idmeta) : Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta>(self, idmeta) {
+      BranchMeta(const name& self, const uint64_t& idmeta) : Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta>(self, idmeta) {
         if (isEnt())
           _meta = getMeta();
       }
@@ -85,13 +85,14 @@ namespace Woffler {
       asset buytryRevShare(const asset& revenue);
 
       void checkIsMeta();
-      void checkCells(wflbrnchmeta meta);
-      void checkRatios(wflbrnchmeta meta);
-      void checkOwner(name owner);
+      void checkCells(const wflbrnchmeta& meta);
+      void checkRatios(const wflbrnchmeta& meta);
+      void checkOwner(const name& owner);
       void checkNotUsedInBranches();
 
-      void upsertBranchMeta(name owner, wflbrnchmeta meta);
-      void removeBranchMeta(name owner);
+      void upsertBranchMeta(const name& owner, wflbrnchmeta& meta);
+      void removeBranchMeta(const name& owner);
+      void removeBranchMeta();//debug
     };
 
   }

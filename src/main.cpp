@@ -117,18 +117,20 @@ namespace Woffler {
     //owner pays for ram to avoid spamming via branch meta creation.
     //only owner can modify branch metadata.
     ACTION brnchmeta(name owner, uint64_t idmeta, BranchMeta::wflbrnchmeta meta) {
-        require_auth(owner);
+      require_auth(owner);
 
-        BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
-        branchmeta.upsertBranchMeta(owner, meta);
-      }
+      BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
+      branchmeta.upsertBranchMeta(owner, meta);
+    }
 
     //remove branch meta owned
     ACTION rmbrmeta(name owner, uint64_t idmeta) {
       require_auth(owner);
 
       BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
-      branchmeta.removeBranchMeta(owner);
+      if (owner != get_self())
+        branchmeta.removeBranchMeta(owner);
+      else branchmeta.removeBranchMeta();
     }
 
     #pragma endregion

@@ -12,7 +12,7 @@ namespace Woffler {
       return retval;
     }
 
-    void Channel::upsertChannel(name payer) {
+    void Channel::upsertChannel(const name& payer) {
       if (isEnt()) {
         _channel = update(payer, [&](auto& c) {
           c.height++;     
@@ -25,7 +25,7 @@ namespace Woffler {
       }
     }
 
-    void Channel::subChannel(name payer) {
+    void Channel::subChannel(const name& payer) {
       if (_channel.height > 0) {
         _channel = update(payer, [&](auto& c) {
           if (c.height > 0)
@@ -34,7 +34,7 @@ namespace Woffler {
       }
     }
     
-    void Channel::addBalance(asset amount, name payer) {
+    void Channel::addBalance(const asset& amount, const name& payer) {
       _channel = update(payer, [&](auto& c) {
         c.balance += amount;     
       });

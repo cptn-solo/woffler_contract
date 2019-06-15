@@ -4,7 +4,7 @@
 namespace Woffler {
   namespace Branch {
     //create root branch with root level after meta is created/selected from existing
-    void Branch::createBranch(name owner, uint64_t idmeta, asset pot) {
+    void Branch::createBranch(const name& owner, const uint64_t& idmeta, const asset& pot) {
       BranchMeta::BranchMeta meta(_self, idmeta);
       auto _meta = meta.getMeta();
 
@@ -62,7 +62,7 @@ namespace Woffler {
       return _entKey;
     }
 
-    void Branch::addStake(name owner, asset amount) {
+    void Branch::addStake(const name& owner, const asset& amount) {
       BranchMeta::BranchMeta meta(_self, _branch.idmeta);
       auto _meta = meta.getMeta();
 
@@ -93,19 +93,19 @@ namespace Woffler {
       rootlevel.addPot(owner, amount);
     }
 
-    void Branch::addPot(name payer, asset pot) {
+    void Branch::addPot(const name& payer, const asset& pot) {
       _branch = update(payer, [&](auto& b) {
         b.potbalance += pot;
       });
     }
     
-    void Branch::subPot(name payer, asset take) {
-      check(getBranch().potbalance >= take, "Branch pot balanse must cover reward amount");
+    void Branch::subPot(const name& payer, const asset& take) {
+      check(_branch.potbalance >= take, "Branch pot balanse must cover reward amount");
       _branch = update(payer, [&](auto& b) {
         b.potbalance -= take;
       });
       
-      if (getBranch().potbalance.amount == 0)
+      if (_branch.potbalance.amount == 0)
         closeBranch();      
     }
 
@@ -123,7 +123,7 @@ namespace Woffler {
       }
     }
 
-    void Branch::appendStake(name owner, asset amount) {
+    void Branch::appendStake(const name& owner, const asset& amount) {
       stake.registerStake(owner, _entKey, amount);
 
       _branch = update(_self, [&](auto& b) {
@@ -131,7 +131,7 @@ namespace Woffler {
       });
     }
 
-    void Branch::setRootLevel(name payer, uint64_t idrootlvl, uint64_t generation) {
+    void Branch::setRootLevel(const name& payer, const uint64_t& idrootlvl, const uint64_t& generation) {
       _branch = update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
         b.winlevel = idrootlvl;
@@ -139,7 +139,7 @@ namespace Woffler {
       });
     }
 
-    void Branch::updateTreeDept(name payer, uint64_t idlevel, uint64_t generation) {
+    void Branch::updateTreeDept(const name& payer, const uint64_t& idlevel, const uint64_t& generation) {
       _branch = update(payer, [&](auto& b) {
         b.winlevel = idlevel;
         b.winlevgen = generation;
@@ -147,20 +147,20 @@ namespace Woffler {
       });
     }
 
-    void Branch::setWinner(name player) {
+    void Branch::setWinner(const name& player) {
       _branch = update(player, [&](auto& b) {
         b.winner = player;
       });
     }
 
-    void Branch::deferRevenueShare(asset amount) {
+    void Branch::deferRevenueShare(const asset& amount) {
       _branch = update(_self, [&](auto& b) {
         b.totalrvnue += amount;
         b.tipprocessed = 0;
       });
     }
 
-    void Branch::deferRevenueShare(asset amount, uint64_t idbranch) {
+    void Branch::deferRevenueShare(const asset& amount, const uint64_t& idbranch) {
       Branch branch(_self, idbranch);
       branch.deferRevenueShare(amount);
     }
@@ -256,14 +256,14 @@ namespace Woffler {
       );
     }
 
-    void Branch::checkBranchMetaNotUsed(uint64_t idmeta) {
+    void Branch::checkBranchMetaNotUsed(const uint64_t& idmeta) {
       check(
         !isIndexedByMeta(idmeta),
         "Branch metadata is already used in branches."
       );
     }
 
-    bool Branch::isIndexedByMeta(uint64_t idmeta) {
+    bool Branch::isIndexedByMeta(const uint64_t& idmeta) {
       auto idxbymeta = getIndex<"bymeta"_n>();
       auto itrbymeta = idxbymeta.find(idmeta);
       return itrbymeta != idxbymeta.end();

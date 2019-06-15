@@ -22,13 +22,13 @@ namespace Woffler {
     class DAO: public Accessor<channels, wflchannel, channels::const_iterator, uint64_t>  {
       public:
 
-      DAO(channels& _channels, uint64_t _ownerV): 
+      DAO(channels& _channels, const uint64_t& _ownerV): 
         Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, _ownerV) {}
       
-      DAO(channels& _channels, channels::const_iterator itr): 
+      DAO(channels& _channels, const channels::const_iterator& itr): 
         Accessor<channels, wflchannel, channels::const_iterator, uint64_t>::Accessor(_channels, itr) {}
           
-      static uint64_t keyValue(name owner) {
+      static uint64_t keyValue(const name& owner) {
         return owner.value;
       }
     };
@@ -41,7 +41,7 @@ namespace Woffler {
 
       public:
     
-      Channel(name self, name owner) : Entity<channels, DAO, name, wflchannel>(self, owner) {
+      Channel(const name& self, const name& owner) : Entity<channels, DAO, name, wflchannel>(self, owner) {
         if (isEnt())
           _channel = getChannel();
       }
@@ -52,9 +52,9 @@ namespace Woffler {
 
       uint8_t getRate();
       
-      void upsertChannel(name payer);
-      void subChannel(name payer);
-      void addBalance(asset amount, name payer);
+      void upsertChannel(const name& payer);
+      void subChannel(const name& payer);
+      void addBalance(const asset& amount, const name& payer);
       void mergeBalance();
       
       //DEBUG

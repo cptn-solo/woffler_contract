@@ -9,11 +9,11 @@ namespace Woffler {
 
     public:
     
-    Accessor(Idx& idx, V val): Accessor(idx, idx.find(val)) {}
-    Accessor(Idx& idx, Itr itr): _itr(itr), _idx{idx} {}
+    Accessor(Idx& idx, const V& val): Accessor(idx, idx.find(val)) {}
+    Accessor(Idx& idx, const Itr& itr): _itr(itr), _idx{idx} {}
     ~Accessor() {}
 
-    void fetchByKey(V entKey) {
+    void fetchByKey(const V& entKey) {
       _itr = _idx.find(entKey);
       check(_itr != _idx.end(), "Object for key was not found in index");
     }
@@ -26,7 +26,7 @@ namespace Woffler {
     Idx& _idx;
 
     template<typename Lambda>
-    void update(name payer, Lambda&& updater) {
+    void update(const name& payer, Lambda&& updater) {
       _idx.modify(_itr, payer, std::forward<Lambda&&>(updater));
     }
 
@@ -38,7 +38,7 @@ namespace Woffler {
       return _itr != _idx.end();
     }
 
-    bool isEnt(V val) {
+    bool isEnt(const V& val) {
       return _idx.find(val) != _idx.end();
     }
 

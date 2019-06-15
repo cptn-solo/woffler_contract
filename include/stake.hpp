@@ -30,30 +30,32 @@ namespace Woffler {
   
     class DAO: public Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>  {
       public:
-      DAO(stakes& _stakes, uint64_t idstake): 
+      DAO(stakes& _stakes, const uint64_t& idstake): 
         Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, idstake) {}
       
-      DAO(stakes& _stakes, stakes::const_iterator itr): 
+      DAO(stakes& _stakes, const stakes::const_iterator& itr): 
         Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
     
-      static uint64_t keyValue(uint64_t idstake) {
+      static uint64_t keyValue(const uint64_t& idstake) {
         return idstake;
       }
     };
 
     class Stake: Entity<stakes, DAO, uint64_t, wflstake> {
       public:
-      Stake(name self, uint64_t idstake) : 
+      Stake(const name& self, const uint64_t& idstake) : 
         Entity<stakes, DAO, uint64_t, wflstake>(self, idstake) {}
 
+      Stake(const name& self) : 
+        Entity<stakes, DAO, uint64_t, wflstake>(self, 0) {}
 
-      void registerStake(name owner, uint64_t idbranch, asset amount);
-      void branchStake(name owner, uint64_t idbranch, asset& total, asset& owned);
-      void claimRevenue(name owner, uint64_t idbranch);
+      void registerStake(const name& owner, const uint64_t& idbranch, const asset& amount);
+      void branchStake(const name& owner, const uint64_t& idbranch, asset& total, asset& owned);
+      void claimRevenue(const name& owner, const uint64_t& idbranch);
 
       void rmStake();
 
-      void checkIsStakeholder(name owner, uint64_t idbranch);
+      void checkIsStakeholder(const name& owner, const uint64_t& idbranch);
     };
 
   }

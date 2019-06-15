@@ -17,7 +17,7 @@ namespace Woffler {
 
     public:
 
-    Entity(name self, PK entKey): _idx(self, self.value) {
+    Entity(const name& self, const PK& entKey): _idx(self, self.value) {
       _self = self;
       _entKey = entKey;
       if (A::keyValue(entKey) > 0)
@@ -30,7 +30,7 @@ namespace Woffler {
       }
     }
 
-    void fetchByKey(PK entKey) {//fetch entity by key when instantiating without initially known key
+    void fetchByKey(const PK& entKey) {//fetch entity by key when instantiating without initially known key
       check(_dao == NULL, "Can't refetch into existing accessor object");
       _entKey = entKey;
       _dao = new A(_idx, A::keyValue(entKey));
@@ -43,14 +43,14 @@ namespace Woffler {
     Idx _idx;
 
     template <typename Lambda>
-    const Ent& create(name payer, Lambda&& creator) {
+    const Ent& create(const name& payer, Lambda&& creator) {
       auto _itr = _idx.emplace(payer, std::forward<Lambda&&>(creator));
       _dao = new A(_idx, _itr);
       return *_itr;
     }
 
     template <typename Lambda>
-    const Ent& update(name payer, Lambda&& updater) {
+    const Ent& update(const name& payer, Lambda&& updater) {
       check(isEnt(), "Object not found.");
       _dao->update(payer, updater);
       return _dao->getEnt();
@@ -65,7 +65,7 @@ namespace Woffler {
       return _dao ? _dao->isEnt() : false;
     }
 
-    bool isEnt(PK val) {
+    bool isEnt(const PK& val) {
       return _dao ? _dao->isEnt(A::keyValue(val)) : false;
     }
 
