@@ -6,24 +6,7 @@
 
 namespace Woffler {
   namespace Player {
-    Player::Player(name self, name account) :
-      Entity<players, DAO, name>(self, account) {}
-
-    DAO::DAO(players& _players, uint64_t _playerV):
-      Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, _playerV) {}
-
-    DAO::DAO(players& _players, players::const_iterator itr):
-      Accessor<players, wflplayer, players::const_iterator, uint64_t>::Accessor(_players, itr) {}
-
-    wflplayer Player::getPlayer() {
-      return getEnt<wflplayer>();
-    }
-    
-    name Player::getChannel() {
-      return getPlayer().channel;
-    }
-
-    void Player::createPlayer(name payer, name referrer) {
+    void Player::createPlayer(const name& payer, const name& referrer) {
       auto _referrer = (referrer ? referrer : _self);
 
       check(
@@ -47,18 +30,34 @@ namespace Woffler {
       channel.upsertChannel(_self);//contract pays RAM for the sales channels' record
     }
 
-    void Player::addBalance(asset amount, name payer) {
+    void Player::addBalance(const asset& amount, const name& payer) {
       checkPlayer();
       update(payer, [&](auto& p) {
         p.activebalance += amount;
       });
     }
 
-    void Player::subBalance(asset amount, name payer) {
+    void Player::subBalance(const asset& amount, const name& payer) {
       checkBalanceCovers(amount);
       update(payer, [&](auto& p) {
         p.activebalance -= amount;
       });
+    }
+
+    void Player::claimVesting() {
+      update(_entity.account, [&](auto& p) {
+        p.activebalance += p.vestingbalance;
+        p.vestingbalance = asset{0, Const::acceptedSymbol};
+      });
+    }
+
+    void Player::clearVesting() {
+      update(_entity.account, [&](auto& p) {
+        p.status = Const::playerstate::GREEN;
+        p.resulttimestamp = Utils::now();
+        p.vestingbalance = asset{0, Const::acceptedSymbol};
+        //triesleft must remain as before take to prevent "free bets"
+      });      
     }
 
     void Player::rmAccount() {
@@ -71,11 +70,9 @@ namespace Woffler {
       remove();
     }
 
-    void Player::switchBranch(uint64_t idbranch) {
-      auto _player = getPlayer();
-
+    void Player::switchBranch(const uint64_t& idbranch) {
       check(
-        _player.status != Const::playerstate::TAKE,
+        _entity.status != Const::playerstate::TAKE,
         "Player can not leave the game while in TAKE state. Please wait for vested funds or return (Un-take) reward first."
       );
       if (idbranch == 0) {
@@ -84,14 +81,11 @@ namespace Woffler {
       }
       //find branch of the level
       Branch::Branch branch(_self, idbranch);
+      branch.checkNotClosed();
+
       auto _branch = branch.getBranch();
       uint64_t idrootlvl = _branch.idrootlvl;
       
-      check(
-        idrootlvl != 0, 
-        "Player can be positioned only in branches with root level available."
-      );
-
       Level::Level level(_self, idrootlvl);
       auto _level = level.getLevel();
 
@@ -104,8 +98,8 @@ namespace Woffler {
       } 
       else {
         check(
-          _player.idlevel == _level.idparent && 
-          _player.status == Const::playerstate::GREEN, 
+          _entity.idlevel == _level.idparent && 
+          _entity.status == Const::playerstate::GREEN, 
           "Player can move to side branch only from GREEN in split level."
         );
       }
@@ -116,7 +110,7 @@ namespace Woffler {
       switchRootLevel(idrootlvl, (startJailed ? Const::playerstate::RED : Const::playerstate::SAFE));
     }
 
-    void Player::switchRootLevel(uint64_t idlevel, Const::playerstate playerState) {
+    void Player::switchRootLevel(const uint64_t& idlevel, const Const::playerstate& playerState) {
       //position player in root level of the branch
       update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
@@ -128,58 +122,19 @@ namespace Woffler {
       });
     }
 
-    void Player::tryTurn() {
-      checkState(Const::playerstate::SAFE);
-      
-      auto _player = getPlayer();
-      
-      /* Turn logic */
-      //find player's current level 
-      Level::Level level(_self, _player.idlevel);
-      level.checkUnlockedLevel();//just to read level's data, not nesessary to check for lock - no way get to locked level
-      auto _level = level.getLevel();
-
-      //getting branch meta to decide on level presets
-      BranchMeta::BranchMeta meta(_self, _level.idmeta);    
-      auto _meta = meta.getMeta();
-
-      if (_player.triesleft >= 1) {
-        //get current position and produce tryposition by generating random offset
-        auto rnd = randomizer::getInstance(_entKey, _player.idlevel);
-        auto tryposition = (_player.currentposition + rnd.range(Const::tryturnMaxDistance)) % Const::lvlLength;
-        useTry(tryposition);    
-      }
-
-      if (_player.triesleft == 0) {
-        auto status = level.cellTypeAtPosition(_player.tryposition);
-        commitTurn(status);
-      }
+    uint8_t Player::useTry() {
+      return useTry(_entity.tryposition);
     }
 
-    void Player::commitTurn() {
-      checkState(Const::playerstate::SAFE);
-
-      auto _player = getPlayer();
-
-      Level::Level level(_self, _player.idlevel);
-      auto status = level.cellTypeAtPosition(_player.tryposition);
-
-      commitTurn(status);
-    }
-
-    void Player::useTry() {
-      auto p = getPlayer();
-      useTry(p.tryposition);
-    }
-
-    void Player::useTry(uint8_t position) {
+    uint8_t Player::useTry(const uint8_t& position) {
       update(_entKey, [&](auto& p) {
         p.tryposition = position;
         p.triesleft -= 1;
       });
+      return _entity.triesleft;
     }
 
-    void Player::commitTurn(Const::playerstate status) {
+    void Player::commitTurn(const Const::playerstate& status) {
       update(_entKey, [&](auto& p) {
         p.currentposition = p.tryposition;
         p.status = status;
@@ -188,81 +143,16 @@ namespace Woffler {
       });
     }
 
-    void Player::commitTake(asset amount, uint32_t timestamp) {
+    void Player::commitTake(const asset& amount, const uint32_t& timestamp) {
       update(_entKey, [&](auto& p) {
         p.status = Const::playerstate::TAKE;
         p.resulttimestamp = timestamp;
         p.vestingbalance += amount;
         //triesleft must remain as before action to prevent "free" bets upon un-take
       });
-    }
+    }    
 
-    void Player::cancelTake() {
-      checkState(Const::playerstate::TAKE);
-
-      auto _player = getPlayer();
-
-      Level::Level level(_self, _player.idlevel);      
-      level.addPot(_entKey, _player.vestingbalance);
-
-      update(_entKey, [&](auto& p) {
-        p.status = Const::playerstate::GREEN;
-        p.resulttimestamp = Utils::now();
-        p.vestingbalance = asset{0, Const::acceptedSymbol};
-        //triesleft must remain as before take to prevent "free bets"
-      });      
-    }
-
-    void Player::claimSafe() {
-      auto _player = getPlayer();
-      check(
-        _player.status == Const::playerstate::GREEN ||
-        _player.status == Const::playerstate::NEXT ||
-        _player.status == Const::playerstate::SPLIT,
-        "Only player in GREEN/NEXT/SPLIT state can apply for repositon to 0 cell (safe)."
-      );
-
-      resetPositionAtLevel(_player.idlevel);
-    }
-
-    void Player::claimRed() {
-      checkState(Const::playerstate::RED);
-
-      auto _player = getPlayer();
-      
-      Level::Level level(_self, _player.idlevel);      
-      auto _level = level.getLevel();
-      auto _meta = level.meta.getMeta();
-      check(
-        _level.idparent != 0 || !_meta.startjailed,
-        "You can only call `unjail` or `switchbrnch` from your current state"
-      );
-      uint64_t idlevel = (_level.idparent != 0 ? _level.idparent : _level.id);
-      resetPositionAtLevel(idlevel);
-    }
-
-    void Player::claimTake() {      
-      checkState(Const::playerstate::TAKE);
-      
-      auto _player = getPlayer();
-      if (_player.resulttimestamp > Utils::now()) {
-        auto expiredAfter = _player.resulttimestamp - Utils::now();
-        check(
-          expiredAfter <= 0,
-          string("TAKE state did not expired yet. Seconds left until expiration: ") + std::to_string(expiredAfter)
-        );        
-      }    
-
-      resetPositionAtLevel(_player.idlevel);
-      
-      //Move player's vested balance to active balance
-      update(_entKey, [&](auto& p) {
-        p.activebalance += p.vestingbalance;
-        p.vestingbalance = asset{0, Const::acceptedSymbol};
-      });
-    }
-
-    void Player::resetPositionAtLevel(uint64_t idlevel) {
+    void Player::resetPositionAtLevel(const uint64_t& idlevel) {
       update(_entKey, [&](auto& p) {
         p.idlevel = idlevel;
         p.tryposition = 0;
@@ -283,7 +173,7 @@ namespace Woffler {
       return isEnt();
     }
 
-    void Player::checkReferrer(name referrer) {
+    void Player::checkReferrer(const name& referrer) {
       check(
         isEnt(referrer),
         string("Account ") + referrer.to_string() + string(" is not registred in game conract.")
@@ -291,7 +181,6 @@ namespace Woffler {
     }
 
     void Player::checkNotReferrer() {
-      auto player = getPlayer();
       auto idxchannel = getIndex<"bychannel"_n>();
       auto itrchannel = idxchannel.find(_entKey.value);
       check(
@@ -316,57 +205,48 @@ namespace Woffler {
     }
 
     void Player::checkActivePlayer() {
-      auto p = getPlayer();
       check(
-        p.idlevel != 0,
+        _entity.idlevel != 0,
         "First select branch to play on with action switchbrnch."
       );
     }
 
-    void Player::checkState(Const::playerstate state) {
-      auto p = getPlayer();
+    void Player::checkState(const Const::playerstate& state) {
       checkActivePlayer();
       check(
-        p.status == state,
+        _entity.status == state,
         string("Player current level resutl must be '") + std::to_string(state) + string("'.")
       );
     }
 
-    void Player::checkBalanceCovers(asset amount) {
-      auto p = getPlayer();
+    void Player::checkBalanceCovers(const asset& amount) {
       check(
-        p.activebalance >= amount,
-        string("Not enough active balance in your account. Current active balance: ") + p.activebalance.to_string().c_str()
+        _entity.activebalance >= amount,
+        string("Not enough active balance in your account. Current active balance: ") + _entity.activebalance.to_string().c_str()
       );
     }
 
     void Player::checkBalanceZero() {
-      auto p = getPlayer();
       check(//warning! works only for records, emplaced in contract's host scope
-        p.activebalance == asset{0, Const::acceptedSymbol},
-        string("Please withdraw funds first. Current active balance: ") + p.activebalance.to_string().c_str()
+        _entity.activebalance == asset{0, Const::acceptedSymbol},
+        string("Please withdraw funds first. Current active balance: ") + _entity.activebalance.to_string().c_str()
       );
     }
 
-    void Player::checkLevelUnlockTrialAllowed(uint64_t idlevel) {
-      auto p = getPlayer();
+    void Player::checkLevelUnlockTrialAllowed() {
       check(
-        p.idlevel == idlevel,
-        "Player must be at previous level to unlock next one."
-      );
-      check(
-        p.status == Const::playerstate::NEXT ||
-        p.status == Const::playerstate::SPLIT,
+        _entity.status == Const::playerstate::NEXT ||
+        _entity.status == Const::playerstate::SPLIT,
         "Player can unlock level only from NEXT/SPLIT states"
       );
       check(
-        p.triesleft >= 1,
+        _entity.triesleft >= 1,
         "Retries count to unlock level is restricted. Buy next set of retries with 'buytries' action"
       );
     }
 
     //DEBUG only, payer == contract
-    void Player::reposition(uint64_t idlevel, uint8_t position) {
+    void Player::reposition(const uint64_t& idlevel, const uint8_t& position) {
       update(_self, [&](auto& p) {
         p.idlevel = idlevel;
         p.tryposition = position;

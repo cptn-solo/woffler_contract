@@ -3,16 +3,7 @@
 
 namespace Woffler {
   namespace Stake {    
-    Stake::Stake(name self, uint64_t idstake) : 
-      Entity<stakes, DAO, uint64_t>(self, idstake) {}
-
-    DAO::DAO(stakes& _stakes, uint64_t idstake): 
-      Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, idstake) {}
-    
-    DAO::DAO(stakes& _stakes, stakes::const_iterator itr): 
-      Accessor<stakes, wflstake, stakes::const_iterator, uint64_t>::Accessor(_stakes, itr) {}
-    
-    void Stake::registerStake(name owner, uint64_t idbranch, asset amount) {
+    void Stake::registerStake(const name& owner, const uint64_t& idbranch, const asset& amount) {
       //find stake and add amount, or emplace if not found
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
       auto stkidx = getIndex<"byownedbrnch"_n>();
@@ -36,7 +27,7 @@ namespace Woffler {
       }
     }
 
-    void Stake::branchStake(name owner, uint64_t idbranch, asset& total, asset& owned) {
+    void Stake::branchStake(const name& owner, const uint64_t& idbranch, asset& total, asset& owned) {
       //calculating branch stake total (all stakeholders)
       auto stkidx = getIndex<"bybranch"_n>();
       auto stkitr = stkidx.lower_bound(idbranch);
@@ -49,7 +40,7 @@ namespace Woffler {
       }
     }
 
-    void Stake::claimRevenue(name owner, uint64_t idbranch) {
+    void Stake::claimRevenue(const name& owner, const uint64_t& idbranch) {
       auto stkidx = getIndex<"byownedbrnch"_n>();
       auto stkitr = stkidx.find(Utils::combineIds(owner.value, idbranch));
       check(stkitr != stkidx.end(), "No stake in branch for this owner");
@@ -77,7 +68,7 @@ namespace Woffler {
       remove();
     }
 
-    void Stake::checkIsStakeholder(name owner, uint64_t idbranch) {
+    void Stake::checkIsStakeholder(const name& owner, const uint64_t& idbranch) {
       auto ownedBranchId = Utils::combineIds(owner.value, idbranch);    
       auto stkidx = getIndex<"byownedbrnch"_n>();
       const auto& stake = stkidx.find(ownedBranchId);

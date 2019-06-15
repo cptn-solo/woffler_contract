@@ -3,26 +3,8 @@
 
 namespace Woffler {
   namespace Branch {
-    Branch::Branch(name self, uint64_t idbranch) :
-      Entity<branches, DAO, uint64_t>(self, idbranch), stake(self, 0) {}
-
-    DAO::DAO(branches& _branches, uint64_t idbranch):
-        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
-
-    DAO::DAO(branches& _branches, branches::const_iterator itr):
-        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, itr) {}
-
-    wflbranch Branch::getBranch() {
-      return getEnt<wflbranch>();
-    }
-
-    uint64_t Branch::getRootLevel() {
-      auto b = getEnt<wflbranch>();
-      return b.idrootlvl;
-    }
-
     //create root branch with root level after meta is created/selected from existing
-    void Branch::createBranch(name owner, uint64_t idmeta, asset pot) {
+    void Branch::createBranch(const name& owner, const uint64_t& idmeta, const asset& pot) {
       BranchMeta::BranchMeta meta(_self, idmeta);
       auto _meta = meta.getMeta();
 
@@ -41,6 +23,7 @@ namespace Woffler {
       create(owner, [&](auto& b) {
         b.id = _entKey;
         b.idmeta = idmeta;
+        b.potbalance = pot;
       });
 
       //register players's and house stake
@@ -51,33 +34,39 @@ namespace Woffler {
       appendStake(_self, houseStake);
 
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, pot, _entKey, 0, 1, idmeta);
+      uint64_t idlevel = level.createLevel(owner, _entKey, 0, 1, idmeta, true, pot);
 
       setRootLevel(owner, idlevel, 1);
     }
 
-    uint64_t Branch::createChildBranch(name owner, uint64_t idparent) {
+    uint64_t Branch::createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot) {
       _entKey = nextPK();
-      auto parent = _idx.find(idparent);
+      auto parent = _idx.find(pidbranch);
       check(parent != _idx.end(), "Parent branch not found");
       create(owner, [&](auto& b) {
         b.id = _entKey;
         b.idmeta = parent->idmeta;
-        b.idparent = idparent;
+        b.idparent = pidbranch;
         b.generation = (parent->generation + 1);
+        b.potbalance = pot;
       });
+      
+      //here is the change: child branch creator got stake. all next green can't unlock this branch until `stkaddval`
+      appendStake(owner, pot);
+
+      Level::Level level(_self);
+      uint64_t idlevel = level.createLevel(owner, _entKey, pidlevel, 1, parent->idmeta, true, pot);
+
+      setRootLevel(owner, idlevel, 1);        
+
       return _entKey;
     }
 
-    void Branch::addStake(name owner, asset amount) {
-      auto _branch = getBranch();
-
-      BranchMeta::BranchMeta meta(_self, _branch.idmeta);
+    void Branch::addStake(const name& owner, const asset& amount) {
+      BranchMeta::BranchMeta meta(_self, _entity.idmeta);
       auto _meta = meta.getMeta();
 
-      //if root level is created already - append staked value to the root level's pot
-      Level::Level level(_self, _branch.idrootlvl);
-      auto threshold = meta.stakeThreshold(level.getLevel().potbalance);
+      auto threshold = meta.stakeThreshold(_entity.potbalance);
 
       check(amount >= threshold, string("Amount must be >= ")+threshold.to_string().c_str());
 
@@ -85,7 +74,7 @@ namespace Woffler {
       Player::Player player(_self, owner);
       player.subBalance(amount, owner);
 
-      if (_branch.generation > 1) {
+      if (_entity.generation > 1) {
         //non-root branches don't directly share profit with contract's account (house)
         appendStake(owner,amount);
       }
@@ -98,10 +87,44 @@ namespace Woffler {
         appendStake(_self, houseStake);
       }
 
-      level.addPot(owner, amount);
+      addPot(owner, amount);
+
+      Level::Level rootlevel(_self, _entity.idrootlvl);
+      rootlevel.addPot(owner, amount);
     }
 
-    void Branch::appendStake(name owner, asset amount) {
+    void Branch::addPot(const name& payer, const asset& pot) {
+      update(payer, [&](auto& b) {
+        b.potbalance += pot;
+      });
+    }
+    
+    void Branch::subPot(const name& payer, const asset& take) {
+      print("Branch::subPot ", _entity.potbalance, take);
+      check(_entity.potbalance >= take, "Branch pot balanse must cover reward amount");
+      update(payer, [&](auto& b) {
+        b.potbalance -= take;
+      });
+      
+      if (_entity.potbalance.amount == 0)
+        closeBranch();      
+    }
+
+    void Branch::closeBranch() {
+      update(_self, [&](auto& b) {
+        b.closed = Utils::now();
+      });
+      
+      auto idparent = _entity.idparent;
+      if (idparent > 0) {
+        Branch parent(_self, idparent);
+        parent.update(_self,[&](auto& b) {
+          b.openchildcnt--;
+        });
+      }
+    }
+
+    void Branch::appendStake(const name& owner, const asset& amount) {
       stake.registerStake(owner, _entKey, amount);
 
       update(_self, [&](auto& b) {
@@ -109,7 +132,7 @@ namespace Woffler {
       });
     }
 
-    void Branch::setRootLevel(name payer, uint64_t idrootlvl, uint64_t generation) {
+    void Branch::setRootLevel(const name& payer, const uint64_t& idrootlvl, const uint64_t& generation) {
       update(payer, [&](auto& b) {
         b.idrootlvl = idrootlvl;
         b.winlevel = idrootlvl;
@@ -117,37 +140,35 @@ namespace Woffler {
       });
     }
 
-    void Branch::updateTreeDept(name payer, uint64_t idlevel, uint64_t generation) {
+    void Branch::updateTreeDept(const name& payer, const uint64_t& idlevel, const uint64_t& generation) {
       update(payer, [&](auto& b) {
         b.winlevel = idlevel;
         b.winlevgen = generation;
+        b.openchildcnt++;
       });
     }
 
-    void Branch::setWinner(name player) {
+    void Branch::setWinner(const name& player) {
       update(player, [&](auto& b) {
         b.winner = player;
       });
     }
 
-    void Branch::deferRevenueShare(asset amount) {
+    void Branch::deferRevenueShare(const asset& amount) {
       update(_self, [&](auto& b) {
         b.totalrvnue += amount;
         b.tipprocessed = 0;
       });
     }
 
-    void Branch::deferRevenueShare(asset amount, uint64_t idbranch) {
+    void Branch::deferRevenueShare(const asset& amount, const uint64_t& idbranch) {
       Branch branch(_self, idbranch);
       branch.deferRevenueShare(amount);
     }
 
     //this method always run in context of a deferred transaction and only for unprocessed branches
     void Branch::allocateRevshare() {
-      auto _branch = getBranch();
-
-      check(_branch.tipprocessed == 0, "Branch already processed");
-
+      check(_entity.tipprocessed == 0, "Branch already processed");
       /*
         Implementation notice.
         To avoid need to generate detailed "billing" record for each revenue event, generated by levels, current implementation
@@ -164,32 +185,32 @@ namespace Woffler {
         by any account even not registered in the game contract as a player.
       */
 
-      auto totalrvnue = _branch.totalrvnue;//for unprocessed branch this amount is "gross" - contains parent and winner shares
-      auto parentrvnue = _branch.parentrvnue;//"old" value, doesn't yet include new tip until "processed"
-      auto winnerrvnue = _branch.winnerrvnue;//"old" value, doesn't yet include new tip until "processed"
+      auto totalrvnue = _entity.totalrvnue;//for unprocessed branch this amount is "gross" - contains parent and winner shares
+      auto parentrvnue = _entity.parentrvnue;//"old" value, doesn't yet include new tip until "processed"
+      auto winnerrvnue = _entity.winnerrvnue;//"old" value, doesn't yet include new tip until "processed"
 
       //get parent branch
-      if (_branch.idparent > 0) {
+      if (_entity.idparent > 0) {
         //if exists then cut (amount/generation) and call deferRevenueShare on parent branch
 
-        parentrvnue = totalrvnue / _branch.generation;//totalrvnue is now bigger then it was when parentrvnue was last calculated, so this is an "increment"
+        parentrvnue = totalrvnue / _entity.generation;//totalrvnue is now bigger then it was when parentrvnue was last calculated, so this is an "increment"
         totalrvnue -= parentrvnue;
-        auto delta = parentrvnue - _branch.parentrvnue;
-        deferRevenueShare(delta, _branch.idparent);//only delta revenue amount should be paid at a time
-        print("Parent branch <", std::to_string(_branch.idparent), "> get: ", asset{delta}, ".\n");
+        auto delta = parentrvnue - _entity.parentrvnue;
+        deferRevenueShare(delta, _entity.idparent);//only delta revenue amount should be paid at a time
+        print("Parent branch <", std::to_string(_entity.idparent), "> get: ", asset{delta}, ".\n");
       }
       //cut branch winner amount
-      if (_branch.winner) {
-        BranchMeta::BranchMeta meta(_self, _branch.idmeta);
+      if (_entity.winner) {
+        BranchMeta::BranchMeta meta(_self, _entity.idmeta);
         auto _meta = meta.getMeta();
         winnerrvnue = (totalrvnue * _meta.winnerrate) / 100;
 
         totalrvnue -= winnerrvnue;
 
-        Player::Player player(_self, _branch.winner);
-        auto delta = winnerrvnue - _branch.winnerrvnue;
+        Player::Player player(_self, _entity.winner);
+        auto delta = winnerrvnue - _entity.winnerrvnue;
         player.addBalance(delta, _self);//only delta revenue amount should be paid at a time
-        print("Branch winner <", name(_branch.winner), "> get: ", asset{delta}, ".\n");
+        print("Branch winner <", name(_entity.winner), "> get: ", asset{delta}, ".\n");
       }
 
       update(_self, [&](auto& b) {
@@ -212,36 +233,41 @@ namespace Woffler {
     }
 
     void Branch::checkStartBranch() {
-      auto b = getEnt<wflbranch>();
       check(
-        b.generation == 1,
+        _entity.generation == 1,
         "Player can start only from root branch"
       );
       check(
-        b.idrootlvl != 0,
+        _entity.idrootlvl != 0,
         "Branch has no root level yet."
       );
     }
 
-    void Branch::checkEmptyBranch() {
-      auto b = getEnt<wflbranch>();
+    void Branch::checkNotClosed() {
       check(
-        b.idrootlvl == 0,
+        _entity.closed == 0,
+        "Branch is closed and cant be played any more"
+      );
+    }
+
+    void Branch::checkEmptyBranch() {
+      check(
+        _entity.idrootlvl == 0,
         "Root level already exists"
       );
     }
 
-    void Branch::checkBranchMetaNotUsed(uint64_t idmeta) {
+    void Branch::checkBranchMetaNotUsed(const uint64_t& idmeta) {
       check(
         !isIndexedByMeta(idmeta),
         "Branch metadata is already used in branches."
       );
     }
 
-    bool Branch::isIndexedByMeta(uint64_t idmeta) {
-        auto idxbymeta = getIndex<"bymeta"_n>();
-        auto itrbymeta = idxbymeta.find(idmeta);
-        return itrbymeta != idxbymeta.end();
+    bool Branch::isIndexedByMeta(const uint64_t& idmeta) {
+      auto idxbymeta = getIndex<"bymeta"_n>();
+      auto itrbymeta = idxbymeta.find(idmeta);
+      return itrbymeta != idxbymeta.end();
     }
   }
 }

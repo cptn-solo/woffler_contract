@@ -29,6 +29,10 @@ namespace Woffler {
       
       uint64_t tipprocessed = 1;//initialize branch without need to be processed
 
+      asset potbalance = asset{0, Const::acceptedSymbol};//potbalance shared across branch levels via `nextrate`
+      uint32_t openchildcnt = 0;//open child branches
+      uint32_t closed = 0;//timestamp of close event (pot emptied)
+
       uint64_t primary_key() const { return id; }
       uint64_t get_idmeta() const { return idmeta; }
       uint64_t get_tipprocessed() const { return tipprocessed; }
@@ -41,41 +45,59 @@ namespace Woffler {
 
     class DAO: public Accessor<branches, wflbranch, branches::const_iterator, uint64_t>  {
       public:
-      DAO(branches& _branches, uint64_t idbranch);
-      DAO(branches& _branches, branches::const_iterator itr);
-      static uint64_t keyValue(uint64_t idbranch) {
+      DAO(branches& _branches, const uint64_t& idbranch):
+        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, idbranch) {}
+
+      DAO(branches& _branches, const branches::const_iterator& itr):
+        Accessor<branches, wflbranch, branches::const_iterator, uint64_t>::Accessor(_branches, itr) {}
+      
+      static uint64_t keyValue(const uint64_t& idbranch) {
         return idbranch;
       }
     };
 
-    class Branch: Entity<branches, DAO, uint64_t> {
+    class Branch: public Entity<branches, DAO, uint64_t, wflbranch> {
+      
       private:
+
       Stake::Stake stake;
 
       public:
-      Branch(name self, uint64_t idbranch);
-      
-      wflbranch getBranch();
-      uint64_t getRootLevel();
+
+      Branch(const name& self, const uint64_t& idbranch) : Entity<branches, DAO, uint64_t, wflbranch>(self, idbranch), stake(self, 0) {
+      }
+
+      wflbranch getBranch() {
+        return getEnt();
+      }
+
+      uint64_t getRootLevel() {
+        auto b = getEnt();
+        return b.idrootlvl;
+      }
       
       void checkBranch();
       void checkStartBranch();
+      void checkNotClosed();
       void checkEmptyBranch();
-      void checkBranchMetaNotUsed(uint64_t idmeta);
+      void checkBranchMetaNotUsed(const uint64_t& idmeta);
 
-      void createBranch(name owner, uint64_t idmeta, asset pot);
-      uint64_t createChildBranch(name owner, uint64_t idparent);
-      void addStake(name owner, asset amount);
-      void appendStake(name owner, asset amount);
-      void setRootLevel(name payer, uint64_t idrootlvl, uint64_t generation);
-      void updateTreeDept(name payer, uint64_t idlevel, uint64_t generation);
-      void setWinner(name player);      
-      void deferRevenueShare(asset amount);
-      void deferRevenueShare(asset amount, uint64_t idbranch);
+      void createBranch(const name& owner, const uint64_t& idmeta, const asset& pot);
+      uint64_t createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot);
+      void addPot(const name& payer, const asset& pot);
+      void subPot(const name& payer, const asset& take);
+      void addStake(const name& owner, const asset& amount);
+      void appendStake(const name& owner, const asset& amount);
+      void setRootLevel(const name& payer, const uint64_t& idrootlvl, const uint64_t& generation);
+      void updateTreeDept(const name& payer, const uint64_t& idlevel, const uint64_t& generation);
+      void setWinner(const name& player);      
+      void deferRevenueShare(const asset& amount);
+      void deferRevenueShare(const asset& amount, const uint64_t& idbranch);
       void allocateRevshare();
+      void closeBranch();
       void rmBranch();
       
-      bool isIndexedByMeta(uint64_t idmeta);
+      bool isIndexedByMeta(const uint64_t& idmeta);
     };
   }
 }

@@ -117,18 +117,20 @@ namespace Woffler {
     //owner pays for ram to avoid spamming via branch meta creation.
     //only owner can modify branch metadata.
     ACTION brnchmeta(name owner, uint64_t idmeta, BranchMeta::wflbrnchmeta meta) {
-        require_auth(owner);
+      require_auth(owner);
 
-        BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
-        branchmeta.upsertBranchMeta(owner, meta);
-      }
+      BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
+      branchmeta.upsertBranchMeta(owner, meta);
+    }
 
     //remove branch meta owned
     ACTION rmbrmeta(name owner, uint64_t idmeta) {
       require_auth(owner);
 
       BranchMeta::BranchMeta branchmeta(get_self(), idmeta);
-      branchmeta.removeBranchMeta(owner);
+      if (owner != get_self())
+        branchmeta.removeBranchMeta(owner);
+      else branchmeta.removeBranchMeta();
     }
 
     #pragma endregion
@@ -166,6 +168,54 @@ namespace Woffler {
       Level::Level level(get_self(), idlevel);
       level.unlockLevel(account);
     }
+    
+    //use try to change position in current level from safe to green. last try will change position automatically
+    ACTION tryturn(name account) {
+      require_auth(account);
+
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.tryTurn();
+    }
+    
+    //commit position change in current level
+    ACTION committurn(name account) {
+      require_auth(account);
+      
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.commitTurn();
+    }
+
+    //reset player's GREEN/NEXT/SPLIT state to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
+    ACTION claimsafe(name account) {
+      require_auth(account);          
+
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.claimSafe();
+    }
+
+    //commit player's position after turn result "red cell" (position player to prev. level's zero)
+    ACTION claimred(name account) {
+      require_auth(account);
+
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.claimRed();
+    }
+
+    //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
+    ACTION claimtake(name account) {
+      require_auth(account);
+
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.claimTake();
+    }
+    
+    //return vested balance to level's pot and set state back to GREEN
+    ACTION untake(name account) {
+      require_auth(account);
+      
+      Level::PlayerLevel plevel(get_self(), account);
+      plevel.cancelTake();
+    }    
 
     //position player to the next level
     //if not yet exists - initialize new locked level in current branch 
@@ -230,54 +280,6 @@ namespace Woffler {
       player.switchBranch(idbranch);//position player in root level of the branch
     }
         
-    //use try to change position in current level from safe to green. last try will change position automatically
-    ACTION tryturn(name account) {
-      require_auth(account);
-
-      Player::Player player(get_self(), account);
-      player.tryTurn();
-    }
-    
-    //commit position change in current level
-    ACTION committurn(name account) {
-      require_auth(account);
-      
-      Player::Player player(get_self(), account);
-      player.commitTurn();
-    }
-
-    //reset player's GREEN/NEXT/SPLIT state to SAFE (current level's zero cell) if a player don't want to continue trial of splitting branch or extending it
-    ACTION claimsafe(name account) {
-      require_auth(account);          
-
-      Player::Player player(get_self(), account);
-      player.claimSafe();
-    }
-
-    //commit player's position after turn result "red cell" (position player to prev. level's zero)
-    ACTION claimred(name account) {
-      require_auth(account);
-
-      Player::Player player(get_self(), account);
-      player.claimRed();
-    }
-
-    //reset player's TAKE position to SAFE (current level's zero cell) after TAKE level result timestamp expired
-    ACTION claimtake(name account) {
-      require_auth(account);
-
-      Player::Player player(get_self(), account);
-      player.claimTake();
-    }
-    
-    //return vested balance to level's pot and set state back to GREEN
-    ACTION untake(name account) {
-      require_auth(account);
-      
-      Player::Player player(get_self(), account);
-      player.cancelTake();
-    }
-
     
     #pragma endregion
     

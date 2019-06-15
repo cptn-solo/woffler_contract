@@ -30,6 +30,10 @@ namespace Woffler {
       uint8_t winnerrate = 0;
       string url;
       string name;
+      uint64_t maxlvlgen = 0; //maximum level generation (`nextlvl` limit)
+      uint8_t takemult = 0; //multiplies level.generation which in turn multiplies `tkrate` up to 100
+      uint8_t unljailmult = 0; //multiplies level.generation which in turn multiplies `unjlrate` up to 100
+      uint8_t buytrymult = 0; //multiplies level.generation which in turn multiplies `unjlrate` up to 100
 
       uint64_t primary_key() const { return id; }
     } wflbrnchmeta;
@@ -37,40 +41,52 @@ namespace Woffler {
     typedef multi_index<"brnchmeta"_n, wflbrnchmeta> brnchmetas;
 
     class DAO: public Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>  {
+      
       public:
-      DAO(brnchmetas& _brnchmetas, uint64_t idmeta);
-      DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr);
-      static uint64_t keyValue(uint64_t idmeta) {
+
+      DAO(brnchmetas& _brnchmetas, const uint64_t& idmeta):
+        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
+
+      DAO(brnchmetas& _brnchmetas, const brnchmetas::const_iterator& itr):
+        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, itr) {}
+
+      static uint64_t keyValue(const uint64_t& idmeta) {
         return idmeta;
       }
     };
 
-    class BranchMeta: public Entity<brnchmetas, DAO, uint64_t> {
+    class BranchMeta: public Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta> {
+
       public:
-      BranchMeta(name self, uint64_t idmeta);
 
-      wflbrnchmeta getMeta();
-
+      BranchMeta(const name& self, const uint64_t& idmeta) : Entity<brnchmetas, DAO, uint64_t, wflbrnchmeta>(self, idmeta) {
+      }
+      
+      wflbrnchmeta getMeta() {
+        return getEnt();
+      }
+      
       asset nextPot(const asset& pot);
       asset splitPot(const asset& pot);
-      asset takeAmount(const asset& pot);
+      asset takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen);
       
       asset stakeThreshold(const asset& pot);
       
-      asset unjailPrice(const asset& pot);
+      asset unjailPrice(const asset& pot, const uint64_t& generation);
       asset unjailRevShare(const asset& revenue);
 
-      asset buytryPrice(const asset& pot);
+      asset buytryPrice(const asset& pot, const uint64_t& generation);
       asset buytryRevShare(const asset& revenue);
 
       void checkIsMeta();
-      void checkCells(wflbrnchmeta meta);
-      void checkRatios(wflbrnchmeta meta);
-      void checkOwner(name owner);
+      void checkCells(const wflbrnchmeta& meta);
+      void checkRatios(const wflbrnchmeta& meta);
+      void checkOwner(const name& owner);
       void checkNotUsedInBranches();
 
-      void upsertBranchMeta(name owner, wflbrnchmeta meta);
-      void removeBranchMeta(name owner);
+      void upsertBranchMeta(const name& owner, wflbrnchmeta& meta);
+      void removeBranchMeta(const name& owner);
+      void removeBranchMeta();//debug
     };
 
   }

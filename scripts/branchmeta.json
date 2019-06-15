@@ -16,5 +16,9 @@
   "buytrymin": "1.0000 EOS",
   "buytryrate": 1,
   "winnerrate": 30, 
-  "slsrate": 3
+  "slsrate": 3,
+  "maxlvlgen": 0,
+  "takemult": 0,
+  "unljailmult": 0,
+  "buytrymult": 0
 }

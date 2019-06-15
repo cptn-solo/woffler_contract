@@ -3,100 +3,86 @@
 
 namespace Woffler {
   namespace BranchMeta {
-    BranchMeta::BranchMeta(name self, uint64_t idmeta) :
-      Entity<brnchmetas, DAO, uint64_t>(self, idmeta) {
-      }
-
-    DAO::DAO(brnchmetas& _brnchmetas, uint64_t idmeta):
-        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, idmeta) {}
-
-    DAO::DAO(brnchmetas& _brnchmetas, brnchmetas::const_iterator itr):
-        Accessor<brnchmetas, wflbrnchmeta, brnchmetas::const_iterator, uint64_t>::Accessor(_brnchmetas, itr) {}
-
-    wflbrnchmeta BranchMeta::getMeta() {
-      return getEnt<wflbrnchmeta>();
-    }
-
     asset BranchMeta::nextPot(const asset& pot) {
-      auto _meta = getMeta();
-      //decide on new level's pot
-      asset nxtPot = (pot * _meta.nxtrate) / 100;
-      if (nxtPot < _meta.potmin)
+      asset nxtPot = (pot * _entity.nxtrate) / 100;
+      if (nxtPot < _entity.potmin)
         nxtPot = pot;
       return nxtPot;
     }
 
     asset BranchMeta::splitPot(const asset& pot) {
-      auto _meta = getMeta();
       //solved * SPLIT_RATE% >= STAKE_MIN?      
-      auto minPot = (_meta.stkmin * 100) / _meta.spltrate;
+      auto minPot = (_entity.stkmin * 100) / _entity.spltrate;
       check(
         pot >= minPot,
         string("Reward pot of the current level is too small, should be at least ") + minPot.to_string().c_str()
       );
 
-      auto splitAmount = (pot * _meta.spltrate) / 100;
+      auto splitAmount = (pot * _entity.spltrate) / 100;
       return splitAmount;
     }
 
-    asset BranchMeta::takeAmount(const asset& pot) {
-      auto _meta = getMeta();
-      auto reward = (pot * _meta.tkrate) / 100;
+    asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen) {
+      if (_entity.maxlvlgen > 0 && _entity.maxlvlgen == generation)//last level winner gets all remaining pot
+        return pot;
 
-      //solved * (100-TAKE_RATE)% > POT_MIN ?
+      auto reward = (pot * _entity.tkrate) / 100;
+      
       check(reward.amount > 0, "Reward amount must be > 0");
-      check(
-        (pot - reward) >= _meta.potmin,
-        string("Level pot is insufficient for reward, must be at least ")+_meta.potmin.to_string().c_str()+string(" after reward paid.\n")
-      );
+
+      if (_entity.takemult > 0) 
+        reward *= (_entity.takemult * generation); 
+
+      if (reward > pot)
+        return pot;
 
       return reward;
     }
 
     asset BranchMeta::stakeThreshold(const asset& pot) {
-      auto _meta = getMeta();
-      auto price = (pot * _meta.stkrate) / 100;
-      if (price < _meta.stkmin)
-        price = _meta.stkmin;
+      //stake amounts derived from total branch pot, not current level's amount
+      auto price = (pot * _entity.stkrate) / 100;
+      if (price < _entity.stkmin)
+        price = _entity.stkmin;
 
       return price;
     }
 
-    asset BranchMeta::unjailPrice(const asset& pot) {
-      auto _meta = getMeta();
-      auto price = (pot * _meta.unjlrate) / 100;
-      if (price < _meta.unjlmin)
-        price = _meta.unjlmin;
+    asset BranchMeta::unjailPrice(const asset& pot, const uint64_t& generation) {
+      auto price = (pot * _entity.unjlrate) / 100;
+      if (_entity.unljailmult > 0)
+        price *= (_entity.unljailmult * generation);
+
+      if (price < _entity.unjlmin)
+        price = _entity.unjlmin;
 
       return price;
     }
 
     asset BranchMeta::unjailRevShare(const asset& revenue) {
-      auto _meta = getMeta();
-      auto share = (revenue * _meta.unjlrate) / 100;
-      return share;
+      return (revenue * _entity.unjlrate) / 100;
     }
 
-    asset BranchMeta::buytryPrice(const asset& pot) {
-      auto _meta = getMeta();
-      auto price = (pot * _meta.buytryrate) / 100;
-      if (price < _meta.buytrymin)
-        price = _meta.buytrymin;
+    asset BranchMeta::buytryPrice(const asset& pot, const uint64_t& generation) {
+      auto price = (pot * _entity.buytryrate) / 100;
+      if (_entity.buytrymult > 0) 
+        price *= (_entity.buytrymult * generation);
+
+      if (price < _entity.buytrymin)
+        price = _entity.buytrymin;
 
       return price;
     }
 
     asset BranchMeta::buytryRevShare(const asset& revenue) {
-      auto _meta = getMeta();
-      auto share = (revenue * _meta.buytryrate) / 100;
-      return share;
+      return (revenue * _entity.buytryrate) / 100;
     }
 
-    void BranchMeta::upsertBranchMeta(name owner, wflbrnchmeta meta) {
+    void BranchMeta::upsertBranchMeta(const name& owner, wflbrnchmeta& meta) {
       checkCells(meta);
       checkRatios(meta);
       meta.owner = owner;
-      if (_entKey >=1) {
+      if (_entKey > 0) {
         checkOwner(owner);
         checkNotUsedInBranches();
         meta.id = _entKey;
@@ -112,13 +98,14 @@ namespace Woffler {
         });
       }
     }
-
-    void BranchMeta::removeBranchMeta(name owner) {
-      if (owner != _self) {
-        checkOwner(owner);
-        checkNotUsedInBranches();
-      }
+    void BranchMeta::removeBranchMeta() {
       remove();
+    }
+    
+    void BranchMeta::removeBranchMeta(const name& owner) {
+      checkOwner(owner);
+      checkNotUsedInBranches();
+      removeBranchMeta();
     }
 
     void BranchMeta::checkIsMeta() {
@@ -128,10 +115,9 @@ namespace Woffler {
       );
     }
 
-    void BranchMeta::checkOwner(name owner) {
-        auto _meta = getMeta();
+    void BranchMeta::checkOwner(const name& owner) {
         check(
-          owner == _meta.owner,
+          owner == _entity.owner,
           "Branch metadata can be modified only by its owner"
         );
     }
@@ -142,14 +128,14 @@ namespace Woffler {
         branch.checkBranchMetaNotUsed(_entKey);
     }
 
-    void BranchMeta::checkCells(wflbrnchmeta meta) {
+    void BranchMeta::checkCells(const wflbrnchmeta& meta) {
       check(
         meta.lvlreds >= 1  && meta.lvlgreens >= 1 && Const::lvlLength >= (meta.lvlreds + meta.lvlgreens + 1),
         "Please comply to level rules: lvlreds >= 1  AND lvlgreens >= 1 AND 16 >= (lvlreds + lvlgreens + 1)"
       );
     }
 
-    void BranchMeta::checkRatios(wflbrnchmeta meta) {
+    void BranchMeta::checkRatios(const wflbrnchmeta& meta) {
       check(
         meta.slsrate <= 100 && meta.spltrate <= 100 && meta.stkrate <= 100 && 
         meta.tkrate <= 100 && meta.unjlrate <= 100 && meta.winnerrate <= 100,

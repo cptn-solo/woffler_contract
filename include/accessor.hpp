@@ -2,89 +2,48 @@
 namespace Woffler {
   template <typename Idx, typename Ent, typename Itr, typename V>
   class Accessor {
-    public:
-    Accessor(Idx& idx, V val);
-    Accessor(Idx& idx, Itr itr);
-    ~Accessor();
-
-    void fetchByKey(V entKey);
-
-    template<typename I, typename A, typename PK>
-    friend class Entity;
-
-    protected:
-
-    template <typename Lambda>
-    void update(name payer, Lambda&& updater);
-
-    void remove();
-
-    bool isEnt();
-    bool isEnt(V val);
-    const Ent& getEnt();
-    
-    Idx& _idx;
 
     private:
-    void save(name payer);
-    Ent _ent;
+    
     Itr _itr;
-  };
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  Accessor<Idx, Ent, Itr, V>::Accessor(Idx& idx, V val): Accessor(idx, idx.find(val)) {
-  }
+    public:
+    
+    Accessor(Idx& idx, const V& val): Accessor(idx, idx.find(val)) {}
+    Accessor(Idx& idx, const Itr& itr): _itr(itr), _idx{idx} {}
+    ~Accessor() {}
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  Accessor<Idx, Ent, Itr, V>::Accessor(Idx& idx, Itr itr): _itr(itr), _idx{idx} {
-    if (isEnt())
-      _ent = *_itr;
-  }
+    void fetchByKey(const V& entKey) {
+      _itr = _idx.find(entKey);
+      check(_itr != _idx.end(), "Object for key was not found in index");
+    }
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  Accessor<Idx, Ent, Itr, V>::~Accessor() {
-  }
-  
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  void Accessor<Idx, Ent, Itr, V>::fetchByKey(V entKey) {
-    _itr = _idx.find(entKey);
-    check(_itr != _idx.end(), "Object for key was not found in index");
-    _ent = *_itr;
-  }
+    template<typename I, typename A, typename PK, typename E>
+    friend class Entity;
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  template<typename Lambda>
-  void Accessor<Idx, Ent, Itr, V>::update(name payer, Lambda&& updater) {
-    _idx.modify(_itr, payer, std::forward<Lambda&&>(updater));
-    _ent = *_itr;
-    //alternative way of editing state is:
-    //updater(_ent);
-    //save(payer);
-  }
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  void Accessor<Idx, Ent, Itr, V>::save(name payer) {
-    _idx.modify(_itr, payer, [&](auto& e) {
-      e = _ent;
-    });
-  }
+    protected:    
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  void Accessor<Idx, Ent, Itr, V>::remove() {
-    _idx.erase(_itr);
-  }
+    Idx& _idx;
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  bool Accessor<Idx, Ent, Itr, V>::isEnt() {
-    return _itr != _idx.end();
-  }
+    template<typename Lambda>
+    void update(const name& payer, Lambda&& updater) {
+      _idx.modify(_itr, payer, std::forward<Lambda&&>(updater));
+    }
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  bool Accessor<Idx, Ent, Itr, V>::isEnt(V val) {
-    return _idx.find(val) != _idx.end();
-  }
+    void remove() {
+      _idx.erase(_itr);
+    }
 
-  template<typename Idx, typename Ent, typename Itr, typename V>
-  const Ent& Accessor<Idx, Ent, Itr, V>::getEnt() {
-    return *_itr;
-  }
+    bool isEnt() {
+      return _itr != _idx.end();
+    }
+
+    bool isEnt(const V& val) {
+      return _idx.find(val) != _idx.end();
+    }
+
+    const Ent& getEnt() {
+      return *_itr;
+    }        
+  }; 
 }
