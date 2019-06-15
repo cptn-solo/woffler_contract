@@ -189,6 +189,7 @@ namespace Woffler {
     }
 
     void PlayerLevel::claimRed() {
+      branch.checkNotClosed();      
       player.checkState(Const::playerstate::RED);
       check(
         _level.idparent != 0 || !_meta.startjailed,
@@ -284,12 +285,17 @@ namespace Woffler {
         });
         player.commitTurn(Const::playerstate::SPLIT);
       } 
-      else if (splitlitr->locked) {
-        player.commitTurn(Const::playerstate::SPLIT);
-      } 
       else {
-        check(!splitlitr->locked, "Split level locked. Please unlock it first using 'unlocklvl' action.");
-        player.resetPositionAtLevel(splitlitr->id);
+        Branch::Branch chbranch(_self, splitlitr->idbranch);
+        chbranch.checkNotClosed();
+
+        if (splitlitr->locked) {
+          player.commitTurn(Const::playerstate::SPLIT);
+        } 
+        else {
+          check(!splitlitr->locked, "Split level locked. Please unlock it first using 'unlocklvl' action.");
+          player.resetPositionAtLevel(splitlitr->id);
+        }
       }
     }
     
@@ -341,11 +347,17 @@ namespace Woffler {
         _player.status == Const::playerstate::SPLIT,
         "Extra retries are available only for next/split level unlock action."
       );
+
+      if (_player.status == Const::playerstate::NEXT) {
+        branch.checkNotClosed();
+      }
+      else if (_player.status == Const::playerstate::NEXT) {
+        Branch::Branch splitbranch(_self, _level.idchbranch);
+        splitbranch.checkNotClosed();
+      }
+
       //Player's balance covers price? 
       //Cut player's balance with price 
-      if (_player.status == Const::playerstate::NEXT)
-        branch.checkNotClosed();//split can proceed, but next is not alowed to buy next tries
-
       auto price = meta.buytryPrice(_level.potbalance, _level.generation);
       player.subBalance(price, _player.account);
 
