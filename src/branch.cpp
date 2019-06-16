@@ -64,6 +64,8 @@ namespace Woffler {
     }
 
     void Branch::addStake(const name& owner, const asset& amount) {
+      checkNotClosed();
+      
       BranchMeta::BranchMeta meta(_self, _entity.idmeta);
       auto _meta = meta.getMeta();
 
