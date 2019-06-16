@@ -22,19 +22,23 @@ namespace Woffler {
       return splitAmount;
     }
 
-    asset BranchMeta::takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen) {
+    asset BranchMeta::takeAmount(const asset& levelpot, const uint64_t& generation, const asset& branchpot, const uint64_t& winlevgen) {
+      check(branchpot.amount > 0, "Branch pot is empty");
+      
       if (_entity.maxlvlgen > 0 && _entity.maxlvlgen == generation)//last level winner gets all remaining pot
-        return pot;
+        return branchpot;
 
-      auto reward = (pot * _entity.tkrate) / 100;
+      check(levelpot.amount > 0, "Reward pot is empty");
+
+      auto reward = (levelpot * _entity.tkrate) / 100;
       
       check(reward.amount > 0, "Reward amount must be > 0");
 
       if (_entity.takemult > 0) 
         reward *= (_entity.takemult * generation); 
 
-      if (reward > pot)
-        return pot;
+      if (reward > levelpot)
+        return levelpot;
 
       return reward;
     }

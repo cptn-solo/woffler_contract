@@ -85,7 +85,7 @@ namespace Woffler {
       void createBranch(const name& owner, const uint64_t& idmeta, const asset& pot);
       uint64_t createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot);
       void addPot(const name& payer, const asset& pot);
-      void subPot(const name& payer, const asset& take);
+      bool subPot(const name& payer, const asset& take);
       void addStake(const name& owner, const asset& amount);
       void appendStake(const name& owner, const asset& amount);
       void setRootLevel(const name& payer, const uint64_t& idrootlvl, const uint64_t& generation);

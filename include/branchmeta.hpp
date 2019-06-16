@@ -68,7 +68,7 @@ namespace Woffler {
       
       asset nextPot(const asset& pot);
       asset splitPot(const asset& pot);
-      asset takeAmount(const asset& pot, const uint64_t& generation, const uint64_t& winlevgen);
+      asset takeAmount(const asset& levelpot, const uint64_t& generation, const asset& branchpot, const uint64_t& winlevgen);
       
       asset stakeThreshold(const asset& pot);
       

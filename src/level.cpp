@@ -275,12 +275,9 @@ namespace Woffler {
 
         const asset splitPot = meta.splitPot(_entity.potbalance);
 
-        branch.subPot(_player.account, splitPot);
-
         //Create child branch and a locked level with "Red" cells, branch generation++
         //Move SPLIT_RATE% of solved pot to locked pot
-        Branch::Branch chbranch(_self, 0);
-        const uint64_t idchbranch = chbranch.createChildBranch(_player.account, _entity.idbranch, _entity.id, splitPot);
+        const uint64_t idchbranch = branch.createChildBranch(_player.account, _entity.idbranch, _entity.id, splitPot);
 
         update(_player.account, [&](auto& l) {
           l.idchbranch = idchbranch;
@@ -307,16 +304,20 @@ namespace Woffler {
       branch.checkNotClosed();
       
       //Cut TAKE_RATE% of solved pot and append to winner's vesting balance
-      const asset reward = meta.takeAmount(_entity.potbalance, _entity.generation, _branch.winlevgen);
+      const asset reward = meta.takeAmount(_entity.potbalance, _entity.generation, _branch.potbalance, _branch.winlevgen);
 
-      update(_player.account, [&](auto& l) {
-        l.potbalance -= reward;
-      });
+      bool closed = branch.subPot(_player.account, reward);// will close current branch if reward pot is drained
 
-      branch.subPot(_player.account, reward);// will close current branch if reward pot is drained
-
-      //Set winner level result to TAKE and update result timestamp
-      player.commitTake(reward, Utils::now() + meta.getMeta().tkintrvl);//retries reset, reward added to vesting
+      if (closed) {
+        //Set vesting without wait interval, branch is now closed.
+        player.commitTake(reward, Utils::now());
+      } else {
+        update(_player.account, [&](auto& l) {
+          l.potbalance -= reward;
+        });
+        //Set winner level result to TAKE and update result timestamp
+        player.commitTake(reward, Utils::now() + meta.getMeta().tkintrvl);//retries reset, reward added to vesting
+      }
     }
 
     void PlayerLevel::unjailPlayer() {

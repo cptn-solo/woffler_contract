@@ -39,27 +39,28 @@ namespace Woffler {
       setRootLevel(owner, idlevel, 1);
     }
 
-    uint64_t Branch::createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot) {
-      _entKey = nextPK();
-      auto parent = _idx.find(pidbranch);
-      check(parent != _idx.end(), "Parent branch not found");
-      create(owner, [&](auto& b) {
-        b.id = _entKey;
-        b.idmeta = parent->idmeta;
-        b.idparent = pidbranch;
-        b.generation = (parent->generation + 1);
+    uint64_t Branch::createChildBranch(const name& owner, const uint64_t& pidbranch, const uint64_t& pidlevel, const asset& pot) {      
+      subPot(owner, pot);
+      auto nextID = nextPK();
+      _idx.emplace(owner, [&](auto& b) {
+        b.id = nextID;
+        b.idmeta = _entity.idmeta;
+        b.idparent = _entity.id;
+        b.generation = _entity.generation + 1;
         b.potbalance = pot;
       });
-      
-      //here is the change: child branch creator got stake. all next green can't unlock this branch until `stkaddval`
-      appendStake(owner, pot);
+      update(owner, [&](auto& b) {
+        b.openchildcnt++;
+      });
 
       Level::Level level(_self);
-      uint64_t idlevel = level.createLevel(owner, _entKey, pidlevel, 1, parent->idmeta, true, pot);
+      uint64_t idlevel = level.createLevel(owner, nextID, pidlevel, 1, _entity.idmeta, true, pot);
+      
+      Branch child(_self, nextID);
+      child.appendStake(owner, pot);
+      child.setRootLevel(owner, idlevel, 1);        
 
-      setRootLevel(owner, idlevel, 1);        
-
-      return _entKey;
+      return nextID;
     }
 
     void Branch::addStake(const name& owner, const asset& amount) {
@@ -99,15 +100,19 @@ namespace Woffler {
       });
     }
     
-    void Branch::subPot(const name& payer, const asset& take) {
+    //return false if closed
+    bool Branch::subPot(const name& payer, const asset& take) {
       print("Branch::subPot ", _entity.potbalance, take);
       check(_entity.potbalance >= take, "Branch pot balanse must cover reward amount");
       update(payer, [&](auto& b) {
         b.potbalance -= take;
       });
       
-      if (_entity.potbalance.amount == 0)
+      if (_entity.potbalance.amount == 0) {
         closeBranch();      
+        return true;
+      }
+      return false;
     }
 
     void Branch::closeBranch() {
@@ -143,8 +148,7 @@ namespace Woffler {
     void Branch::updateTreeDept(const name& payer, const uint64_t& idlevel, const uint64_t& generation) {
       update(payer, [&](auto& b) {
         b.winlevel = idlevel;
-        b.winlevgen = generation;
-        b.openchildcnt++;
+        b.winlevgen = generation;        
       });
     }
 
